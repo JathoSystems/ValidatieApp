@@ -1,0 +1,27 @@
+cmake_minimum_required(VERSION 3.16)
+project(Vuurjongen_Watermeisje LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 20)
+
+add_executable(Vuurjongen_Watermeisje src/Main.cpp)
+
+# Link gameengine library
+add_subdirectory(External/GameEngine)
+target_link_libraries(Vuurjongen_Watermeisje PRIVATE Engine)
+target_include_directories(Vuurjongen_Watermeisje PUBLIC External/GameEngine/src
+        External/GameEngine/includes)
+
+add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Engine>
+        $<TARGET_FILE:SDL3::SDL3>
+        $<TARGET_FILE:SDL3_image::SDL3_image>
+        $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
+        $<TARGET_FILE_DIR:Vuurjongen_Watermeisje>
+)
+
+add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources
+        $<TARGET_FILE_DIR:Vuurjongen_Watermeisje>/resources
+)
