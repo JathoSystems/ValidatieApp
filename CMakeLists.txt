@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(Vuurjongen_Watermeisje src/Main.cpp)
 
 # Link gameengine library
-add_subdirectory(External/GameEngine)
+add_subdirectory(external/GameEngine)
 target_link_libraries(Vuurjongen_Watermeisje PRIVATE Engine)
 target_include_directories(Vuurjongen_Watermeisje PUBLIC External/GameEngine/src
         External/GameEngine/includes)
@@ -25,3 +25,5 @@ add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
         ${CMAKE_CURRENT_SOURCE_DIR}/resources
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje>/resources
 )
+# cmp0077
+cmake_policy( SET CMP0077 NEW )

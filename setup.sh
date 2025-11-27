@@ -6,4 +6,4 @@ cd external/GameEngine
 git clone --depth 1 https://github.com/libsdl-org/SDL.git external/SDL3
 git clone --depth 1 https://github.com/libsdl-org/SDL_image.git external/SDL3_image
 git clone --depth 1 https://github.com/libsdl-org/SDL_ttf external/SDL3_TTF
-./external/SDL3_TTF/download.sh
+./external/SDL3_TTF/external/download.sh
