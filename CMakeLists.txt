@@ -3,7 +3,17 @@ project(Vuurjongen_Watermeisje LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Vuurjongen_Watermeisje src/Main.cpp)
+add_executable(Vuurjongen_Watermeisje src/Main.cpp
+        includes/characters/Fireboy.hpp
+        src/characters/Fireboy.cpp
+        includes/characters/movement/MovementComponent.hpp
+        src/characters/Watergirl.cpp
+        includes/characters/Watergirl.hpp
+        includes/characters/events/MoveEvent.hpp
+        src/characters/events/MoveEvent.cpp
+)
+
+include_directories("includes")
 
 # Link gameengine library
 add_subdirectory(external/GameEngine)
