@@ -16,7 +16,7 @@ public:
     std::string getName() const override;
     Package serialize() const override;
     Data deserialize(const Package &package) const override;
-    void apply(GameObject* gameObject) override;
+    void apply(std::shared_ptr<GameObject> gameObject) override;
 };
 
 #endif //VUURJONGEN_WATERMEISJE_MOVEEVENT_HPP

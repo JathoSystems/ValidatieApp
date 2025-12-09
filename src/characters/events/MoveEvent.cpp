@@ -33,7 +33,7 @@ Data MoveEvent::deserialize(const Package& package) const {
     return data;
 }
 
-void MoveEvent::apply(GameObject* gameObject) {
+void MoveEvent::apply(std::shared_ptr<GameObject> gameObject) {
     auto pos = gameObject->getTransform()->getPosition();
 
     pos->setX(_x);

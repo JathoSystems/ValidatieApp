@@ -6,12 +6,10 @@
 #include "characters/events/MoveEvent.hpp"
 #include "Events/EventRegistry.h"
 
-Fireboy::Fireboy(GameEngine *engine) {
-    addComponent(std::make_unique<Animator>("../resources/dropping.png", 1, 4));
-    addComponent(std::make_unique<MovementComponent>(
-        this, engine, Key::W, Key::S, Key::A, Key::D
-    ));
-
-    getTransform()->getPosition()->setX(1);
-    getTransform()->getPosition()->setY(1);
+Fireboy::Fireboy(GameEngine *engine, bool active): BaseCharacter(engine, active){
+    setFallingSpritesheet(R"(..\resources\fireboy\dropping.png)");
+    setJumpingSpritesheet(R"(..\resources\fireboy\jumping.png)");
+    setIdleSpritesheet(R"(..\resources\fireboy\idle.png)");
+    setMovingLeftSpritesheet(R"(..\resources\fireboy\walk-left.png)");
+    setMovingRightSpritesheet(R"(..\resources\fireboy\walk-right.png)");
 }

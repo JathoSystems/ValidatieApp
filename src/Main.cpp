@@ -16,7 +16,7 @@ int main() {
         engine->init("Vuurjongen en Watermeisje", 800, 600);
 
         std::unique_ptr<Scene> scene = std::make_unique<Scene>("main_scene");
-        scene->addObject(std::make_unique<Fireboy>(engine.get()));
+        scene->addObject(std::make_unique<Fireboy>(engine.get(), true));
         scene->addObject(std::make_unique<Watergirl>(engine.get()));
 
         std::unique_ptr<Viewport> viewport = std::make_unique<Viewport>(Size(800, 600), Position(0, 0));

@@ -11,6 +11,11 @@ add_executable(Vuurjongen_Watermeisje src/Main.cpp
         includes/characters/Watergirl.hpp
         includes/characters/events/MoveEvent.hpp
         src/characters/events/MoveEvent.cpp
+        src/characters/movement/MovementComponent.cpp
+        includes/characters/input/MovementInputHandler.hpp
+        src/characters/input/MovementInputHandler.cpp
+        includes/characters/BaseCharacter.hpp
+        src/characters/BaseCharacter.cpp
 )
 
 include_directories("includes")
