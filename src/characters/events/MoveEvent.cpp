@@ -18,7 +18,7 @@ Package MoveEvent::serialize() const {
     return p;
 }
 
-Data MoveEvent::deserialize(const Package& package) const {
+Data MoveEvent::deserialize(const Package& package) {
     Data data;
 
     if (package.size() >= 2) {

@@ -7,6 +7,7 @@
 #include "characters/movement/MovementComponent.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "Physics/Box2DFacade.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/RigidBody.h"
 

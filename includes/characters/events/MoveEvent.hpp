@@ -15,7 +15,7 @@ public:
 
     std::string getName() const override;
     Package serialize() const override;
-    Data deserialize(const Package &package) const override;
+    Data deserialize(const Package &package) override;
     void apply(std::shared_ptr<GameObject> gameObject) override;
 };
 
