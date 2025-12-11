@@ -16,7 +16,7 @@
 #include "Scenes/Camera/FixedCamera.h"
 
 auto network = std::make_shared<NetworkSystem>();
-auto result = network->connect("127.0.0.1", 7534);
+auto result = network->connect("192.168.2.161", 7534);
 EventManager manager(network->getMiddleware());
 
 class PlayerController : public IKeyListener {
