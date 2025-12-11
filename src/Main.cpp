@@ -5,6 +5,8 @@
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Network/NetworkSystem.h"
+#include "Network/Packet/PacketRegistery.h"
+#include "Network/Packet/Packets/NetworkEventPacket.h"
 #include "Network/Sockets/TcpNetworkSocket.h"
 #include "Physics/Collider.h"
 #include "Physics/PhysicsComponent.h"
@@ -15,12 +17,12 @@
 
 auto network = std::make_shared<NetworkSystem>();
 auto result = network->connect("127.0.0.1", 7534);
-EventManager manager (network->getMiddleware());
+EventManager manager(network->getMiddleware());
 
 class PlayerController : public IKeyListener {
 private:
-    GameObject* object;
-    PhysicsComponent* _physics = nullptr;
+    GameObject *object;
+    PhysicsComponent *_physics = nullptr;
     float _moveSpeed = 300.0f;
     float _jumpForce = 5000.0f;
     int _groundContactCount = 0;
@@ -28,8 +30,9 @@ private:
     bool _movingRight = false;
 
 public:
-    void setObject(GameObject* object) { this->object = object; }
-    void setPhysicsComponent(PhysicsComponent* physics) {
+    void setObject(GameObject *object) { this->object = object; }
+
+    void setPhysicsComponent(PhysicsComponent *physics) {
         _physics = physics;
     }
 
@@ -63,7 +66,7 @@ public:
             case Key::SPACE:
             case Key::W:
             case Key::UP:
-                GameObject* parent = object;
+                GameObject *parent = object;
 
                 if (network->isConnected()) {
                     std::cout << "Network is connected!\n";
@@ -121,7 +124,7 @@ private:
     PlayerController _controller;
 
 public:
-    void setup(PhysicsComponent* physics, InputSystem* inputSystem, GameObject* object) {
+    void setup(PhysicsComponent *physics, InputSystem *inputSystem, GameObject *object) {
         _controller.setPhysicsComponent(physics);
         _controller.setObject(object);
 
@@ -136,7 +139,7 @@ public:
         _controller.update();
     }
 
-    void onCollisionEnter(const CollisionData& collision) override {
+    void onCollisionEnter(const CollisionData &collision) override {
         GameObject::onCollisionEnter(collision);
 
         if (collision.normalY > 0.2f) {
@@ -144,18 +147,24 @@ public:
         }
     }
 
-    void onCollisionExit(const CollisionData& collision) override {
+    void onCollisionExit(const CollisionData &collision) override {
         _controller.removeGroundContact();
     }
 };
 
 int main() {
     try {
+        PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
+
+        EventRegistry::getInstance()->registerEvent("jump", []() {
+            return std::make_shared<JumpEvent>();
+        });
+
         std::unique_ptr<GameEngine> gameEngine = std::make_unique<GameEngine>();
         gameEngine->init("Physics Platformer Demo", 1280, 720);
 
-        PhysicsSystem* physicsSystem = gameEngine->getSystem<PhysicsSystem>();
-        InputSystem* inputSystem = gameEngine->getSystem<InputSystem>();
+        PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+        InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
         if (!inputSystem) {
             return 1;
@@ -239,7 +248,7 @@ int main() {
         playerPhysics->setGravityScale(1.0f);
         playerPhysics->setParent(player.get());
 
-        auto* physicsPtr = playerPhysics.get();
+        auto *physicsPtr = playerPhysics.get();
         player->addComponent(std::move(playerPhysics));
 
         auto playerRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_lime.png");
