@@ -14,7 +14,7 @@
 
 BaseCharacter::BaseCharacter(GameEngine *engine, bool activePlayer) {
     if (activePlayer) {
-        std::unique_ptr<MovementComponent> movement = std::make_unique<MovementComponent>(
+        /*std::unique_ptr<MovementComponent> movement = std::make_unique<MovementComponent>(
             this, engine, Key::W, Key::S, Key::A, Key::D);
 
         movement->onUp([this]() {
@@ -42,23 +42,20 @@ BaseCharacter::BaseCharacter(GameEngine *engine, bool activePlayer) {
             this->addComponent(std::make_unique<Animator>(idle, 1, 5));
         });
 
-        addComponent(std::move(movement));
+        addComponent(std::move(movement));*/
+        addComponent(std::make_unique<SpriteRenderer>("../resources/sprite.jpeg"));
     }
-    getTransform()->getPosition()->setX(1);
-    getTransform()->getPosition()->setY(1);
+    getTransform()->getPosition()->setX(100);
+    getTransform()->getPosition()->setY(100);
+
+    getTransform()->getSize()->setWidth(100);
+    getTransform()->getSize()->setHeight(100);
 
     Box2DFacade *facade = new Box2DFacade();
     facade->init(300, 300);
 
-    std::unique_ptr<Material> material = std::make_unique<Material>(5, 0.1, 0);
-    Material* mat = material.get();
-
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(facade);
     component->setBodyType(BodyType::KINEMATIC);
-    component->setGravityScale(300);
-    component->setFixedRotation(0);
-    component->applyForce(3, 1);
-    component->setMaterial(*mat);
     component->setCollider(std::make_unique<BoxCollider>(100, 100));
 
     PhysicsComponent *componentPointer = component.get();
@@ -80,7 +77,7 @@ void BaseCharacter::setMovingRightSpritesheet(std::string right) {
 
 void BaseCharacter::setJumpingSpritesheet(std::string jump) {
     this->jump = jump;
-    addComponent(std::make_unique<Animator>(jump, 1, 4));
+    // addComponent(std::make_unique<Animator>(jump, 1, 4));
 }
 
 void BaseCharacter::setFallingSpritesheet(std::string falling) {
