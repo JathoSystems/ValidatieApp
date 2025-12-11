@@ -14,7 +14,7 @@ void sync(std::initializer_list<std::string> events, std::shared_ptr<GameObject>
 
         // ToDo: centralized manager?
         EventManager manager;
-        manager.broadcast(event, object);
+        manager.broadcast(event);
     }
 }
 

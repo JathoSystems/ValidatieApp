@@ -7,6 +7,8 @@
 #include "characters/movement/MovementComponent.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "Physics/PhysicsComponent.h"
+#include "Physics/RigidBody.h"
 
 BaseCharacter::BaseCharacter(GameEngine *engine, bool activePlayer) {
     if (activePlayer) {
@@ -41,6 +43,16 @@ BaseCharacter::BaseCharacter(GameEngine *engine, bool activePlayer) {
     }
     getTransform()->getPosition()->setX(1);
     getTransform()->getPosition()->setY(1);
+
+    Box2DFacade* facade = new Box2DFacade();
+    facade->init(3.17, 0);
+
+    std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(facade);
+    component->setBodyType(BodyType::KINEMATIC);
+    component->setGravityScale(3.17);
+    component->setFixedRotation(0);
+
+    delete facade;
 }
 
 void BaseCharacter::setIdleSpritesheet(std::string idle) {
