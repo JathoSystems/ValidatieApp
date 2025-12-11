@@ -68,17 +68,7 @@ public:
             case Key::UP:
                 GameObject *parent = object;
 
-                if (network->isConnected()) {
-                    std::cout << "Network is connected!\n";
-                }
-
-                manager.setEventCallback([parent](std::shared_ptr<IEvent> event) {
-                    std::cout << "Mis deze\n";
-                    event->apply(parent);
-                });
-
                 network->getMiddleware()->setOnEventReceived([parent](std::shared_ptr<IEvent> event) {
-                    std::cout << "On event received!\n";
                     event->apply(parent);
                 });
 
@@ -105,17 +95,17 @@ public:
     void update() {
         if (!_physics || !_physics->isInitialized()) return;
 
-        float vx = 0.0f;
-        if (_movingLeft) {
-            vx = -_moveSpeed;
-        } else if (_movingRight) {
-            vx = _moveSpeed;
-        }
-
         float currentVx, currentVy;
         _physics->getVelocity(currentVx, currentVy);
 
-        _physics->setVelocity(vx, currentVy);
+        float vx = 0.0f;
+        if (_movingLeft) {
+            vx = -_moveSpeed;
+            manager.broadcast(std::make_shared<MoveEvent>(vx, currentVy));
+        } else if (_movingRight) {
+            vx = _moveSpeed;
+            manager.broadcast(std::make_shared<MoveEvent>(vx, currentVy));
+        }
     }
 };
 
@@ -158,6 +148,10 @@ int main() {
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
+        });
+
+        EventRegistry::getInstance()->registerEvent("move", []() {
+            return std::make_shared<MoveEvent>(0, 0);
         });
 
         std::unique_ptr<GameEngine> gameEngine = std::make_unique<GameEngine>();

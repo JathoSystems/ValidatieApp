@@ -1,11 +1,13 @@
 #include "characters/events/MoveEvent.hpp"
 #include <iostream>
 
+#include "Physics/PhysicsComponent.h"
+
 MoveEvent::MoveEvent(int x, int y)
     : _x(x), _y(y) {}
 
 std::string MoveEvent::getName() const {
-    return "fireboy-move";
+    return "move";
 }
 
 Package MoveEvent::serialize() const {
@@ -34,8 +36,9 @@ Data MoveEvent::deserialize(const Package& package) {
 }
 
 void MoveEvent::apply(GameObject* gameObject) {
-    auto pos = gameObject->getTransform()->getPosition();
+    PhysicsComponent* physics = gameObject->getComponent<PhysicsComponent>();
+    std::cout << "Moving" << std::endl;
+    if (!physics) return;
 
-    pos->setX(_x);
-    pos->setY(_y);
+    physics->setVelocity(_x, _y);
 }
