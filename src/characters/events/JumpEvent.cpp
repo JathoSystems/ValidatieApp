@@ -4,6 +4,7 @@
 
 #include "characters/events/JumpEvent.h"
 
+#include <iostream>
 #include <vector>
 #include "Physics/PhysicsComponent.h"
 
@@ -12,12 +13,21 @@ std::string JumpEvent::getName() const {
 }
 
 Package JumpEvent::serialize() const {
-    return std::vector<uint8_t>();
+    std::vector<uint8_t> vector;
+
+    std:: cout << "Serializing JumpEvent " << _objectId << std::endl;
+
+    vector.push_back(_objectId);
+
+    return vector;
 }
 
 Data JumpEvent::deserialize(const Package &package) {
-    return std::vector<uint8_t>();
+    _objectId = package.at(0);
 
+    std::cout << "Deserializing JumpEvent " << _objectId << std::endl;
+
+    return package;
 }
 
 void JumpEvent::apply(GameObject* gameObject) {

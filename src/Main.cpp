@@ -3,6 +3,7 @@
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "Engine/GameEngine.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
@@ -68,11 +69,7 @@ public:
             case Key::UP:
                 GameObject *parent = object;
 
-                network->getMiddleware()->setOnEventReceived([parent](std::shared_ptr<IEvent> event) {
-                    event->apply(parent);
-                });
-
-                manager.broadcast(std::make_shared<JumpEvent>());
+                manager.broadcast(std::make_shared<JumpEvent>(parent->getId()));
                 break;
         }
     }
@@ -112,11 +109,13 @@ public:
 class Player : public GameObject {
 private:
     PlayerController _controller;
+    GameObject *_object;
 
 public:
     void setup(PhysicsComponent *physics, InputSystem *inputSystem, GameObject *object) {
         _controller.setPhysicsComponent(physics);
         _controller.setObject(object);
+        _object = object;
 
         auto keyInput = std::make_unique<KeyInputComponent>(this);
         keyInput->setListener(&_controller);
@@ -144,6 +143,7 @@ public:
 
 int main() {
     try {
+        ObjectRegistry &objectRegistry = ObjectRegistry::getInstance();
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -152,6 +152,17 @@ int main() {
 
         EventRegistry::getInstance()->registerEvent("move", []() {
             return std::make_shared<MoveEvent>(0, 0);
+        });
+
+        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            std::cout << "Incomming id" << id << "\n";
+            GameObject* object = ObjectRegistry::getInstance().getObject(id);
+            std::cout << (object ? "Not null" : "Is null!") << std::endl;
+
+            if (!object) return;
+
+            std::cout << "Applying event to object: " << object->getId() << std::endl;
+            event->apply(object);
         });
 
         std::unique_ptr<GameEngine> gameEngine = std::make_unique<GameEngine>();
@@ -230,6 +241,7 @@ int main() {
         scene->addObject(std::move(box));
 
         auto player = std::make_unique<Player>();
+        std::cout << "Player id: " << player->getId() << "\n";
         player->getTransform()->getPosition()->setX(400.0f);
         player->getTransform()->getPosition()->setY(200.0f);
         player->getTransform()->getSize()->setWidth(50.0f);

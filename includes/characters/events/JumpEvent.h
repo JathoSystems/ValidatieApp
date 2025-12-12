@@ -9,7 +9,11 @@
 
 
 class JumpEvent : public IEvent {
+private:
+    int _objectId;
+
 public:
+    JumpEvent(int objectId = 0): _objectId(objectId) {}
     std::string getName() const override;
     Package serialize() const override;
     Data deserialize(const Package &package) override;
