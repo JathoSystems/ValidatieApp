@@ -95,7 +95,6 @@ void MovementComponent::update(float deltaTime) {
         int x = pos->getX() + static_cast<int>(std::round(dx));
         int y = pos->getY() + static_cast<int>(std::round(dy));
 
-        MoveEvent event(x, y);
         std::shared_ptr<GameObject> obj(_parent, [](GameObject *) {
         });
 
@@ -104,12 +103,6 @@ void MovementComponent::update(float deltaTime) {
             return;
         }
 
-        std::string eventName = "fireboy-move";
-        auto registery = EventRegistry::getInstance();
-        registery->registerEvent(eventName, [this, x, y]() {
-            return std::make_shared<MoveEvent>(x, y);
-        });
-
-        sync({eventName}, obj);
+        sync({"Pimpo"}, obj);
     }
 }

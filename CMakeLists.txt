@@ -39,6 +39,7 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/characters/BaseCharacter.cpp
         includes/characters/events/JumpEvent.h
         src/characters/events/JumpEvent.cpp
+        includes/enums/Direction.hpp
 )
 
 include_directories("includes")

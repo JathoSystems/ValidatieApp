@@ -26,7 +26,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("move", []() {
-            return std::make_shared<MoveEvent>(0, 0);
+            return std::make_shared<MoveEvent>(0, Direction::NONE, false);
         });
 
         // Create server

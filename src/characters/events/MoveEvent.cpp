@@ -1,10 +1,11 @@
 #include "characters/events/MoveEvent.hpp"
 #include <iostream>
 
+#include "enums/Direction.hpp"
 #include "Physics/PhysicsComponent.h"
 
-MoveEvent::MoveEvent(int x, int y)
-    : _x(x), _y(y) {}
+MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle):
+    _objectId(objectId), _direction(direction), _toggle(toggle) {}
 
 std::string MoveEvent::getName() const {
     return "move";
@@ -13,8 +14,9 @@ std::string MoveEvent::getName() const {
 Package MoveEvent::serialize() const {
     Package p;
 
-    p.push_back(static_cast<int8_t>(_x));
-    p.push_back(static_cast<int8_t>(_y));
+    p.push_back(_objectId);
+    p.push_back(_toggle);
+    p.push_back(static_cast<int8_t>(_direction));
 
     return p;
 }
@@ -22,27 +24,23 @@ Package MoveEvent::serialize() const {
 Data MoveEvent::deserialize(const Package& package) {
     Data data;
 
-    if (package.size() >= 2) {
-        int8_t sx = static_cast<int8_t>(package[0]);
-        int8_t sy = static_cast<int8_t>(package[1]);
+    if (package.size() >= 3) {
+        int8_t objectId = static_cast<int8_t>(package[0]);
+        int8_t toggle = static_cast<int8_t>(package[1]);
+        int8_t direction = static_cast<int8_t>(package[2]);
 
-        data.push_back(static_cast<uint8_t>(sx));
-        data.push_back(static_cast<uint8_t>(sy));
+        data.push_back(objectId);
+        data.push_back(toggle);
+        data.push_back(direction);
 
-        if (_x == 0) _x = sx;
-        if (_y == 0) _y = sy;
+        _direction = static_cast<Direction>(direction);
+        _toggle = toggle;
+        _objectId = objectId;
     }
 
     return data;
 }
 
 void MoveEvent::apply(GameObject* gameObject) {
-    PhysicsComponent* physics = gameObject->getComponent<PhysicsComponent>();
-
-    if (!physics) return;
-
-    physics->setVelocity(_x, _y);
-
-    gameObject->getTransform()->getPosition()->setX(_x);
-    gameObject->getTransform()->getPosition()->setX(_y);
+    std::cout << DirectionToString(_direction);
 }

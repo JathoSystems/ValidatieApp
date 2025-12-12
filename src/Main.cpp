@@ -54,35 +54,42 @@ public:
             std::cout << "Physics is null!" << std::endl;
             return;
         }
+        GameObject *parent = object;
+
 
         switch (key) {
             case Key::A:
             case Key::LEFT:
                 _movingLeft = true;
+                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, true));
                 break;
             case Key::D:
             case Key::RIGHT:
                 _movingRight = true;
+                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, true));
                 break;
             case Key::SPACE:
             case Key::W:
             case Key::UP:
-                GameObject *parent = object;
 
-                manager.broadcast(std::make_shared<JumpEvent>(parent->getId()));
+                manager.broadcast(std::make_shared<JumpEvent>(object->getId()));
                 break;
         }
     }
 
     void onKeyRelease(Key key) override {
+        GameObject *parent = object;
+
         switch (key) {
             case Key::A:
             case Key::LEFT:
                 _movingLeft = false;
+                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, false));
                 break;
             case Key::D:
             case Key::RIGHT:
                 _movingRight = false;
+                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, false));
                 break;
             default:
                 break;
@@ -98,10 +105,10 @@ public:
         float vx = 0.0f;
         if (_movingLeft) {
             vx = -_moveSpeed;
-            manager.broadcast(std::make_shared<MoveEvent>(vx, currentVy));
+            _physics->setVelocity(vx, currentVy);
         } else if (_movingRight) {
             vx = _moveSpeed;
-            manager.broadcast(std::make_shared<MoveEvent>(vx, currentVy));
+            _physics->setVelocity(vx, currentVy);
         }
     }
 };
@@ -151,7 +158,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("move", []() {
-            return std::make_shared<MoveEvent>(0, 0);
+            return std::make_shared<MoveEvent>(0, Direction::NONE, false);
         });
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
