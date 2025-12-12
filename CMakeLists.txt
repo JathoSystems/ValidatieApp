@@ -3,7 +3,10 @@ project(Vuurjongen_Watermeisje LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(Vuurjongen_Watermeisje src/Main.cpp)
+add_executable(Vuurjongen_Watermeisje src/Main.cpp
+        src/LevelBuilder.cpp
+        src/LevelBuilder.h
+        src/RectangleRenderer.h)
 
 # Link gameengine library
 add_subdirectory(external/GameEngine)
@@ -16,6 +19,7 @@ add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
         $<TARGET_FILE:Engine>
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE:SDL3_image::SDL3_image>
+        $<TARGET_FILE:box2d>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje>
 )
