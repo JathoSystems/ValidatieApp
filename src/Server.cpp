@@ -6,6 +6,7 @@
 #include "Network/Server.h"
 
 #include "characters/events/JumpEvent.h"
+#include "characters/events/MoveEvent.hpp"
 #include "Network/Listeners/TcpNetworkListener.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -22,6 +23,10 @@ int main() {
         // Register events
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
+        });
+
+        EventRegistry::getInstance()->registerEvent("move", []() {
+            return std::make_shared<MoveEvent>(0, 0);
         });
 
         // Create server
