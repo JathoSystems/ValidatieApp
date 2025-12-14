@@ -26,13 +26,17 @@ add_executable(Vuurjongen_Watermeisje
         src/LevelGrid.cpp
         src/LevelGrid.h
         src/GridCell.h
+        src/GridRenderer.cpp
+        src/GridRenderer.h
+        src/GridManager.cpp
+        src/GridManager.h
 )
 
 add_subdirectory(external/GameEngine)
 target_link_libraries(Vuurjongen_Watermeisje PRIVATE Engine)
 target_include_directories(Vuurjongen_Watermeisje PUBLIC
-        External/GameEngine/src
-        External/GameEngine/includes
+        external/GameEngine/src
+        external/GameEngine/includes
 )
 
 add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
