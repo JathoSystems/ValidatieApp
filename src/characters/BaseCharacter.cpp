@@ -23,15 +23,15 @@ BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, boo
     if (activePlayer) {
         addComponent(std::make_unique<Animator>("../resources/fireboy/idle.png", 1, 5));
     }
-    getTransform()->getPosition()->setX(250);
-    getTransform()->getPosition()->setY(1);
+    getTransform()->getPosition()->setX(260);
+    getTransform()->getPosition()->setY(0);
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 200));
-    component->setMaterial(Material(50.0f, 0.8f, 0.0f));
+    component->setCollider(std::make_unique<BoxCollider>(100, 200));
+    component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
 

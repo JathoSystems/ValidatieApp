@@ -1,15 +1,14 @@
 #include <iostream>
 
+#include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
-#include "characters/packet/FireboySpawnPacket.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
-#include "Input/IKeyListener.h"
 #include "Input/InputSystem.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
@@ -46,7 +45,7 @@ int main() {
             event->apply(object);
         });
 
-        std::unique_ptr<GameEngine> gameEngine = std::make_unique<GameEngine>();
+        GameEngine* gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
         PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
@@ -110,7 +109,7 @@ int main() {
         auto boxPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
         boxPhysics->setBodyType(BodyType::DYNAMIC);
         boxPhysics->setCollider(std::make_unique<BoxCollider>(60.0f, 60.0f));
-        boxPhysics->setMaterial(Material(50.0f, 0.8f, 0.0f));
+        boxPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
         boxPhysics->setGravityScale(1.0f);
         boxPhysics->setParent(box.get());
         box->addComponent(std::move(boxPhysics));
@@ -121,7 +120,8 @@ int main() {
 
         scene->addObject(std::move(box));
 
-        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine.get(), true);
+        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine, true);
+        network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(fireboy->getId(), "fireboy"));
         scene->addObject(std::move(fireboy));
 
         auto hud = std::make_unique<HUD>();

@@ -5,18 +5,20 @@
 #include "asio/io_context.hpp"
 #include "Network/Server.h"
 
+#include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
 #include "Network/Listeners/TcpNetworkListener.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
 #include "Events/EventRegistry.h"
+#include "GameObjects/ObjectRegistry.hpp"
 
 int main() {
     try {
         asio::io_context io_context;
         int port = 7534;
-
+        
         // Register packets (we only need NetworkEventPacket now!)
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
