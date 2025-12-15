@@ -58,25 +58,53 @@ public:
         return data;
     }
 
-    void apply(GameObject *gameObject) override {
-        // std::cout << objectName << " houruh" << std::endl;
-        //
-        // Scene* scene = GameEngine::getInstance().getSystem<SceneSystem>()->getActiveSceneObj();
-        //
-        // if (!scene) {
-        //     std::cout << "Scene is null" << std::endl;
-        //     return;
-        // }
-        //
-        // std::unique_ptr<GameObject> object = GameObjectFactory::getInstance().create("fireboy");
-        //
-        // if (!object) {
-        //     std::cout << "Object is null" << std::endl;
-        //     return;
-        // }
-        //
-        // scene->addObject(std::move(object));
+    void apply(GameObject* /*gameObject*/) override {
+        std::cout << objectName << " houruh" << std::endl;
+
+        // Haal SceneSystem op
+        auto system = GameEngine::getInstance().getSystem<SceneSystem>();
+        if (!system) {
+            std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
+            return;
+        }
+
+        // Haal actieve scene op
+        Scene* scene = system->getActiveSceneObj();
+        if (!scene) {
+            std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
+            return;
+        }
+
+        // Maak GameObject veilig aan
+        std::unique_ptr<GameObject> object;
+        try {
+            object = GameObjectFactory::getInstance().create("fireboy");
+            if (!object) {
+                std::cout << "Factory returned nullptr" << std::endl;
+                return;
+            }
+        } catch (const std::exception& e) {
+            std::cout << "Exception in create: " << e.what() << std::endl;
+            return;
+        } catch (...) {
+            std::cout << "Unknown crash in create()" << std::endl;
+            return;
+        }
+
+        if (!object) {
+            std::cout << "[SpawnEvent] Factory returned nullptr for '" << objectName << "'" << std::endl;
+            return;
+        }
+
+        // Voeg object toe aan scene
+        try {
+            scene->addObject(std::move(object));
+            std::cout << "[SpawnEvent] '" << objectName << "' successfully added to scene!" << std::endl;
+        } catch (const std::exception& e) {
+            std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
+        }
     }
+
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
