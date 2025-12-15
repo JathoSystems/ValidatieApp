@@ -3,6 +3,7 @@
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
+#include "characters/packet/FireboySpawnPacket.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
