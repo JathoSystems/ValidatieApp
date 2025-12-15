@@ -22,7 +22,7 @@
 #include "Scenes/Camera/FixedCamera.h"
 
 auto network = std::make_shared<NetworkSystem>();
-auto result = network->connect("192.168.68.57", 7534);
+auto result = network->connect("192.168.2.161", 7534);
 EventManager manager(network->getMiddleware());
 
 int main() {
@@ -37,11 +37,12 @@ int main() {
             return std::make_shared<MoveEvent>(0, Direction::NONE, false);
         });
 
+        EventRegistry::getInstance()->registerEvent("spawn", []() {
+            return std::make_shared<SpawnEvent>();
+        });
+
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
-
-            if (!object) return;
-
             event->apply(object);
         });
 

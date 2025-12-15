@@ -5,6 +5,7 @@
 #include "asio/io_context.hpp"
 #include "Network/Server.h"
 
+#include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
@@ -18,7 +19,7 @@ int main() {
     try {
         asio::io_context io_context;
         int port = 7534;
-        
+
         // Register packets (we only need NetworkEventPacket now!)
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
@@ -31,13 +32,17 @@ int main() {
             return std::make_shared<MoveEvent>(0, Direction::NONE, false);
         });
 
+        EventRegistry::getInstance()->registerEvent("spawn", []() {
+            return std::make_shared<SpawnEvent>();
+        });
+
         // Create server
         auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 2);
 
         Server server(io_context, std::move(listener), port);
 
         // Set packet callback to handle NetworkEventPackets
-        server.setPacketCallback([&server](int32_t clientId, const Packet& packet) {
+        server.setPacketCallback([&server](int32_t clientId, const Packet &packet) {
             // Check if it's a NetworkEventPacket
             if (packet.getId() == 100) {
                 std::cout << "NetworkEventPacket ontvangen van client " << clientId << "\n";
@@ -58,6 +63,8 @@ int main() {
                     EventRegistry::getInstance()->createEvent(eventName);
                     auto event = EventRegistry::getInstance()->getEvent(eventName);
 
+                    std::cout << (event == nullptr ? "Is null" : "Is null") << std::endl;
+
                     if (event) {
                         event->deserialize(eventData);
 
@@ -67,8 +74,7 @@ int main() {
                         server.broadcast(packet);
                         std::cout << "Event broadcasted to other clients\n";
                     }
-
-                } catch (const std::exception& e) {
+                } catch (const std::exception &e) {
                     std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";
                     server.broadcast(packet);
                 }
@@ -87,8 +93,7 @@ int main() {
         std::cout << "=================================\n";
 
         server.run();
-
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cerr << "Server Error: " << e.what() << "\n";
     }
 

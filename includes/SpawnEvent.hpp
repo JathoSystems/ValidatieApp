@@ -53,17 +53,29 @@ public:
 
             data.push_back(registryId);
             for (char c : objectName) data.push_back(static_cast<int8_t>(c));
-
-            Scene* scene = GameEngine::getInstance().getSystem<SceneSystem>()->getActiveSceneObj();
-            // ToDo: add to registy with correct id
-            scene->addObject(GameObjectFactory::getInstance().create(objectName));
         }
 
         return data;
     }
 
     void apply(GameObject *gameObject) override {
-        std::cout << "Zoek t uit!" << std::endl;
+        // std::cout << objectName << " houruh" << std::endl;
+        //
+        // Scene* scene = GameEngine::getInstance().getSystem<SceneSystem>()->getActiveSceneObj();
+        //
+        // if (!scene) {
+        //     std::cout << "Scene is null" << std::endl;
+        //     return;
+        // }
+        //
+        // std::unique_ptr<GameObject> object = GameObjectFactory::getInstance().create("fireboy");
+        //
+        // if (!object) {
+        //     std::cout << "Object is null" << std::endl;
+        //     return;
+        // }
+        //
+        // scene->addObject(std::move(object));
     }
 };
 
