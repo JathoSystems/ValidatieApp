@@ -2,9 +2,14 @@
 
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
+#include "characters/events/MoveEvent.hpp"
 #include "Engine/GameEngine.h"
+#include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
+#include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
+#include "Input/IKeyListener.h"
+#include "Input/InputSystem.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -20,137 +25,136 @@ auto network = std::make_shared<NetworkSystem>();
 auto result = network->connect("192.168.2.161", 7534);
 EventManager manager(network->getMiddleware());
 
-class PlayerController : public IKeyListener {
-private:
-    GameObject *object;
-    PhysicsComponent *_physics = nullptr;
-    float _moveSpeed = 300.0f;
-    float _jumpForce = 5000.0f;
-    int _groundContactCount = 0;
-    bool _movingLeft = false;
-    bool _movingRight = false;
-
-public:
-    void setObject(GameObject *object) { this->object = object; }
-
-    void setPhysicsComponent(PhysicsComponent *physics) {
-        _physics = physics;
-    }
-
-    void addGroundContact() {
-        _groundContactCount++;
-    }
-
-    void removeGroundContact() {
-        _groundContactCount = std::max(0, _groundContactCount - 1);
-    }
-
-    bool isGrounded() const {
-        return _groundContactCount > 0;
-    }
-
-    void onKeyPress(Key key) override {
-        if (!_physics) {
-            std::cout << "Physics is null!" << std::endl;
-            return;
-        }
-        GameObject *parent = object;
-
-
-        switch (key) {
-            case Key::A:
-            case Key::LEFT:
-                _movingLeft = true;
-                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, true));
-                break;
-            case Key::D:
-            case Key::RIGHT:
-                _movingRight = true;
-                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, true));
-                break;
-            case Key::SPACE:
-            case Key::W:
-            case Key::UP:
-
-                manager.broadcast(std::make_shared<JumpEvent>(object->getId()));
-                break;
-        }
-    }
-
-    void onKeyRelease(Key key) override {
-        GameObject *parent = object;
-
-        switch (key) {
-            case Key::A:
-            case Key::LEFT:
-                _movingLeft = false;
-                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, false));
-                break;
-            case Key::D:
-            case Key::RIGHT:
-                _movingRight = false;
-                manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, false));
-                break;
-            default:
-                break;
-        }
-    }
-
-    void update() {
-        if (!_physics || !_physics->isInitialized()) return;
-
-        float currentVx, currentVy;
-        _physics->getVelocity(currentVx, currentVy);
-
-        float vx = 0.0f;
-        if (_movingLeft) {
-            vx = -_moveSpeed;
-            _physics->setVelocity(vx, currentVy);
-        } else if (_movingRight) {
-            vx = _moveSpeed;
-            _physics->setVelocity(vx, currentVy);
-        }
-    }
-};
-
-class Player : public GameObject {
-private:
-    PlayerController _controller;
-    GameObject *_object;
-
-public:
-    void setup(PhysicsComponent *physics, InputSystem *inputSystem, GameObject *object) {
-        _controller.setPhysicsComponent(physics);
-        _controller.setObject(object);
-        _object = object;
-
-        auto keyInput = std::make_unique<KeyInputComponent>(this);
-        keyInput->setListener(&_controller);
-        inputSystem->registerKeyComponent(keyInput.get());
-        addComponent(std::move(keyInput));
-    }
-
-    void update(float deltaTime) {
-        GameObject::update(deltaTime);
-        _controller.update();
-    }
-
-    void onCollisionEnter(const CollisionData &collision) override {
-        GameObject::onCollisionEnter(collision);
-
-        if (collision.normalY > 0.2f) {
-            _controller.addGroundContact();
-        }
-    }
-
-    void onCollisionExit(const CollisionData &collision) override {
-        _controller.removeGroundContact();
-    }
-};
+// class PlayerController : public IKeyListener {
+// private:
+//     GameObject *object;
+//     PhysicsComponent *_physics = nullptr;
+//     float _moveSpeed = 300.0f;
+//     float _jumpForce = 5000.0f;
+//     int _groundContactCount = 0;
+//     bool _movingLeft = false;
+//     bool _movingRight = false;
+//
+// public:
+//     void setObject(GameObject *object) { this->object = object; }
+//
+//     void setPhysicsComponent(PhysicsComponent *physics) {
+//         _physics = physics;
+//     }
+//
+//     void addGroundContact() {
+//         _groundContactCount++;
+//     }
+//
+//     void removeGroundContact() {
+//         _groundContactCount = std::max(0, _groundContactCount - 1);
+//     }
+//
+//     bool isGrounded() const {
+//         return _groundContactCount > 0;
+//     }
+//
+//     void onKeyPress(Key key) override {
+//         if (!_physics) {
+//             std::cout << "Physics is null!" << std::endl;
+//             return;
+//         }
+//         GameObject *parent = object;
+//
+//
+//         switch (key) {
+//             case Key::A:
+//             case Key::LEFT:
+//                 _movingLeft = true;
+//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, true));
+//                 break;
+//             case Key::D:
+//             case Key::RIGHT:
+//                 _movingRight = true;
+//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, true));
+//                 break;
+//             case Key::SPACE:
+//             case Key::W:
+//             case Key::UP:
+//
+//                 manager.broadcast(std::make_shared<JumpEvent>(object->getId()));
+//                 break;
+//         }
+//     }
+//
+//     void onKeyRelease(Key key) override {
+//         GameObject *parent = object;
+//
+//         switch (key) {
+//             case Key::A:
+//             case Key::LEFT:
+//                 _movingLeft = false;
+//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, false));
+//                 break;
+//             case Key::D:
+//             case Key::RIGHT:
+//                 _movingRight = false;
+//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, false));
+//                 break;
+//             default:
+//                 break;
+//         }
+//     }
+//
+//     void update() {
+//         if (!_physics || !_physics->isInitialized()) return;
+//
+//         float currentVx, currentVy;
+//         _physics->getVelocity(currentVx, currentVy);
+//
+//         float vx = 0.0f;
+//         if (_movingLeft) {
+//             vx = -_moveSpeed;
+//             _physics->setVelocity(vx, currentVy);
+//         } else if (_movingRight) {
+//             vx = _moveSpeed;
+//             _physics->setVelocity(vx, currentVy);
+//         }
+//     }
+// };
+//
+// class Player : public GameObject {
+// private:
+//     PlayerController _controller;
+//     GameObject *_object;
+//
+// public:
+//     void setup(PhysicsComponent *physics, InputSystem *inputSystem, GameObject *object) {
+//         _controller.setPhysicsComponent(physics);
+//         _controller.setObject(object);
+//         _object = object;
+//
+//         auto keyInput = std::make_unique<KeyInputComponent>(this);
+//         keyInput->setListener(&_controller);
+//         inputSystem->registerKeyComponent(keyInput.get());
+//         addComponent(std::move(keyInput));
+//     }
+//
+//     void update(float deltaTime) {
+//         GameObject::update(deltaTime);
+//         _controller.update();
+//     }
+//
+//     void onCollisionEnter(const CollisionData &collision) override {
+//         GameObject::onCollisionEnter(collision);
+//
+//         if (collision.normalY > 0.2f) {
+//             _controller.addGroundContact();
+//         }
+//     }
+//
+//     void onCollisionExit(const CollisionData &collision) override {
+//         _controller.removeGroundContact();
+//     }
+// };
 
 int main() {
     try {
-        ObjectRegistry &objectRegistry = ObjectRegistry::getInstance();
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -162,13 +166,10 @@ int main() {
         });
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
-            std::cout << "Incomming id" << id << "\n";
             GameObject* object = ObjectRegistry::getInstance().getObject(id);
-            std::cout << (object ? "Not null" : "Is null!") << std::endl;
 
             if (!object) return;
 
-            std::cout << "Applying event to object: " << object->getId() << std::endl;
             event->apply(object);
         });
 
@@ -229,7 +230,7 @@ int main() {
 
         auto box = std::make_unique<GameObject>();
         box->getTransform()->getPosition()->setX(450.0f);
-        box->getTransform()->getPosition()->setY(330.0f);
+        box->getTransform()->getPosition()->setY(130.0f);
         box->getTransform()->getSize()->setWidth(60.0f);
         box->getTransform()->getSize()->setHeight(60.0f);
 
@@ -247,29 +248,32 @@ int main() {
 
         scene->addObject(std::move(box));
 
-        auto player = std::make_unique<Player>();
-        std::cout << "Player id: " << player->getId() << "\n";
-        player->getTransform()->getPosition()->setX(400.0f);
-        player->getTransform()->getPosition()->setY(200.0f);
-        player->getTransform()->getSize()->setWidth(50.0f);
-        player->getTransform()->getSize()->setHeight(50.0f);
+        // auto player = std::make_unique<Player>();
+        // std::cout << "Player id: " << player->getId() << "\n";
+        // player->getTransform()->getPosition()->setX(400.0f);
+        // player->getTransform()->getPosition()->setY(200.0f);
+        // player->getTransform()->getSize()->setWidth(50.0f);
+        // player->getTransform()->getSize()->setHeight(50.0f);
 
-        auto playerPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-        playerPhysics->setBodyType(BodyType::DYNAMIC);
-        playerPhysics->setCollider(std::make_unique<BoxCollider>(50.0f, 50.0f));
-        playerPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-        playerPhysics->setGravityScale(1.0f);
-        playerPhysics->setParent(player.get());
+        // auto playerPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
+        // playerPhysics->setBodyType(BodyType::DYNAMIC);
+        // playerPhysics->setCollider(std::make_unique<BoxCollider>(50.0f, 50.0f));
+        // playerPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
+        // playerPhysics->setGravityScale(1.0f);
+        // playerPhysics->setParent(player.get());
+        //
+        // auto *physicsPtr = playerPhysics.get();
+        // player->addComponent(std::move(playerPhysics));
+        //
+        // auto playerRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_lime.png");
+        // playerRenderer->setParent(player.get());
+        // player->addComponent(std::move(playerRenderer));
+        //
+        // player->setup(physicsPtr, inputSystem, player.get());
+        // scene->addObject(std::move(player));
 
-        auto *physicsPtr = playerPhysics.get();
-        player->addComponent(std::move(playerPhysics));
-
-        auto playerRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_lime.png");
-        playerRenderer->setParent(player.get());
-        player->addComponent(std::move(playerRenderer));
-
-        player->setup(physicsPtr, inputSystem, player.get());
-        scene->addObject(std::move(player));
+        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine.get(), true);
+        scene->addObject(std::move(fireboy));
 
         auto hud = std::make_unique<HUD>();
 

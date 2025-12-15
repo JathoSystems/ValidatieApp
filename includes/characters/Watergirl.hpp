@@ -6,11 +6,10 @@
 #define VUURJONGEN_WATERMEISJE_WATERGIRL_HPP
 #include "BaseCharacter.hpp"
 #include "Engine/GameEngine.h"
-#include "GameObjects/GameObject.h"
 
 class Watergirl : public BaseCharacter {
 public:
-    Watergirl(GameEngine *engine, bool active = false);
+    Watergirl(EventManager* eventManager, GameEngine *engine, bool active = false);
 };
 
 #endif //VUURJONGEN_WATERMEISJE_WATERGIRL_HPP

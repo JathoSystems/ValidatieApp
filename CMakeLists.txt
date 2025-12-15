@@ -10,29 +10,27 @@ cmake_policy(SET CMP0077 NEW)
 add_executable(Vuurjongen_Watermeisje_Server src/Server.cpp
         includes/characters/Fireboy.hpp
         src/characters/Fireboy.cpp
-        includes/characters/movement/MovementComponent.hpp
         src/characters/Watergirl.cpp
         includes/characters/Watergirl.hpp
         includes/characters/events/MoveEvent.hpp
         src/characters/events/MoveEvent.cpp
-        src/characters/movement/MovementComponent.cpp
         includes/characters/input/MovementInputHandler.hpp
         src/characters/input/MovementInputHandler.cpp
         includes/characters/BaseCharacter.hpp
         src/characters/BaseCharacter.cpp
         includes/characters/events/JumpEvent.h
         src/characters/events/JumpEvent.cpp
+        includes/characters/BaseCharacterController.hpp
+        src/characters/BaseCharacterController.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/characters/Fireboy.hpp
         src/characters/Fireboy.cpp
-        includes/characters/movement/MovementComponent.hpp
         src/characters/Watergirl.cpp
         includes/characters/Watergirl.hpp
         includes/characters/events/MoveEvent.hpp
         src/characters/events/MoveEvent.cpp
-        src/characters/movement/MovementComponent.cpp
         includes/characters/input/MovementInputHandler.hpp
         src/characters/input/MovementInputHandler.cpp
         includes/characters/BaseCharacter.hpp
@@ -40,6 +38,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/characters/events/JumpEvent.h
         src/characters/events/JumpEvent.cpp
         includes/enums/Direction.hpp
+        includes/characters/BaseCharacterController.hpp
+        src/characters/BaseCharacterController.cpp
 )
 
 include_directories("includes")

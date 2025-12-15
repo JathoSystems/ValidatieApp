@@ -1,11 +1,14 @@
 #include "characters/events/MoveEvent.hpp"
 #include <iostream>
 
+#include "characters/BaseCharacter.hpp"
 #include "enums/Direction.hpp"
+#include "GameObjects/Spritesheet/Animator.h"
 #include "Physics/PhysicsComponent.h"
 
-MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle):
-    _objectId(objectId), _direction(direction), _toggle(toggle) {}
+MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle) : _objectId(objectId), _direction(direction),
+                                                                       _toggle(toggle) {
+}
 
 std::string MoveEvent::getName() const {
     return "move";
@@ -21,7 +24,7 @@ Package MoveEvent::serialize() const {
     return p;
 }
 
-Data MoveEvent::deserialize(const Package& package) {
+Data MoveEvent::deserialize(const Package &package) {
     Data data;
 
     if (package.size() >= 3) {
@@ -41,6 +44,12 @@ Data MoveEvent::deserialize(const Package& package) {
     return data;
 }
 
-void MoveEvent::apply(GameObject* gameObject) {
-    std::cout << DirectionToString(_direction);
+void MoveEvent::apply(GameObject *gameObject) {
+    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
+        if (!_toggle) {
+            baseChar->setMovementDirection(Direction::NONE);
+        } else {
+            baseChar->setMovementDirection(_direction);
+        }
+    }
 }

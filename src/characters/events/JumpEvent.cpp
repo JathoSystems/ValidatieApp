@@ -6,6 +6,9 @@
 
 #include <iostream>
 #include <vector>
+
+#include "characters/BaseCharacter.hpp"
+#include "GameObjects/Spritesheet/Animator.h"
 #include "Physics/PhysicsComponent.h"
 
 std::string JumpEvent::getName() const {
@@ -15,8 +18,6 @@ std::string JumpEvent::getName() const {
 Package JumpEvent::serialize() const {
     std::vector<uint8_t> vector;
 
-    std:: cout << "Serializing JumpEvent " << _objectId << std::endl;
-
     vector.push_back(_objectId);
 
     return vector;
@@ -25,18 +26,21 @@ Package JumpEvent::serialize() const {
 Data JumpEvent::deserialize(const Package &package) {
     _objectId = package.at(0);
 
-    std::cout << "Deserializing JumpEvent " << _objectId << std::endl;
-
     return package;
 }
 
-void JumpEvent::apply(GameObject* gameObject) {
-    PhysicsComponent* physics = gameObject->getComponent<PhysicsComponent>();
+void JumpEvent::apply(GameObject *gameObject) {
+    PhysicsComponent *physics = gameObject->getComponent<PhysicsComponent>();
 
     if (!physics) return;
 
     float jumpForce = 10000;
     float vx, vy;
     physics->getVelocity(vx, vy);
-    physics->setVelocity(vx, - jumpForce);
+    physics->setVelocity(vx, -jumpForce);
+
+    if (BaseCharacter * baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
+        baseChar->removeComponent<Animator>(true);
+        baseChar->addComponent(std::make_unique<Animator>(baseChar->getJumpingSpritesheet(), 1, 4));
+    }
 }
