@@ -8,6 +8,9 @@
 #include "GameObjects/GameObject.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "GridManager.h"
+#include "Bat.h"
+#include "BatAI.h"
+#include "BatSpriteRenderer.h"
 
 int main() {
     try {
@@ -128,6 +131,54 @@ int main() {
 
         // Register grid with GridManager for pathfinding access (now that we're done using gridPtr)
         GridManager::registerGrid("MainScene", std::move(levelGrid));
+
+        // Create Bat before adding scene to SceneSystem
+        std::cout << "=== Creating Bat ===" << std::endl;
+        LevelGrid* batGrid = GridManager::getGrid("MainScene");
+        if (batGrid) {
+            // Find a walkable starting position (empty cell in the middle area)
+            int startX = 40;  // Middle of grid
+            int startY = 30;  // Middle height
+            
+            // Find first walkable cell near this position
+            bool foundStart = false;
+            for (int y = startY; y < GRID_HEIGHT - 5 && !foundStart; ++y) {
+                for (int x = 10; x < GRID_WIDTH - 10 && !foundStart; ++x) {
+                    if (batGrid->isWalkable(x, y)) {
+                        startX = x;
+                        startY = y;
+                        foundStart = true;
+                    }
+                }
+            }
+            
+            if (foundStart) {
+                auto bat = std::make_unique<Bat>(batGrid, CELL_SIZE, 80.0f);
+                
+                // Set bat position (convert grid to world coordinates)
+                float worldX, worldY;
+                batGrid->gridToWorld(startX, startY, worldX, worldY);
+                bat->getTransform()->getPosition()->setX(static_cast<int>(worldX));
+                bat->getTransform()->getPosition()->setY(static_cast<int>(worldY));
+                bat->getTransform()->getSize()->setWidth(CELL_SIZE);
+                bat->getTransform()->getSize()->setHeight(CELL_SIZE);
+                
+                // Add BatSpriteRenderer (supports flipping)
+                auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
+                bat->addComponent(std::move(batRenderer));
+                
+                // Add BatAI component
+                auto batAI = std::make_unique<BatAI>(bat.get(), batGrid, CELL_SIZE, 80.0f);
+                bat->addComponent(std::move(batAI));
+                
+                // Add bat to scene
+                mainScene->addObject(std::move(bat));
+                std::cout << "Bat created at grid position (" << startX << ", " << startY << ")" << std::endl;
+                std::cout << "Bat world position (" << worldX << ", " << worldY << ")" << std::endl;
+            } else {
+                std::cout << "Warning: Could not find walkable starting position for bat" << std::endl;
+            }
+        }
 
         // Get SceneSystem using getSystem method
         SceneSystem* sceneSystem = gameEngine.getSystem<SceneSystem>();

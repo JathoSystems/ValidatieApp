@@ -30,6 +30,12 @@ add_executable(Vuurjongen_Watermeisje
         src/GridRenderer.h
         src/GridManager.cpp
         src/GridManager.h
+        src/Bat.cpp
+        src/Bat.h
+        src/BatAI.cpp
+        src/BatAI.h
+        src/BatSpriteRenderer.cpp
+        src/BatSpriteRenderer.h
 )
 
 add_subdirectory(external/GameEngine)
