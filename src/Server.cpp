@@ -67,7 +67,8 @@ int main() {
                     }
 
                 } catch (const std::exception& e) {
-                    std::cerr << "Error processing event: " << e.what() << "\n";
+                    std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";
+                    server.broadcast(packet);
                 }
             } else {
                 std::cout << "Unknown packet type: " << packet.getId() << "\n";
@@ -78,7 +79,7 @@ int main() {
         server.startServer();
 
         std::cout << "=================================\n";
-        std::cout << "Server running on port 8080\n";
+        std::cout << "Server running on port " << port << "!\n";
         std::cout << "Using Event System!\n";
         std::cout << "Press Ctrl+C to stop\n";
         std::cout << "=================================\n";

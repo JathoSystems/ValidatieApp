@@ -25,10 +25,12 @@ BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, boo
     }
     getTransform()->getPosition()->setX(250);
     getTransform()->getPosition()->setY(1);
+    getTransform()->getSize()->setWidth(50);
+    getTransform()->getSize()->setHeight(100);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
+    component->setCollider(std::make_unique<BoxCollider>(50, 200));
     component->setMaterial(Material(50.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);

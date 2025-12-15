@@ -25,134 +25,6 @@ auto network = std::make_shared<NetworkSystem>();
 auto result = network->connect("192.168.2.161", 7534);
 EventManager manager(network->getMiddleware());
 
-// class PlayerController : public IKeyListener {
-// private:
-//     GameObject *object;
-//     PhysicsComponent *_physics = nullptr;
-//     float _moveSpeed = 300.0f;
-//     float _jumpForce = 5000.0f;
-//     int _groundContactCount = 0;
-//     bool _movingLeft = false;
-//     bool _movingRight = false;
-//
-// public:
-//     void setObject(GameObject *object) { this->object = object; }
-//
-//     void setPhysicsComponent(PhysicsComponent *physics) {
-//         _physics = physics;
-//     }
-//
-//     void addGroundContact() {
-//         _groundContactCount++;
-//     }
-//
-//     void removeGroundContact() {
-//         _groundContactCount = std::max(0, _groundContactCount - 1);
-//     }
-//
-//     bool isGrounded() const {
-//         return _groundContactCount > 0;
-//     }
-//
-//     void onKeyPress(Key key) override {
-//         if (!_physics) {
-//             std::cout << "Physics is null!" << std::endl;
-//             return;
-//         }
-//         GameObject *parent = object;
-//
-//
-//         switch (key) {
-//             case Key::A:
-//             case Key::LEFT:
-//                 _movingLeft = true;
-//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, true));
-//                 break;
-//             case Key::D:
-//             case Key::RIGHT:
-//                 _movingRight = true;
-//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, true));
-//                 break;
-//             case Key::SPACE:
-//             case Key::W:
-//             case Key::UP:
-//
-//                 manager.broadcast(std::make_shared<JumpEvent>(object->getId()));
-//                 break;
-//         }
-//     }
-//
-//     void onKeyRelease(Key key) override {
-//         GameObject *parent = object;
-//
-//         switch (key) {
-//             case Key::A:
-//             case Key::LEFT:
-//                 _movingLeft = false;
-//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::WEST, false));
-//                 break;
-//             case Key::D:
-//             case Key::RIGHT:
-//                 _movingRight = false;
-//                 manager.broadcast(std::make_shared<MoveEvent>(parent->getId(), Direction::EAST, false));
-//                 break;
-//             default:
-//                 break;
-//         }
-//     }
-//
-//     void update() {
-//         if (!_physics || !_physics->isInitialized()) return;
-//
-//         float currentVx, currentVy;
-//         _physics->getVelocity(currentVx, currentVy);
-//
-//         float vx = 0.0f;
-//         if (_movingLeft) {
-//             vx = -_moveSpeed;
-//             _physics->setVelocity(vx, currentVy);
-//         } else if (_movingRight) {
-//             vx = _moveSpeed;
-//             _physics->setVelocity(vx, currentVy);
-//         }
-//     }
-// };
-//
-// class Player : public GameObject {
-// private:
-//     PlayerController _controller;
-//     GameObject *_object;
-//
-// public:
-//     void setup(PhysicsComponent *physics, InputSystem *inputSystem, GameObject *object) {
-//         _controller.setPhysicsComponent(physics);
-//         _controller.setObject(object);
-//         _object = object;
-//
-//         auto keyInput = std::make_unique<KeyInputComponent>(this);
-//         keyInput->setListener(&_controller);
-//         inputSystem->registerKeyComponent(keyInput.get());
-//         addComponent(std::move(keyInput));
-//     }
-//
-//     void update(float deltaTime) {
-//         GameObject::update(deltaTime);
-//         _controller.update();
-//     }
-//
-//     void onCollisionEnter(const CollisionData &collision) override {
-//         GameObject::onCollisionEnter(collision);
-//
-//         if (collision.normalY > 0.2f) {
-//             _controller.addGroundContact();
-//         }
-//     }
-//
-//     void onCollisionExit(const CollisionData &collision) override {
-//         _controller.removeGroundContact();
-//     }
-// };
-
 int main() {
     try {
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
@@ -166,7 +38,7 @@ int main() {
         });
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
-            GameObject* object = ObjectRegistry::getInstance().getObject(id);
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
 
             if (!object) return;
 
@@ -174,7 +46,7 @@ int main() {
         });
 
         std::unique_ptr<GameEngine> gameEngine = std::make_unique<GameEngine>();
-        gameEngine->init("Physics Platformer Demo", 1280, 720);
+        gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
         PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
         InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
@@ -247,30 +119,6 @@ int main() {
         box->addComponent(std::move(boxRenderer));
 
         scene->addObject(std::move(box));
-
-        // auto player = std::make_unique<Player>();
-        // std::cout << "Player id: " << player->getId() << "\n";
-        // player->getTransform()->getPosition()->setX(400.0f);
-        // player->getTransform()->getPosition()->setY(200.0f);
-        // player->getTransform()->getSize()->setWidth(50.0f);
-        // player->getTransform()->getSize()->setHeight(50.0f);
-
-        // auto playerPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-        // playerPhysics->setBodyType(BodyType::DYNAMIC);
-        // playerPhysics->setCollider(std::make_unique<BoxCollider>(50.0f, 50.0f));
-        // playerPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-        // playerPhysics->setGravityScale(1.0f);
-        // playerPhysics->setParent(player.get());
-        //
-        // auto *physicsPtr = playerPhysics.get();
-        // player->addComponent(std::move(playerPhysics));
-        //
-        // auto playerRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_lime.png");
-        // playerRenderer->setParent(player.get());
-        // player->addComponent(std::move(playerRenderer));
-        //
-        // player->setup(physicsPtr, inputSystem, player.get());
-        // scene->addObject(std::move(player));
 
         std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine.get(), true);
         scene->addObject(std::move(fireboy));
