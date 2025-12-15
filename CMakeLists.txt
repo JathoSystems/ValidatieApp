@@ -40,7 +40,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/enums/Direction.hpp
         includes/characters/BaseCharacterController.hpp
         src/characters/BaseCharacterController.cpp
-        includes/characters/packet/FireboySpawnPacket.hpp
 )
 
 include_directories("includes")

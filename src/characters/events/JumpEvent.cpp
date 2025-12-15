@@ -39,8 +39,8 @@ void JumpEvent::apply(GameObject *gameObject) {
     physics->getVelocity(vx, vy);
     physics->setVelocity(vx, -jumpForce);
 
-    if (BaseCharacter * baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
-        baseChar->removeComponent<Animator>(true);
-        baseChar->addComponent(std::make_unique<Animator>(baseChar->getJumpingSpritesheet(), 1, 4));
-    }
+    // if (BaseCharacter * baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
+    //     baseChar->removeComponent<Animator>(true);
+    //     baseChar->addComponent(std::make_unique<Animator>(baseChar->getJumpingSpritesheet(), 1, 4));
+    // }
 }

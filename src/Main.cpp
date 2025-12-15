@@ -3,7 +3,6 @@
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
-#include "characters/packet/FireboySpawnPacket.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
@@ -23,7 +22,7 @@
 #include "Scenes/Camera/FixedCamera.h"
 
 auto network = std::make_shared<NetworkSystem>();
-auto result = network->connect("192.168.2.161", 7534);
+auto result = network->connect("192.168.68.57", 7534);
 EventManager manager(network->getMiddleware());
 
 int main() {
@@ -76,7 +75,7 @@ int main() {
         groundPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
         ground->addComponent(std::move(groundPhysics));
 
-        auto groundRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square.png");
+        auto groundRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square.png");
         groundRenderer->setParent(ground.get());
         ground->addComponent(std::move(groundRenderer));
 
@@ -95,7 +94,7 @@ int main() {
         platformPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
         platform->addComponent(std::move(platformPhysics));
 
-        auto platformRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_blue.png");
+        auto platformRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square_blue.png");
         platformRenderer->setParent(platform.get());
         platform->addComponent(std::move(platformRenderer));
 
@@ -115,7 +114,7 @@ int main() {
         boxPhysics->setParent(box.get());
         box->addComponent(std::move(boxPhysics));
 
-        auto boxRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square.png");
+        auto boxRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square.png");
         boxRenderer->setParent(box.get());
         box->addComponent(std::move(boxRenderer));
 
