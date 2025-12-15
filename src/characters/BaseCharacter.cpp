@@ -21,7 +21,7 @@ BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, boo
     addComponent(std::move(keyInput));
 
     if (activePlayer) {
-        addComponent(std::make_unique<Animator>("../resources/fireboy/idle.png", 1, 5));
+        addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
     }
     getTransform()->getPosition()->setX(260);
     getTransform()->getPosition()->setY(0);
