@@ -71,7 +71,7 @@ int main() {
                         std::cout << "[Client " << clientId << " jumped]\n";
 
                         // Broadcast to all other clients
-                        server.broadcast(packet);
+                        server.broadcastExcept(packet, clientId);
                         std::cout << "Event broadcasted to other clients\n";
                     }
                 } catch (const std::exception &e) {

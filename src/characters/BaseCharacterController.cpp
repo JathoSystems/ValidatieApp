@@ -6,8 +6,10 @@
 
 #include <iostream>
 
+#include "SpawnEvent.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
+#include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
 BaseCharacterController::BaseCharacterController(int parentId, EventManager *eventManager) {
@@ -36,6 +38,11 @@ void BaseCharacterController::onKeyPress(Key key) {
             if (!_grounded) break;
 
             _eventManager->broadcast(std::make_shared<JumpEvent>(_parentId));
+            break;
+        case Key::Q:
+            extern std::shared_ptr<NetworkSystem> network;
+            std::cout << "sending: " << _parentId << std::endl;
+            network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "fireboy"));
             break;
     }
 }

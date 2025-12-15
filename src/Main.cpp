@@ -122,7 +122,6 @@ int main() {
         scene->addObject(std::move(box));
 
         std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine, true);
-        network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(fireboy->getId(), "fireboy"));
         scene->addObject(std::move(fireboy));
 
         auto hud = std::make_unique<HUD>();
