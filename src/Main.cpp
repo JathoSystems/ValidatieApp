@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "characters/Fireboy.hpp"
+#include "characters/Watergirl.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
 #include "Engine/GameEngine.h"
@@ -13,6 +14,8 @@
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
+#include "Network/Packet/Packets/GameReadyPacket.h"
+#include "Network/Packet/Packets/PlayerAssignPacket.h"
 #include "Network/Sockets/TcpNetworkSocket.h"
 #include "Physics/Collider.h"
 #include "Physics/PhysicsComponent.h"
@@ -21,13 +24,17 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 
-auto network = std::make_shared<NetworkSystem>();
-auto result = network->connect("192.168.68.57", 7534);
-EventManager manager(network->getMiddleware());
+enum class LocalPlayerType {
+    FIREBOY,
+    WATERGIRL
+};
 
-int main() {
+int main(int argc, char** argv) {
     try {
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
+        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+        PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
@@ -36,6 +43,10 @@ int main() {
         EventRegistry::getInstance()->registerEvent("move", []() {
             return std::make_shared<MoveEvent>(0, Direction::NONE, false);
         });
+
+        auto network = std::make_shared<NetworkSystem>();
+        auto result = network->connect("192.168.68.57", 7534);
+        EventManager manager(network->getMiddleware());
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
@@ -120,8 +131,27 @@ int main() {
 
         scene->addObject(std::move(box));
 
-        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine.get(), true);
+        // Determine which local player this client controls (default: Fireboy)
+        LocalPlayerType localPlayer = LocalPlayerType::FIREBOY;
+        for (int i = 1; i < argc; ++i) {
+            std::string arg = argv[i];
+            if (arg == "--player=watergirl" || arg == "watergirl") {
+                localPlayer = LocalPlayerType::WATERGIRL;
+            } else if (arg == "--player=fireboy" || arg == "fireboy") {
+                localPlayer = LocalPlayerType::FIREBOY;
+            }
+        }
+
+        bool fireboyActive  = (localPlayer == LocalPlayerType::FIREBOY);
+        bool watergirlActive = (localPlayer == LocalPlayerType::WATERGIRL);
+
+        // Player 1: Fireboy
+        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine.get(), fireboyActive);
         scene->addObject(std::move(fireboy));
+
+        // Player 2: Watergirl (second independent character)
+        std::unique_ptr<Watergirl> watergirl = std::make_unique<Watergirl>(&manager, gameEngine.get(), watergirlActive);
+        scene->addObject(std::move(watergirl));
 
         auto hud = std::make_unique<HUD>();
 

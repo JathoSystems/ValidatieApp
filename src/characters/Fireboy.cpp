@@ -6,7 +6,8 @@
 #include "characters/events/MoveEvent.hpp"
 #include "Events/EventRegistry.h"
 
-Fireboy::Fireboy(EventManager* eventManager, GameEngine *engine, bool active): BaseCharacter(eventManager, engine, active) {
+Fireboy::Fireboy(EventManager* eventManager, GameEngine *engine, bool active)
+    : BaseCharacter(eventManager, engine, active, ControlScheme::ARROWS) {
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");

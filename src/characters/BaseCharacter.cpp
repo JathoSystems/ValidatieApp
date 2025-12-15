@@ -12,16 +12,18 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 #include "Physics/RigidBody.h"
+#include <cmath>
 
-BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(getId(), eventManager);
-    auto keyInput = std::make_unique<KeyInputComponent>(this);
-    keyInput->setListener(_controller.get());
-    engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
-    addComponent(std::move(keyInput));
+BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer, ControlScheme scheme) {
+    // Controller always exists (for grounded state, movement & animation),
+    // and input is registered immediately for the chosen local player.
+    _controller = std::make_unique<BaseCharacterController>(getId(), eventManager, scheme);
 
     if (activePlayer) {
-        addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+        auto keyInput = std::make_unique<KeyInputComponent>(this);
+        keyInput->setListener(_controller.get());
+        engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
+        addComponent(std::move(keyInput));
     }
     getTransform()->getPosition()->setX(250);
     getTransform()->getPosition()->setY(1);
@@ -30,7 +32,8 @@ BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, boo
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 200));
+    // Match collider to visual size to keep collision normals consistent for grounding
+    component->setCollider(std::make_unique<BoxCollider>(50, 100));
     component->setMaterial(Material(50.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
@@ -52,16 +55,38 @@ void BaseCharacter::update(float delta) {
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
-    if (collision.normalY > 0.2f) {
-        _controller->setGrounded(true);
+    if (!collision.isTouching || !collision.other) return;
 
-        removeComponent<Animator>(true);
-        addComponent(std::make_unique<Animator>(idle, 1, 5));
+    // Use bounds to decide if the other collider is effectively below us.
+    Transform* selfT = getTransform();
+    Transform* otherT = collision.other->getTransform();
+
+    float selfCenterY = selfT->getPosition()->getY();
+    float otherCenterY = otherT->getPosition()->getY();
+
+    float selfHalfH = selfT->getSize()->getHeight() * 0.5f;
+    float otherHalfH = otherT->getSize()->getHeight() * 0.5f;
+
+    float selfBottom = selfCenterY + selfHalfH;
+    float otherTop   = otherCenterY - otherHalfH;
+
+    // Allow generous tolerance for small penetrations or rendering offsets
+    const float belowTolerance = 50.0f;   // how far we may sink before losing grounded
+    const float separationTolerance = 5.0f; // small gap still counts as grounded
+
+    bool otherIsBelow = selfBottom >= otherTop - separationTolerance;
+    bool notTooDeep   = selfBottom <= otherTop + belowTolerance;
+
+    if (otherIsBelow && notTooDeep) {
+        _groundContacts.insert(collision.other);
+        _controller->setGrounded(true);
+        updateAnimator(Animation::IDLE);
     }
 }
 
 void BaseCharacter::onCollisionExit(const CollisionData &collision) {
-    _controller->setGrounded(false);
+    _groundContacts.erase(collision.other);
+    _controller->setGrounded(!_groundContacts.empty());
 }
 
 void BaseCharacter::setIdleSpritesheet(std::string idle) {
@@ -155,12 +180,12 @@ void BaseCharacter::updateAnimation() {
 
     // 2. Check beweging (alleen als op grond)
     if (movementDir == Direction::WEST) {
-        updateAnimator(Animation::RIGHT);
+        updateAnimator(Animation::LEFT);
         return;
     }
 
     if (movementDir == Direction::EAST) {
-        updateAnimator(Animation::LEFT);
+        updateAnimator(Animation::RIGHT);
         return;
     }
 

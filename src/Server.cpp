@@ -10,14 +10,18 @@
 #include "Network/Listeners/TcpNetworkListener.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
+#include "Network/Packet/Packets/PlayerAssignPacket.h"
+#include "Network/Packet/Packets/GameReadyPacket.h"
 #include "Events/EventRegistry.h"
+#include <unordered_map>
+#include <vector>
 
 int main() {
     try {
         asio::io_context io_context;
         int port = 7534;
 
-        // Register packets (we only need NetworkEventPacket now!)
+        // Register packets
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
         // Register events
@@ -33,6 +37,31 @@ int main() {
         auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 2);
 
         Server server(io_context, std::move(listener), port);
+
+        // Role list for this game (join order defines role)
+        std::vector<std::string> roles = {"fireboy", "watergirl"};
+        std::unordered_map<int32_t, std::string> clientRoles;
+
+        // Assign roles in order of connection and signal ready when all filled
+        server.setClientConnectedCallback([&server, &roles, &clientRoles](int32_t clientId) {
+            if (clientRoles.size() < roles.size()) {
+                std::string role = roles[clientRoles.size()];
+                clientRoles[clientId] = role;
+
+                std::cout << "Assigning role '" << role << "' to client " << clientId << "\n";
+
+                PlayerAssignPacket assign(role);
+                assign.serialize();
+                server.sendToClient(clientId, assign);
+            }
+
+            if (clientRoles.size() == roles.size()) {
+                std::cout << "All roles assigned, sending GameReadyPacket\n";
+                GameReadyPacket ready;
+                ready.serialize();
+                server.broadcast(ready);
+            }
+        });
 
         // Set packet callback to handle NetworkEventPackets
         server.setPacketCallback([&server](int32_t clientId, const Packet& packet) {

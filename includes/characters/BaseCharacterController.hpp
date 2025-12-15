@@ -9,6 +9,12 @@
 #include "Input/IKeyListener.h"
 #include "Physics/PhysicsComponent.h"
 
+// Which keys this controller responds to for movement/jump
+enum class ControlScheme {
+    ARROWS, // LEFT/RIGHT/UP
+    WASD    // A/D/W
+};
+
 class BaseCharacterController : public IKeyListener {
 private:
     bool _grounded = true;
@@ -17,9 +23,10 @@ private:
     float _jumpingSpeed = 5000.0f;
     EventManager *_eventManager;
     int _parentId;
+    ControlScheme _scheme;
 
 public:
-    BaseCharacterController(int parentId, EventManager *eventManager);
+    BaseCharacterController(int parentId, EventManager *eventManager, ControlScheme scheme);
 
     void onKeyPress(Key key) override;
 

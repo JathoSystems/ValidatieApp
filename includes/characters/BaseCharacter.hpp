@@ -4,6 +4,7 @@
 #include "Engine/GameEngine.h"
 #include "events/MoveEvent.hpp"
 #include "GameObjects/GameObject.h"
+#include <unordered_set>
 
 enum class Animation {
     IDLE,
@@ -24,12 +25,15 @@ private:
     
     // Animatie state tracking
     Animation _currentAnimation = Animation::IDLE;
+
+    // Track active ground contacts to avoid flickering grounded state
+    std::unordered_set<const GameObject*> _groundContacts;
     
     // Interne methode die daadwerkelijk de animator switch doet
     void updateAnimator(Animation newAnimation);
 
 public:
-    BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer);
+    BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer, ControlScheme scheme);
 
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;
