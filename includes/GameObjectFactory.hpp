@@ -37,14 +37,27 @@ public:
         return nullptr;
     }
 
+    void setNetworkSystem(std::shared_ptr<NetworkSystem> network) {
+        _network = network;
+    }
+
+    void setEventManager(EventManager * manager) {
+        _manager = manager;
+    }
+
 private:
+    std::shared_ptr<NetworkSystem> _network;
+    EventManager * _manager;
+
     GameObjectFactory() {
-        registerType("fireboy", []() {
-            return std::make_unique<Fireboy>(nullptr, nullptr, nullptr, false);
+        std::shared_ptr<NetworkSystem> network = _network;
+        EventManager * manager = _manager;
+        registerType("fireboy", [network, manager]() {
+            return std::make_unique<Fireboy>(network, manager, &GameEngine::getInstance(), false);
         });
 
-        registerType("watergirl", []() {
-            return std::make_unique<Watergirl>(nullptr, nullptr, nullptr, false);
+        registerType("watergirl", [network, manager]() {
+            return std::make_unique<Watergirl>(network, manager, &GameEngine::getInstance(), false);
         });
     }
     GameObjectFactory(const GameObjectFactory&) = delete;

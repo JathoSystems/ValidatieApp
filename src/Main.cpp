@@ -41,6 +41,9 @@ int main() {
             return std::make_shared<SpawnEvent>();
         });
 
+        GameObjectFactory::getInstance().setNetworkSystem(network);
+        GameObjectFactory::getInstance().setEventManager(&manager);
+
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
             event->apply(object);
