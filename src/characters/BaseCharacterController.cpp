@@ -45,6 +45,8 @@ void BaseCharacterController::onKeyPress(Key key) {
             std::cout << "sending: " << _parentId << std::endl;
             _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "fireboy"));
             break;
+        case Key::E:
+            _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "waterboy"));
     }
 }
 
