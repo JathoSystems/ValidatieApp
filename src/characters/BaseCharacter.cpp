@@ -15,8 +15,8 @@
 // [ToDo] fix duplicates
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                              bool activePlayer) {
+    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
     if (activePlayer) {
-        _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
         auto keyInput = std::make_unique<KeyInputComponent>(this);
         keyInput->setListener(_controller.get());
         engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
@@ -45,8 +45,9 @@ BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManage
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer) : GameObject(parentId) {
+    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
+
     if (activePlayer) {
-        _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
         auto keyInput = std::make_unique<KeyInputComponent>(this);
         keyInput->setListener(_controller.get());
         engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
