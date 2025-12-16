@@ -19,7 +19,7 @@ Game::Game(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) :
 }
 
 void Game::onInitialRender() {
-    GameEngine* gameEngine = &GameEngine::getInstance()
+    GameEngine* gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
