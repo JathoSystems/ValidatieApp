@@ -57,22 +57,13 @@ int main() {
                     std::string eventName = eventPacket.getEventName();
                     std::vector<uint8_t> eventData = eventPacket.getEventData();
 
-                    std::cout << "Event type: " << eventName << "\n";
-
                     // Create the event from the registry
                     EventRegistry::getInstance()->createEvent(eventName);
                     auto event = EventRegistry::getInstance()->getEvent(eventName);
 
-                    std::cout << (event == nullptr ? "Is null" : "Is null") << std::endl;
-
                     if (event) {
                         event->deserialize(eventData);
-
-                        std::cout << "[Client " << clientId << " jumped]\n";
-
-                        // Broadcast to all other clients
                         server.broadcastExcept(packet, clientId);
-                        std::cout << "Event broadcasted to other clients\n";
                     }
                 } catch (const std::exception &e) {
                     std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";

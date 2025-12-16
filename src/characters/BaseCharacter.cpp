@@ -4,6 +4,8 @@
 
 #include "characters/BaseCharacter.hpp"
 
+#include <iostream>
+
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
@@ -79,9 +81,14 @@ void BaseCharacter::setMovementDirection(Direction direction) {
 
 void BaseCharacter::update(float delta) {
     GameObject::update(delta);
-
     updateAnimation();
-    _controller->move(_direction, getComponent<PhysicsComponent>());
+
+    if (_controller) {
+        auto* physics = getComponent<PhysicsComponent>();
+        if (physics) {
+            _controller->move(_direction, physics);
+        }
+    }
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
@@ -111,7 +118,6 @@ void BaseCharacter::setMovingRightSpritesheet(std::string right) {
 
 void BaseCharacter::setJumpingSpritesheet(std::string jump) {
     this->jump = jump;
-    // addComponent(std::make_unique<Animator>(jump, 1, 4));
 }
 
 void BaseCharacter::setFallingSpritesheet(std::string falling) {

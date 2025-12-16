@@ -86,12 +86,6 @@ public:
                 return;
             }
 
-            if (!object) {
-                std::cout << "[SpawnEvent] Factory returned nullptr for '" << objectName << "'" << std::endl;
-                return;
-            }
-
-            // Voeg object toe aan scene
             try {
                 scene->addObject(std::move(object));
                 std::cout << "[SpawnEvent] '" << objectName << "' successfully added to scene!" << std::endl;

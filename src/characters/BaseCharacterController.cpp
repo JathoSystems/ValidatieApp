@@ -23,22 +23,23 @@ void BaseCharacterController::onKeyPress(Key key) {
         std::cerr << "Event manager is null!" << std::endl;
         return;
     }
+    std::cout << "Key pressed: " << static_cast<int>(key) << std::endl;
 
     switch (key) {
         case Key::A:
         case Key::LEFT:
-            _eventManager->broadcast(std::make_shared<MoveEvent>(_parentId, Direction::EAST, true));
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, true));
             break;
         case Key::D:
         case Key::RIGHT:
-            _eventManager->broadcast(std::make_shared<MoveEvent>(_parentId, Direction::WEST, true));
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, true));
             break;
         case Key::SPACE:
         case Key::W:
         case Key::UP:
             if (!_grounded) break;
 
-            _eventManager->broadcast(std::make_shared<JumpEvent>(_parentId));
+            _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
             break;
     }
 }
@@ -47,11 +48,11 @@ void BaseCharacterController::onKeyRelease(Key key) {
     switch (key) {
         case Key::A:
         case Key::LEFT:
-            _eventManager->broadcast(std::make_shared<MoveEvent>(_parentId, Direction::WEST, false));
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, false));
             break;
         case Key::D:
         case Key::RIGHT:
-            _eventManager->broadcast(std::make_shared<MoveEvent>(_parentId, Direction::EAST, false));
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, false));
             break;
         default:
             break;

@@ -21,12 +21,13 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 
-auto network = std::make_shared<NetworkSystem>();
-auto result = network->connect("192.168.2.161", 7534);
-EventManager manager(network->getMiddleware());
 
 int main() {
     try {
+        auto network = std::make_shared<NetworkSystem>();
+        auto result = network->connect("192.168.2.161", 7534);
+        EventManager manager(network->getMiddleware());
+
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -45,6 +46,11 @@ int main() {
         GameObjectFactory::getInstance().setEventManager(&manager);
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            event->apply(object);
+        });
+
+        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
             event->apply(object);
         });

@@ -58,6 +58,7 @@ private:
         });
 
         registerType("watergirl", [network, manager](int parentId) {
+            std::cout << "PARENT ID: " << parentId << std::endl;
             return std::make_unique<Watergirl>(parentId, network, manager, &GameEngine::getInstance(), false);
         });
     }
