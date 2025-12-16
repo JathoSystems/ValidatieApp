@@ -14,6 +14,9 @@
 #include "Network/Packet/Packets/NetworkEventPacket.h"
 #include "Events/EventRegistry.h"
 #include "GameObjects/ObjectRegistry.hpp"
+#include "server/PlayerManager.hpp"
+#include "../../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
+#include "Network/Packet/Packets/GameReady.hpp"
 
 int main() {
     try {
@@ -22,6 +25,9 @@ int main() {
 
         // Register packets (we only need NetworkEventPacket now!)
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
+        PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+
 
         // Register events
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -40,12 +46,28 @@ int main() {
         auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 2);
 
         Server server(io_context, std::move(listener), port);
+        PlayerManager playerManager;
+        server.onConnect([&playerManager, &server](int32_t clientId) {
+            std::string role = playerManager.getNextRole();
+            playerManager.join(clientId, role);
+            std::cout << "Player " << clientId << " connected with role " << role << "\n";
+
+            PlayerAssignPacket assign(role);
+            assign.serialize();
+            server.sendToClient(clientId, assign);
+
+            if (playerManager.getAmountOfPlayers() == playerManager.getAmountOfRoles()) {
+                std::cout << "All roles assigned, sending GameReadyPacket\n";
+                GameReadyPacket ready;
+                ready.serialize();
+                server.broadcast(ready);
+            }
+        });
 
         // Set packet callback to handle NetworkEventPackets
         server.setPacketCallback([&server](int32_t clientId, const Packet &packet) {
             // Check if it's a NetworkEventPacket
             if (packet.getId() == 100) {
-
                 // Deserialize the NetworkEventPacket
                 NetworkEventPacket eventPacket;
                 eventPacket.getBuffer().setData(packet.getBuffer().getData());

@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 # cmp0077
 cmake_policy(SET CMP0077 NEW)
 
-add_executable(Vuurjongen_Watermeisje_Server src/Server.cpp
+add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/characters/Fireboy.hpp
         src/characters/Fireboy.cpp
         src/characters/Watergirl.cpp
@@ -23,6 +23,9 @@ add_executable(Vuurjongen_Watermeisje_Server src/Server.cpp
         includes/enums/Direction.hpp
         includes/characters/BaseCharacterController.hpp
         src/characters/BaseCharacterController.cpp
+        src/server/Player.cpp
+        src/server/PlayerManager.cpp
+        includes/GameState.hpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -41,6 +44,13 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/enums/Direction.hpp
         includes/characters/BaseCharacterController.hpp
         src/characters/BaseCharacterController.cpp
+        includes/server/Player.hpp
+        includes/server/PlayerManager.hpp
+        includes/GameState.hpp
+        includes/scenes/Lobby.hpp
+        src/scenes/Lobby.cpp
+        includes/scenes/Game.hpp
+        src/scenes/Game.cpp
 )
 
 include_directories("includes")

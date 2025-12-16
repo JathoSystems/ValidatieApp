@@ -20,6 +20,10 @@
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
+#include "../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
+#include "Network/Packet/Packets/GameReady.hpp"
+#include "scenes/Game.hpp"
+#include "scenes/Lobby.hpp"
 
 
 int main() {
@@ -29,6 +33,8 @@ int main() {
         EventManager manager(network->getMiddleware());
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
+        PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
@@ -157,8 +163,9 @@ int main() {
         hud->setFPSCounter(std::move(fpsCounter));
         scene->setHUD(std::move(hud));
 
-        gameEngine->getSystem<SceneSystem>()->addScene(std::move(scene));
-        gameEngine->getSystem<SceneSystem>()->setScene("MainScene");
+        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Lobby>());
+        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Game>());
+        gameEngine->getSystem<SceneSystem>()->setScene("Lobby");
         gameEngine->start();
     } catch (const std::exception &e) {
         std::cerr << "Exception: " << e.what() << std::endl;

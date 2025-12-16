@@ -45,7 +45,7 @@ BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManage
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer) : GameObject(parentId) {
-    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
+    _controller = std::make_unique<BaseCharacterController>(network, parentId, eventManager);
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
