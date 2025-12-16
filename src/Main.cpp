@@ -47,15 +47,18 @@ int main() {
 
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
             event->apply(object);
         });
 
         manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+
             event->apply(object);
         });
 
-        GameEngine* gameEngine = &GameEngine::getInstance();
+        GameEngine *gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
         PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
