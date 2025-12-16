@@ -121,7 +121,7 @@ int main() {
 
         scene->addObject(std::move(box));
 
-        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(&manager, gameEngine, true);
+        std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(network, &manager, gameEngine, true);
         scene->addObject(std::move(fireboy));
 
         auto hud = std::make_unique<HUD>();

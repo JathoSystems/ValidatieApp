@@ -13,8 +13,8 @@
 #include "Physics/PhysicsSystem.h"
 #include "Physics/RigidBody.h"
 
-BaseCharacter::BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(getId(), eventManager);
+BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool activePlayer) {
+    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
     auto keyInput = std::make_unique<KeyInputComponent>(this);
     keyInput->setListener(_controller.get());
     engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
@@ -99,6 +99,10 @@ std::string BaseCharacter::getRightSpritesheet() const {
 
 std::string BaseCharacter::getIdleSpritesheet() const {
     return idle;
+}
+
+std::string BaseCharacter::getFallingSpritesheet() const {
+    return falling;
 }
 
 void BaseCharacter::updateAnimator(Animation newAnimation) {

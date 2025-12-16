@@ -5,7 +5,7 @@
 
 class Fireboy : public BaseCharacter {
 public:
-    Fireboy(EventManager* eventManager, GameEngine *engine, bool activePlayer = false);
+    Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine, bool active);
 };
 
 #endif // FIREBOY_HPP

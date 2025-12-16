@@ -12,10 +12,12 @@
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
-BaseCharacterController::BaseCharacterController(int parentId, EventManager *eventManager) {
+BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager) {
     _parentId = parentId;
     _eventManager = eventManager;
+    _network = network;
 }
+
 
 void BaseCharacterController::onKeyPress(Key key) {
     if (!_eventManager) {
@@ -40,9 +42,8 @@ void BaseCharacterController::onKeyPress(Key key) {
             _eventManager->broadcast(std::make_shared<JumpEvent>(_parentId));
             break;
         case Key::Q:
-            extern std::shared_ptr<NetworkSystem> network;
             std::cout << "sending: " << _parentId << std::endl;
-            network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "fireboy"));
+            _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "fireboy"));
             break;
     }
 }
@@ -70,7 +71,7 @@ void BaseCharacterController::setGrounded(bool grounded) {
     _grounded = grounded;
 }
 
-void BaseCharacterController::move(Direction direction, PhysicsComponent* physics) {
+void BaseCharacterController::move(Direction direction, PhysicsComponent *physics) {
     _movementDirection = direction;
 
     float currentVx, currentVy;

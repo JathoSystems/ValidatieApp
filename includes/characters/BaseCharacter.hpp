@@ -29,7 +29,8 @@ private:
     void updateAnimator(Animation newAnimation);
 
 public:
-    BaseCharacter(EventManager* eventManager, GameEngine *engine, bool activePlayer);
+    BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+                  bool activePlayer);
 
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;

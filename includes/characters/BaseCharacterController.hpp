@@ -7,6 +7,7 @@
 #include "enums/Direction.hpp"
 #include "Events/EventManager.h"
 #include "Input/IKeyListener.h"
+#include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
 class BaseCharacterController : public IKeyListener {
@@ -17,9 +18,10 @@ private:
     float _jumpingSpeed = 5000.0f;
     EventManager *_eventManager;
     int _parentId;
+    std::shared_ptr<NetworkSystem> _network;
 
 public:
-    BaseCharacterController(int parentId, EventManager *eventManager);
+    BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager);
 
     void onKeyPress(Key key) override;
 

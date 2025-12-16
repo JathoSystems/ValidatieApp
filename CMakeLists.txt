@@ -20,6 +20,7 @@ add_executable(Vuurjongen_Watermeisje_Server src/Server.cpp
         src/characters/BaseCharacter.cpp
         includes/characters/events/JumpEvent.h
         src/characters/events/JumpEvent.cpp
+        includes/enums/Direction.hpp
         includes/characters/BaseCharacterController.hpp
         src/characters/BaseCharacterController.cpp
 )
@@ -77,6 +78,8 @@ add_custom_command(TARGET Vuurjongen_Watermeisje_Server POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:Engine>
         $<TARGET_FILE:SDL3::SDL3>
+        $<TARGET_FILE:SDL3_image::SDL3_image>
+        $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
         $<TARGET_FILE:box2d>
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje_Server>
 )
