@@ -4,8 +4,6 @@
 
 #include "characters/BaseCharacter.hpp"
 
-#include <iostream>
-
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
@@ -13,7 +11,6 @@
 #include "Physics/Box2DFacade.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
-#include "Physics/RigidBody.h"
 
 // [ToDo] fix duplicates
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
@@ -92,16 +89,22 @@ void BaseCharacter::update(float delta) {
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
+
     if (collision.normalY > 0.2f) {
-        _controller->setGrounded(true);
+
+        if (_controller) {
+            _controller->setGrounded(true);
+        }
 
         removeComponent<Animator>(true);
         addComponent(std::make_unique<Animator>(idle, 1, 5));
     }
 }
 
-void BaseCharacter::onCollisionExit(const CollisionData &collision) {
-    _controller->setGrounded(false);
+
+void BaseCharacter::onCollisionExit(const CollisionData &) {
+    if (_controller)
+        _controller->setGrounded(false);
 }
 
 void BaseCharacter::setIdleSpritesheet(std::string idle) {

@@ -62,23 +62,18 @@ public:
 
     void apply(GameObject * gameObject) override {
         try {
-            std::cout << objectName << " houruh" << std::endl;
-
-            // Haal SceneSystem op
             auto system = GameEngine::getInstance().getSystem<SceneSystem>();
             if (!system) {
                 std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
                 return;
             }
 
-            // Haal actieve scene op
             Scene *scene = system->getActiveSceneObj();
             if (!scene) {
                 std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
                 return;
             }
 
-            // Maak GameObject veilig aan
             std::unique_ptr<GameObject> object;
             object = GameObjectFactory::getInstance().create(registryId, "fireboy");
             if (!object) {
@@ -88,7 +83,6 @@ public:
 
             try {
                 scene->addObject(std::move(object));
-                std::cout << "[SpawnEvent] '" << objectName << "' successfully added to scene!" << std::endl;
             } catch (const std::exception &e) {
                 std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
             }

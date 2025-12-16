@@ -27,14 +27,10 @@ public:
     }
 
     std::unique_ptr<GameObject> create(int parentId, const std::string& name) {
-        std::cout << "Creating GameObject of type: " << name  << " with id " << parentId << std::endl;
         auto it = creators_.find(name);
         if (it != creators_.end()) {
-            std::cout << "Found creator for type: " << name << std::endl;
             return it->second(parentId); // Roept de geregistreerde functie aan
         }
-
-        std::cout << "No creator found for type: " << name << std::endl;
         return nullptr;
     }
 
@@ -58,7 +54,6 @@ private:
         });
 
         registerType("watergirl", [network, manager](int parentId) {
-            std::cout << "PARENT ID: " << parentId << std::endl;
             return std::make_unique<Watergirl>(parentId, network, manager, &GameEngine::getInstance(), false);
         });
     }

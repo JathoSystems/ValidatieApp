@@ -23,7 +23,6 @@ void BaseCharacterController::onKeyPress(Key key) {
         std::cerr << "Event manager is null!" << std::endl;
         return;
     }
-    std::cout << "Key pressed: " << static_cast<int>(key) << std::endl;
 
     switch (key) {
         case Key::A:

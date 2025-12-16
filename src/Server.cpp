@@ -45,7 +45,6 @@ int main() {
         server.setPacketCallback([&server](int32_t clientId, const Packet &packet) {
             // Check if it's a NetworkEventPacket
             if (packet.getId() == 100) {
-                std::cout << "NetworkEventPacket ontvangen van client " << clientId << "\n";
 
                 // Deserialize the NetworkEventPacket
                 NetworkEventPacket eventPacket;
@@ -69,20 +68,11 @@ int main() {
                     std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";
                     server.broadcast(packet);
                 }
-            } else {
-                std::cout << "Unknown packet type: " << packet.getId() << "\n";
             }
         });
 
         // 5. Start the server
         server.startServer();
-
-        std::cout << "=================================\n";
-        std::cout << "Server running on port " << port << "!\n";
-        std::cout << "Using Event System!\n";
-        std::cout << "Press Ctrl+C to stop\n";
-        std::cout << "=================================\n";
-
         server.run();
     } catch (std::exception &e) {
         std::cerr << "Server Error: " << e.what() << "\n";
