@@ -60,39 +60,34 @@ public:
         return data;
     }
 
-    void apply(GameObject * gameObject) override {
-        try {
-            auto system = GameEngine::getInstance().getSystem<SceneSystem>();
-            if (!system) {
-                std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
-                return;
-            }
-
-            Scene *scene = system->getActiveSceneObj();
-            if (!scene) {
-                std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
-                return;
-            }
-
-            std::unique_ptr<GameObject> object;
-            object = GameObjectFactory::getInstance().create(registryId, "fireboy");
-            if (!object) {
-                std::cout << "Factory returned nullptr" << std::endl;
-                return;
-            }
-
-            try {
-                scene->addObject(std::move(object));
-            } catch (const std::exception &e) {
-                std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
-            }
-        } catch (const std::exception &e) {
-            std::cout << "Exception in create: " << e.what() << std::endl;
-            return;
-        } catch (...) {
-            std::cout << "Unknown crash in create()" << std::endl;
+    void spawn() {
+        auto system = GameEngine::getInstance().getSystem<SceneSystem>();
+        if (!system) {
+            std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
             return;
         }
+
+        Scene *scene = system->getActiveSceneObj();
+        if (!scene) {
+            std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
+            return;
+        }
+
+        std::unique_ptr<GameObject> object;
+        object = GameObjectFactory::getInstance().create(registryId, "fireboy");
+        if (!object) {
+            std::cout << "Factory returned nullptr" << std::endl;
+            return;
+        }
+
+        try {
+            scene->addObject(std::move(object));
+        } catch (const std::exception &e) {
+            std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
+        }
+    }
+
+    void apply(GameObject * gameObject) override {
     }
 };
 

@@ -17,6 +17,9 @@ std::string MoveEvent::getName() const {
 Package MoveEvent::serialize() const {
     Package p;
 
+    std::cout << "Moving " << _objectId << " in direction " << static_cast<int>(_direction)
+              << " with toggle " << static_cast<int>(_toggle) << std::endl;
+
     p.push_back(_objectId);
     p.push_back(_toggle);
     p.push_back(static_cast<int8_t>(_direction));
@@ -28,6 +31,9 @@ Data MoveEvent::deserialize(const Package &package) {
     Data data;
 
     if (package.size() >= 3) {
+
+        std::cout << "Deserializing MoveEvent from parentId: " << static_cast<int8_t>(package[0] << std::endl;
+
         int8_t objectId = static_cast<int8_t>(package[0]);
         int8_t toggle = static_cast<int8_t>(package[1]);
         int8_t direction = static_cast<int8_t>(package[2]);
