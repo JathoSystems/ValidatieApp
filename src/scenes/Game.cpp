@@ -42,11 +42,11 @@ void Game::onInitialRender() {
 
     auto groundPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
     groundPhysics->setBodyType(BodyType::STATIC);
-    groundPhysics->setCollider(std::make_unique<BoxCollider>(1280.0f, 100.0f));
+    groundPhysics->setCollider(std::make_unique<BoxCollider>());
     groundPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
     ground->addComponent(std::move(groundPhysics));
 
-    auto groundRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square.png");
+    auto groundRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square.png");
     groundRenderer->setParent(ground.get());
     ground->addComponent(std::move(groundRenderer));
 
@@ -61,11 +61,11 @@ void Game::onInitialRender() {
 
     auto platformPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
     platformPhysics->setBodyType(BodyType::STATIC);
-    platformPhysics->setCollider(std::make_unique<BoxCollider>(300.0f, 50.0f));
+    platformPhysics->setCollider(std::make_unique<BoxCollider>());
     platformPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
     platform->addComponent(std::move(platformPhysics));
 
-    auto platformRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square_blue.png");
+    auto platformRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square_blue.png");
     platformRenderer->setParent(platform.get());
     platform->addComponent(std::move(platformRenderer));
 
@@ -73,19 +73,19 @@ void Game::onInitialRender() {
 
     auto box = std::make_unique<GameObject>();
     box->getTransform()->getPosition()->setX(450.0f);
-    box->getTransform()->getPosition()->setY(130.0f);
+    box->getTransform()->getPosition()->setY(345.0f);
     box->getTransform()->getSize()->setWidth(60.0f);
     box->getTransform()->getSize()->setHeight(60.0f);
 
     auto boxPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
     boxPhysics->setBodyType(BodyType::DYNAMIC);
-    boxPhysics->setCollider(std::make_unique<BoxCollider>(60.0f, 60.0f));
+    boxPhysics->setCollider(std::make_unique<BoxCollider>());
     boxPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
     boxPhysics->setGravityScale(1.0f);
     boxPhysics->setParent(box.get());
     box->addComponent(std::move(boxPhysics));
 
-    auto boxRenderer = std::make_unique<SpriteRenderer>("../external/GameEngine/resources/square.png");
+    auto boxRenderer = std::make_unique<SpriteRenderer>("external/GameEngine/resources/square.png");
     boxRenderer->setParent(box.get());
     box->addComponent(std::move(boxRenderer));
 
@@ -96,11 +96,19 @@ void Game::onInitialRender() {
     std::cout << "Selected character: " << characterState << std::endl;
     std::unique_ptr<BaseCharacter> character = nullptr;
 
+    float spawnX = 350.0f;
     if (characterState == "fireboy") {
         character = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
+        spawnX = 350.0f;
     } else {
         character = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
+        spawnX = 550.0f;
     }
+
+    if (character) {
+        character->getTransform()->getPosition()->setX(spawnX);
+    }
+    
     addObject(std::move(character));
 
     auto hud = std::make_unique<HUD>();

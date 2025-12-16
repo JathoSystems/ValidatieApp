@@ -25,18 +25,22 @@ BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManage
 
     addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
 
+    float width = 50.0f;
+    float height = 100.0f;
+
     getTransform()->getPosition()->setX(260);
-    getTransform()->getPosition()->setY(0);
-    getTransform()->getSize()->setWidth(50);
-    getTransform()->getSize()->setHeight(100);
+    getTransform()->getPosition()->setY(300.0f);
+    getTransform()->getSize()->setWidth(width);
+    getTransform()->getSize()->setHeight(height);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
+    component->setCollider(std::make_unique<BoxCollider>());
     component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
+    component->setParent(this);
 
     PhysicsComponent *componentPointer = component.get();
     addComponent(std::move(component));
@@ -55,18 +59,24 @@ BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> networ
     }
 
     addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+    
+    float width = 50.0f;
+    float height = 100.0f;
+    
     getTransform()->getPosition()->setX(260);
-    getTransform()->getPosition()->setY(0);
-    getTransform()->getSize()->setWidth(50);
-    getTransform()->getSize()->setHeight(100);
+    getTransform()->getPosition()->setY(300.0f);
+    getTransform()->getSize()->setWidth(width);
+    getTransform()->getSize()->setHeight(height);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
+    // Collider will automatically use Transform size (width, height)
+    component->setCollider(std::make_unique<BoxCollider>());
     component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
+    component->setParent(this);
 
     PhysicsComponent *componentPointer = component.get();
     addComponent(std::move(component));
@@ -90,15 +100,10 @@ void BaseCharacter::update(float delta) {
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
-
-    if (collision.normalY > 0.2f) {
-
+    if (collision.normalY > 0.5f) {
         if (_controller) {
             _controller->setGrounded(true);
         }
-
-        removeComponent<Animator>(true);
-        addComponent(std::make_unique<Animator>(idle, 1, 5));
     }
 }
 
@@ -186,30 +191,38 @@ void BaseCharacter::updateAnimation() {
     bool isGrounded = _controller->isGrounded();
     Direction movementDir = _controller->getMovementDirection();
 
-    // Animatie prioriteit: Spring/Val > Beweging > Idle
+    const float velocityThreshold = 10.0f;
 
     // 1. Check of karakter in de lucht is
     if (!isGrounded) {
-        if (vy < 0) {
+        if (vy < -velocityThreshold) {
             // Omhoog (springen)
             updateAnimator(Animation::JUMP);
-        } else {
+        } else if (vy > velocityThreshold) {
             // Omlaag (vallen)
             updateAnimator(Animation::FALLING);
+        } else {
+            // In de lucht maar kleine velocity
+            if (vy < 0) {
+                updateAnimator(Animation::JUMP);
+            } else {
+                updateAnimator(Animation::FALLING);
+            }
         }
         return; // Lucht animaties hebben voorrang
     }
 
     // 2. Check beweging (alleen als op grond)
     if (movementDir == Direction::WEST) {
-        updateAnimator(Animation::RIGHT);
-        return;
-    }
-
-    if (movementDir == Direction::EAST) {
         updateAnimator(Animation::LEFT);
         return;
     }
 
+    if (movementDir == Direction::EAST) {
+        updateAnimator(Animation::RIGHT);
+        return;
+    }
+
+    // 3. Idle als op grond en niet bewegen
     updateAnimator(Animation::IDLE);
 }

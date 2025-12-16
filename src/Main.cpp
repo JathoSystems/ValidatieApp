@@ -33,7 +33,7 @@ int main() {
 
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
-        auto result = network->connect("192.168.2.161", 7534);
+        auto result = network->connect("192.168.68.58", 7534);
         EventManager manager(network->getMiddleware());
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
