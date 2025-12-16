@@ -25,7 +25,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/characters/BaseCharacterController.cpp
         src/server/Player.cpp
         src/server/PlayerManager.cpp
-        includes/GameState.hpp
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -50,7 +49,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/characters/BaseCharacterController.cpp
         includes/server/Player.hpp
         includes/server/PlayerManager.hpp
-        includes/GameState.hpp
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp

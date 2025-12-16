@@ -4,7 +4,9 @@
 
 #include "scenes/Game.hpp"
 
+#include "../../external/GameEngine/includes/Network/GameState.hpp"
 #include "characters/Fireboy.hpp"
+#include "characters/Watergirl.hpp"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Input/InputSystem.h"
@@ -89,8 +91,17 @@ void Game::onInitialRender() {
 
     addObject(std::move(box));
 
-    std::unique_ptr<Fireboy> fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
-    addObject(std::move(fireboy));
+    std::string characterState = GameState::getInstance().get("role");
+
+    std::cout << "Selected character: " << characterState << std::endl;
+    std::unique_ptr<BaseCharacter> character = nullptr;
+
+    if (characterState == "fireboy") {
+        character = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
+    } else {
+        character = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
+    }
+    addObject(std::move(character));
 
     auto hud = std::make_unique<HUD>();
 
