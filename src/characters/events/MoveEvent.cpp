@@ -32,7 +32,7 @@ Data MoveEvent::deserialize(const Package &package) {
 
     if (package.size() >= 3) {
 
-        std::cout << "Deserializing MoveEvent from parentId: " << static_cast<int8_t>(package[0] << std::endl;
+        std::cout << "Deserializing MoveEvent from parentId: " << static_cast<int8_t>(package[0]) << std::endl;
 
         int8_t objectId = static_cast<int8_t>(package[0]);
         int8_t toggle = static_cast<int8_t>(package[1]);
