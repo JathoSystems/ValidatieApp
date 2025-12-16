@@ -2,9 +2,9 @@
 // Created by jusra on 16-12-2025.
 //
 
-#include "UI/Text.h"
-
 #include "scenes/Game.hpp"
+
+#include "UI/Text.h"
 
 Game::Game() : Scene("Game") {
     auto object = std::make_unique<GameObject>();

@@ -56,6 +56,9 @@ int main() {
             assign.serialize();
             server.sendToClient(clientId, assign);
 
+            std::cout << playerManager.getAmountOfPlayers() << "\n";
+            std::cout << playerManager.getAmountOfRoles() << "\n";
+
             if (playerManager.getAmountOfPlayers() == playerManager.getAmountOfRoles()) {
                 std::cout << "All roles assigned, sending GameReadyPacket\n";
                 GameReadyPacket ready;

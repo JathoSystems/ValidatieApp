@@ -26,6 +26,10 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/server/Player.cpp
         src/server/PlayerManager.cpp
         includes/GameState.hpp
+        includes/scenes/Lobby.hpp
+        src/scenes/Lobby.cpp
+        includes/scenes/Game.hpp
+        src/scenes/Game.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
