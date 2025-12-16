@@ -39,7 +39,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>();
+            return std::make_shared<SpawnEvent>(0, "watergirl");
         });
 
         GameObjectFactory::getInstance().setNetworkSystem(network);
