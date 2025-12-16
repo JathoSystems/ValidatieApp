@@ -33,7 +33,7 @@ BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManage
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(100, 200));
+    component->setCollider(std::make_unique<BoxCollider>(50, 100));
     component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
@@ -63,7 +63,7 @@ BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> networ
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(100, 200));
+    component->setCollider(std::make_unique<BoxCollider>(50, 100));
     component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
