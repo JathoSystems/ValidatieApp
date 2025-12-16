@@ -28,6 +28,10 @@
 
 int main() {
     try {
+        GameEngine *gameEngine = &GameEngine::getInstance();
+        gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
+
+        // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
         auto result = network->connect("192.168.2.161", 7534);
         EventManager manager(network->getMiddleware());
@@ -74,9 +78,6 @@ int main() {
 
             event->apply(object);
         });
-
-        GameEngine *gameEngine = &GameEngine::getInstance();
-        gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
         // PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
         // InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
@@ -166,6 +167,8 @@ int main() {
         gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Lobby>());
         gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Game>());
         gameEngine->getSystem<SceneSystem>()->setScene("Lobby");
+
+
         gameEngine->start();
     } catch (const std::exception &e) {
         std::cerr << "Exception: " << e.what() << std::endl;
