@@ -13,22 +13,55 @@
 #include "Physics/PhysicsSystem.h"
 #include "Physics/RigidBody.h"
 
-BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
-    auto keyInput = std::make_unique<KeyInputComponent>(this);
-    keyInput->setListener(_controller.get());
-    engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
-    addComponent(std::move(keyInput));
-
+// [ToDo] fix duplicates
+BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+                             bool activePlayer) {
     if (activePlayer) {
-        addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+        _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
+        auto keyInput = std::make_unique<KeyInputComponent>(this);
+        keyInput->setListener(_controller.get());
+        engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
+        addComponent(std::move(keyInput));
     }
+
+    addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+
     getTransform()->getPosition()->setX(260);
     getTransform()->getPosition()->setY(0);
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
-    std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(engine->getSystem<PhysicsSystem>()->getBox2DFacade());
+    std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
+        engine->getSystem<PhysicsSystem>()->getBox2DFacade());
+    component->setBodyType(BodyType::DYNAMIC);
+    component->setCollider(std::make_unique<BoxCollider>(100, 200));
+    component->setMaterial(Material(1.0f, 0.8f, 0.0f));
+    component->setGravityScale(1.0f);
+    component->setFixedRotation(true);
+
+    PhysicsComponent *componentPointer = component.get();
+    addComponent(std::move(component));
+    engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
+}
+
+BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+                             GameEngine *engine, bool activePlayer) : GameObject(parentId) {
+    if (activePlayer) {
+        _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
+        auto keyInput = std::make_unique<KeyInputComponent>(this);
+        keyInput->setListener(_controller.get());
+        engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
+        addComponent(std::move(keyInput));
+    }
+
+    addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+    getTransform()->getPosition()->setX(260);
+    getTransform()->getPosition()->setY(0);
+    getTransform()->getSize()->setWidth(50);
+    getTransform()->getSize()->setHeight(100);
+
+    std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
+        engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
     component->setCollider(std::make_unique<BoxCollider>(100, 200));
     component->setMaterial(Material(1.0f, 0.8f, 0.0f));
@@ -135,7 +168,7 @@ void BaseCharacter::updateAnimator(Animation newAnimation) {
 void BaseCharacter::updateAnimation() {
     if (!_controller) return;
 
-    PhysicsComponent* physics = getComponent<PhysicsComponent>();
+    PhysicsComponent *physics = getComponent<PhysicsComponent>();
     if (!physics) return;
 
     float vx, vy;

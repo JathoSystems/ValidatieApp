@@ -8,13 +8,14 @@
 #include <functional>
 #include <memory>
 
+#include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/GameObject.h"
 
 class GameObjectFactory {
 public:
-    using CreatorFunc = std::function<std::unique_ptr<GameObject>()>;
+    using CreatorFunc = std::function<std::unique_ptr<GameObject>(int parentId)>;
 
     static GameObjectFactory& getInstance() {
         static GameObjectFactory instance;
@@ -25,12 +26,12 @@ public:
         creators_[name] = func;
     }
 
-    std::unique_ptr<GameObject> create(const std::string& name) {
-        std::cout << "Creating GameObject of type: " << name << std::endl;
+    std::unique_ptr<GameObject> create(int parentId, const std::string& name) {
+        std::cout << "Creating GameObject of type: " << name  << " with id " << parentId << std::endl;
         auto it = creators_.find(name);
         if (it != creators_.end()) {
             std::cout << "Found creator for type: " << name << std::endl;
-            return it->second(); // Roept de geregistreerde functie aan
+            return it->second(parentId); // Roept de geregistreerde functie aan
         }
 
         std::cout << "No creator found for type: " << name << std::endl;
@@ -52,12 +53,12 @@ private:
     GameObjectFactory() {
         std::shared_ptr<NetworkSystem> network = _network;
         EventManager * manager = _manager;
-        registerType("fireboy", [network, manager]() {
-            return std::make_unique<Fireboy>(network, manager, &GameEngine::getInstance(), false);
+        registerType("fireboy", [network, manager](int parentId) {
+            return std::make_unique<Fireboy>(parentId, network, manager, &GameEngine::getInstance(), false);
         });
 
-        registerType("watergirl", [network, manager]() {
-            return std::make_unique<Watergirl>(network, manager, &GameEngine::getInstance(), false);
+        registerType("watergirl", [network, manager](int parentId) {
+            return std::make_unique<Watergirl>(parentId, network, manager, &GameEngine::getInstance(), false);
         });
     }
     GameObjectFactory(const GameObjectFactory&) = delete;

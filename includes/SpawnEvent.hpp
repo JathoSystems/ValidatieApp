@@ -80,7 +80,7 @@ public:
 
             // Maak GameObject veilig aan
             std::unique_ptr<GameObject> object;
-            object = GameObjectFactory::getInstance().create("fireboy");
+            object = GameObjectFactory::getInstance().create(registryId, "fireboy");
             if (!object) {
                 std::cout << "Factory returned nullptr" << std::endl;
                 return;

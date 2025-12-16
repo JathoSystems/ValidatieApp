@@ -18,7 +18,6 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     _network = network;
 }
 
-
 void BaseCharacterController::onKeyPress(Key key) {
     if (!_eventManager) {
         std::cerr << "Event manager is null!" << std::endl;
@@ -41,12 +40,6 @@ void BaseCharacterController::onKeyPress(Key key) {
 
             _eventManager->broadcast(std::make_shared<JumpEvent>(_parentId));
             break;
-        case Key::Q:
-            std::cout << "sending: " << _parentId << std::endl;
-            _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "fireboy"));
-            break;
-        case Key::E:
-            _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(_parentId, "watergirl"));
     }
 }
 

@@ -32,6 +32,11 @@ public:
     BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer);
 
+    BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+                  bool activePlayer);
+
+    void build();
+
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;
     std::string getRightSpritesheet() const;
