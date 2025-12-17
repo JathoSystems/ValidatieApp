@@ -25,17 +25,15 @@ private:
     Animation _currentAnimation = Animation::IDLE;
     
     void updateAnimator(Animation newAnimation);
-    void initializeCharacter(int id, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+    void initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine,
                              bool activePlayer);
 public:
-    BaseCharacter(Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+    BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer);
 
-    BaseCharacter(int parentId, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+    BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer);
-
-    void build();
 
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;

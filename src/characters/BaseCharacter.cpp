@@ -12,17 +12,17 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
-BaseCharacter::BaseCharacter(Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                              bool activePlayer) {
-    initializeCharacter(getId(), startPos, network, eventManager, engine, activePlayer);
+    initializeCharacter(getId(), network, eventManager, engine, activePlayer);
 }
 
-BaseCharacter::BaseCharacter(int parentId, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer) : GameObject(parentId) {
-    initializeCharacter(parentId, startPos, network, eventManager, engine, activePlayer);
+    initializeCharacter(parentId, network, eventManager, engine, activePlayer);
 }
 
-void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                                         GameEngine *engine, bool activePlayer) {
     _controller = std::make_unique<BaseCharacterController>(network, id, eventManager);
 
@@ -34,11 +34,6 @@ void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_p
     }
 
     // addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
-
-    std::cout << "Starting pos for " << id << " is: " << startPos.getX() << ", " << startPos.getY() << std::endl;
-
-    getTransform()->getPosition()->setX(startPos.getX());
-    getTransform()->getPosition()->setY(startPos.getY());
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
