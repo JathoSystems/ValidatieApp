@@ -59,10 +59,8 @@ void GridRenderer::renderCell(int x, int y) {
 
     int cellSize = _grid->getCellSize();
 
-    // Check if this is a door
     bool isDoor = (cellType == CellType::RedDoor || cellType == CellType::BlueDoor);
 
-    // For doors, only render if this is the top-left corner
     if (isDoor) {
         if (!isTopLeftOfDoor(x, y, cellType)) {
             return;
@@ -71,11 +69,10 @@ void GridRenderer::renderCell(int x, int y) {
         return;
     }
 
-    // Check if this is a diamond - only render at top-left of 2x2 block
     bool isDiamond = (cellType == CellType::DiamondBlue || cellType == CellType::DiamondRed);
     if (isDiamond) {
         if (!isTopLeftOfDiamond(x, y, cellType)) {
-            return; // Skip rendering, this is part of a diamond but not the anchor point
+            return;
         }
     }
 
@@ -87,7 +84,6 @@ void GridRenderer::renderCell(int x, int y) {
 
     auto block = std::make_unique<GameObject>();
 
-    // Center within the 2x2 block for diamonds
     float xPos = x * cellSize + spriteWidth / 2;
     float yPos = y * cellSize + spriteHeight / 2;
 
@@ -117,7 +113,6 @@ void GridRenderer::renderCell(int x, int y) {
 void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
     int cellSize = _grid->getCellSize();
 
-    // Actual image dimensions
     int baseWidth = 53;
     int baseHeight = 57;
     int doorWidth = 41;
@@ -129,7 +124,6 @@ void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
     float baseCenterX = x * cellSize + blockWidthPx / 2.0f;
     float baseCenterY = y * cellSize + blockHeightPx / 2.0f + 5.0f;
 
-    // Layer 1: Door base/frame (behind)
     auto doorBase = std::make_unique<GameObject>();
     doorBase->getTransform()->getPosition()->setX(baseCenterX);
     doorBase->getTransform()->getPosition()->setY(baseCenterY);
@@ -144,10 +138,9 @@ void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
 
     _scene->addObject(std::move(doorBase));
 
-    // Layer 2: Door itself (in front, centered within the base)
     auto doorFront = std::make_unique<GameObject>();
-    doorFront->getTransform()->getPosition()->setX(baseCenterX);  // Same center as base
-    doorFront->getTransform()->getPosition()->setY(baseCenterY);  // Same center as base
+    doorFront->getTransform()->getPosition()->setX(baseCenterX);
+    doorFront->getTransform()->getPosition()->setY(baseCenterY);
     doorFront->getTransform()->getSize()->setWidth(doorWidth);
     doorFront->getTransform()->getSize()->setHeight(doorHeight);
 
@@ -159,7 +152,6 @@ void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
     doorFront->addComponent(std::move(doorSprite));
     doorFront->setLayer(1);
 
-    // Add collision to match the base size (full door frame)
     auto physics = std::make_unique<PhysicsComponent>(_box2DFacade);
     physics->setBodyType(BodyType::STATIC);
     physics->setCollider(std::make_unique<BoxCollider>(baseWidth, baseHeight));
@@ -169,10 +161,8 @@ void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
 }
 
 bool GridRenderer::isTopLeftOfDoor(int x, int y, CellType doorType) {
-    // Base is 53 wide, 57 tall
-    // At 10px per cell: 6 cells wide (rounding up from 5.3), 6 cells tall (rounding up from 5.7)
-    const int doorWidthCells = 6;   // 53px / 10px per cell = 5.3, round up
-    const int doorHeightCells = 6;  // 57px / 10px per cell = 5.7, round up
+    const int doorWidthCells = 6;
+    const int doorHeightCells = 6;
 
     for (int dy = 0; dy < doorHeightCells; ++dy) {
         for (int dx = 0; dx < doorWidthCells; ++dx) {
@@ -186,7 +176,6 @@ bool GridRenderer::isTopLeftOfDoor(int x, int y, CellType doorType) {
 }
 
 bool GridRenderer::isTopLeftOfDiamond(int x, int y, CellType diamondType) {
-    // Check if there's a 2x2 block of the same diamond type
     const int diamondSize = 2;
 
     for (int dy = 0; dy < diamondSize; ++dy) {

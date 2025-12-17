@@ -7,14 +7,14 @@
 
 int main() {
     try {
-        std::cout << "=== Initializing Level Viewer ===" << std::endl;
+        std::cout << "Initializing Level Viewer" << std::endl;
 
         GameEngine gameEngine;
         gameEngine.init("Fireboy & Watergirl - Level Viewer", 800, 600);
 
         auto physicsFacade = gameEngine.getSystem<PhysicsSystem>();
 
-        std::cout << "=== Creating Scene ===" << std::endl;
+        std::cout << "Creating Scene " << std::endl;
         auto mainScene = std::make_unique<Scene>("MainScene");
 
         // Camera instellen
@@ -38,7 +38,7 @@ int main() {
             sceneSystem->setScene("MainScene");
         }
 
-        std::cout << "=== Starting Viewer ===" << std::endl;
+        std::cout << "Starting Viewer" << std::endl;
         gameEngine.start();
 
     } catch (const std::exception &e) {

@@ -11,8 +11,8 @@ enum class CellType {
     BlueDoor,                               // Exit for Watergirl
     Button,                                 // Pressure plate/switch maybe make this for blue and red too
     DiamondBlue, DiamondRed,                // Collectible
-    SlopeLeft,                              // Slopes
-    SlopeRight                              // Slopes
+    SlopeLeft,                              // Slope
+    SlopeRight                              // Slope
 };
 
 // Character types for hazard checking
