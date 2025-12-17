@@ -35,7 +35,7 @@ void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_p
 
     // addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
 
-    std::cout << "Starting pos: " << startPos.getX() << ", " << startPos.getY() << std::endl;
+    std::cout << "Starting pos for " << id << " is: " << startPos.getX() << ", " << startPos.getY() << std::endl;
 
     getTransform()->getPosition()->setX(startPos.getX());
     getTransform()->getPosition()->setY(startPos.getY());
