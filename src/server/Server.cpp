@@ -6,17 +6,15 @@
 #include "Network/Server.h"
 
 #include "SpawnEvent.hpp"
-#include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
 #include "Network/Listeners/TcpNetworkListener.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
 #include "Events/EventRegistry.h"
-#include "GameObjects/ObjectRegistry.hpp"
 #include "server/PlayerManager.hpp"
-#include "../../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
-#include "../../includes/server/packet/GameReady.hpp"
+#include "server/packet/GameReady.hpp"
+#include "server/packet/PlayerAssignPacket.hpp"
 
 int main() {
     try {
