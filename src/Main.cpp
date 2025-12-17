@@ -1,4 +1,5 @@
 #include <iostream>
+#include <asio.hpp>
 
 #include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
@@ -7,9 +8,9 @@
 #include "Engine/GameEngine.h"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
-#include "GameObjects/Component/KeyInputComponent.h"
-#include "GameObjects/Component/SpriteRenderer.h"
-#include "Input/InputSystem.h"
+#include "asio/io_context.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/ip/host_name.hpp"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -25,6 +26,28 @@
 #include "scenes/Game.hpp"
 #include "scenes/Lobby.hpp"
 
+std::string getLocalIPAddress() {
+    try {
+        asio::io_context io_context;
+        asio::ip::tcp::resolver resolver(io_context);
+        asio::ip::tcp::resolver::query query(asio::ip::host_name(), "");
+        asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
+        asio::ip::tcp::resolver::iterator end;
+
+        while(it != end) {
+            asio::ip::tcp::endpoint endpoint = *it++;
+            asio::ip::address addr = endpoint.address();
+
+            if(addr.is_v4() && !addr.is_loopback()) {
+                return addr.to_string();
+            }
+        }
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
+    return "";
+}
 
 int main() {
     try {
@@ -33,7 +56,7 @@ int main() {
 
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
-        auto result = network->connect("192.168.68.58", 7534);
+        auto result = network->connect(getLocalIPAddress(), 7534);
         EventManager manager(network->getMiddleware());
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
