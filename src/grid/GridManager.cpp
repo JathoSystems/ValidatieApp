@@ -1,4 +1,4 @@
-#include "GridManager.h"
+#include "grid/GridManager.h"
 
 std::unordered_map<std::string, std::unique_ptr<LevelGrid>> GridManager::_grids;
 
@@ -21,4 +21,3 @@ void GridManager::unregisterGrid(const std::string& sceneName) {
 void GridManager::clear() {
     _grids.clear();
 }
-

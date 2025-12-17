@@ -23,4 +23,3 @@ public:
 };
 
 #endif //VALIDATIEAPP_BATSPRITERENDERER_H
-

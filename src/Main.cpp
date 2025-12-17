@@ -27,6 +27,7 @@
 #include "server/packet/GameReady.hpp"
 #include "server/packet/PlayerAssignPacket.hpp"
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
+#include "bat/events/BatMoveEvent.hpp"
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
 
 std::string getLocalIPAddress() {
@@ -57,10 +58,23 @@ int main() {
         GameEngine *gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
+        auto sceneSystem = gameEngine->getSystem<SceneSystem>();
+        if (!sceneSystem) {
+            std::cerr << "[Main] ERROR: SceneSystem is null!" << std::endl;
+            return 1;
+        }
+        
+        sceneSystem->addScene(std::make_unique<Lobby>());
+
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
         auto result = network->connect(getLocalIPAddress(), 7534);
         EventManager manager(network->getMiddleware());
+        
+        auto gameScene = std::make_unique<Game>(network, &manager);
+        std::string gameSceneName = gameScene->getName();
+
+        sceneSystem->addScene(std::move(gameScene));
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
@@ -83,6 +97,10 @@ int main() {
             return std::make_shared<SpawnEvent>(0, "watergirl");
         });
 
+        EventRegistry::getInstance()->registerEvent("batmove", []() {
+            return std::make_shared<BatMoveEvent>(0, 0.0f, 0.0f);
+        });
+
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 
@@ -93,7 +111,15 @@ int main() {
             }
 
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
-            if (!object) return;
+            if (!object) {
+                int mappedId = SpawnEvent::getMappedId(id);
+                if (mappedId != id) {
+                    object = ObjectRegistry::getInstance().getObject(mappedId);
+                }
+            }
+            if (!object) {
+                return;
+            }
             event->apply(object);
         });
 
@@ -104,16 +130,20 @@ int main() {
             }
 
             GameObject *object = ObjectRegistry::getInstance().getObject(id);
-
-            if (!object) return;
+            if (!object) {
+                int mappedId = SpawnEvent::getMappedId(id);
+                if (mappedId != id) {
+                    object = ObjectRegistry::getInstance().getObject(mappedId);
+                }
+            }
+            if (!object) {
+                return;
+            }
 
             event->apply(object);
         });
 
-        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Lobby>());
-        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Game>(network, &manager));
-        gameEngine->getSystem<SceneSystem>()->setScene("Lobby");
-
+        sceneSystem->setScene("Lobby");
 
         gameEngine->start();
     } catch (const std::exception &e) {

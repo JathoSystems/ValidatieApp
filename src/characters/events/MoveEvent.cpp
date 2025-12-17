@@ -41,11 +41,10 @@ Data MoveEvent::deserialize(const Package &package) {
 }
 
 void MoveEvent::apply(GameObject *gameObject) {
-    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
-        if (!_toggle) {
-            baseChar->setMovementDirection(Direction::NONE);
-        } else {
-            baseChar->setMovementDirection(_direction);
-        }
+    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject);
+    if (!_toggle) {
+        baseChar->setMovementDirection(Direction::NONE);
+    } else {
+        baseChar->setMovementDirection(_direction);
     }
 }

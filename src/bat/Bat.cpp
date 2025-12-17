@@ -1,5 +1,5 @@
-#include "Bat.h"
-#include "LevelGrid.h"
+#include "bat/Bat.h"
+#include "grid/LevelGrid.h"
 #include "GameObjects/Transform/Position.h"
 
 Bat::Bat(LevelGrid* grid, int cellSize, float speed)
@@ -9,4 +9,3 @@ Bat::Bat(LevelGrid* grid, int cellSize, float speed)
 void Bat::update(float deltaTime) {
     GameObject::update(deltaTime);
 }
-

@@ -15,7 +15,8 @@ Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventMana
     setMovingLeftSpritesheet(R"(resources/fireboy/walk-left.png)");
     setMovingRightSpritesheet(R"(resources/fireboy/walk-right.png)");
 
-    network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "fireboy"));
+    // SpawnEvent is now sent from Game::createCharacter()
+    // network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "fireboy"));
     getTransform()->getPosition()->setX(200);
 }
 

@@ -1,4 +1,4 @@
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
 #include <cmath>
 
 LevelGrid::LevelGrid(int width, int height, int cellSize) 

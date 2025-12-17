@@ -8,6 +8,9 @@
 
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
+#include "bat/Bat.h"
+#include "bat/BatSpriteRenderer.h"
+#include "grid/GridManager.h"
 #include "GameObjects/GameObject.h"
 
 class GameObjectFactory {
@@ -37,6 +40,10 @@ public:
 
     void setEventManager(EventManager * manager) {
         _manager = manager;
+    }
+
+    EventManager* getEventManager() const {
+        return _manager;
     }
 
 private:
@@ -72,6 +79,24 @@ private:
                 &GameEngine::getInstance(),
                 false
             );
+        });
+        
+        registerType("bat", [this](int parentId) -> std::unique_ptr<GameObject> {
+            LevelGrid* grid = GridManager::getGrid("Game");
+            if (!grid) {
+                return nullptr;
+            }
+            const int CELL_SIZE = 10;
+            auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+            
+            const int BAT_SIZE = CELL_SIZE * 4;
+            bat->getTransform()->getSize()->setWidth(BAT_SIZE);
+            bat->getTransform()->getSize()->setHeight(BAT_SIZE);
+            
+            auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
+            bat->addComponent(std::move(batRenderer));
+            
+            return bat;
         });
     }
 

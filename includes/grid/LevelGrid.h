@@ -1,7 +1,7 @@
 #ifndef VALIDATIEAPP_LEVELGRID_H
 #define VALIDATIEAPP_LEVELGRID_H
 
-#include "GridCell.h"
+#include "grid/GridCell.h"
 #include <vector>
 
 class LevelGrid {
@@ -23,12 +23,10 @@ public:
     void setCellSize(int cellSize) { _cellSize = cellSize; }
 
     const std::vector<std::vector<CellType>>& getGrid() const { return _grid; }
-    
-    // Pathfinding helper methods
+
     bool isWalkable(int x, int y) const;
     bool isWalkableWorld(float worldX, float worldY) const;
-    
-    // Coordinate conversion methods
+
     void worldToGrid(float worldX, float worldY, int& gridX, int& gridY) const;
     void gridToWorld(int gridX, int gridY, float& worldX, float& worldY) const;
 };

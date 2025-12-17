@@ -1,4 +1,4 @@
-#include "GridRenderer.h"
+#include "grid/GridRenderer.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 
 GridRenderer::GridRenderer(LevelGrid* grid, Scene* scene, const std::string& spritePath)
@@ -47,4 +47,3 @@ void GridRenderer::updateVisualization() {
     // For now, we'll just re-render the grid
     renderGrid();
 }
-

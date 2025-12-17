@@ -16,7 +16,8 @@ Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* event
     setMovingLeftSpritesheet(R"(resources/watergirl/walk-left.png)");
     setMovingRightSpritesheet(R"(resources/watergirl/walk-right.png)");
 
-    network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "watergirl"));
+    // SpawnEvent is now sent from Game::createCharacter() after proper registration
+    // network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "watergirl"));
     getTransform()->getPosition()->setX(600);
 }
 

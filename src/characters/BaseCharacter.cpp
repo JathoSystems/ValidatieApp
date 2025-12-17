@@ -62,6 +62,20 @@ void BaseCharacter::update(float delta) {
         auto* physics = getComponent<PhysicsComponent>();
         if (physics) {
             _controller->move(_direction, physics);
+        } else {
+            static float debugTimer = 0.0f;
+            debugTimer += delta;
+            if (debugTimer >= 2.0f) {
+                std::cout << "[BaseCharacter] WARNING: Character has no PhysicsComponent!" << std::endl;
+                debugTimer = 0.0f;
+            }
+        }
+    } else {
+        static float debugTimer = 0.0f;
+        debugTimer += delta;
+        if (debugTimer >= 2.0f) {
+            std::cout << "[BaseCharacter] WARNING: Character has no controller!" << std::endl;
+            debugTimer = 0.0f;
         }
     }
 }

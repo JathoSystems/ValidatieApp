@@ -15,6 +15,7 @@
 #include "server/PlayerManager.hpp"
 #include "server/packet/GameReady.hpp"
 #include "server/packet/PlayerAssignPacket.hpp"
+#include "bat/events/BatMoveEvent.hpp"
 
 int main() {
     try {
@@ -38,6 +39,10 @@ int main() {
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
             return std::make_shared<SpawnEvent>(0, "watergirl");
+        });
+
+        EventRegistry::getInstance()->registerEvent("batmove", []() {
+            return std::make_shared<BatMoveEvent>(0, 0.0f, 0.0f);
         });
 
         // Create server

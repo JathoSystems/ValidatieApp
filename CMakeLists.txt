@@ -48,6 +48,23 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
+        includes/grid/LevelGrid.h
+        src/grid/LevelGrid.cpp
+        includes/grid/GridCell.h
+        includes/grid/GridRenderer.h
+        src/grid/GridRenderer.cpp
+        includes/grid/GridManager.h
+        src/grid/GridManager.cpp
+        includes/bat/Bat.h
+        src/bat/Bat.cpp
+        includes/bat/BatAI.h
+        src/bat/BatAI.cpp
+        includes/bat/BatSpriteRenderer.h
+        src/bat/BatSpriteRenderer.cpp
+        includes/bat/events/BatMoveEvent.hpp
+        src/bat/events/BatMoveEvent.cpp
+        includes/SpawnEvent.hpp
+        src/SpawnEvent.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game
@@ -79,19 +96,23 @@ add_executable(Vuurjongen_Watermeisje_Game
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
-        src/LevelGrid.cpp
-        src/LevelGrid.h
-        src/GridCell.h
-        src/GridRenderer.cpp
-        src/GridRenderer.h
-        src/GridManager.cpp
-        src/GridManager.h
-        src/Bat.cpp
-        src/Bat.h
-        src/BatAI.cpp
-        src/BatAI.h
-        src/BatSpriteRenderer.cpp
-        src/BatSpriteRenderer.h
+        includes/grid/LevelGrid.h
+        src/grid/LevelGrid.cpp
+        includes/grid/GridCell.h
+        includes/grid/GridRenderer.h
+        src/grid/GridRenderer.cpp
+        includes/grid/GridManager.h
+        src/grid/GridManager.cpp
+        includes/bat/Bat.h
+        src/bat/Bat.cpp
+        includes/bat/BatAI.h
+        src/bat/BatAI.cpp
+        includes/bat/BatSpriteRenderer.h
+        src/bat/BatSpriteRenderer.cpp
+        includes/bat/events/BatMoveEvent.hpp
+        src/bat/events/BatMoveEvent.cpp
+        includes/SpawnEvent.hpp
+        src/SpawnEvent.cpp
 )
 
 include_directories("includes")

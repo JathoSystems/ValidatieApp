@@ -24,4 +24,3 @@ public:
 };
 
 #endif //VALIDATIEAPP_BAT_H
-

@@ -1,4 +1,4 @@
-#include "BatSpriteRenderer.h"
+#include "bat/BatSpriteRenderer.h"
 #include "GameObjects/GameObject.h"
 #include "GameObjects/Transform/Transform.h"
 #include "Scenes/Camera/Viewport.h"
@@ -75,4 +75,3 @@ void BatSpriteRenderer::render(const std::unique_ptr<Window>& window) {
     
     SDL_RenderTexture(renderer, sdlTexture, nullptr, &dstRect);
 }
-
