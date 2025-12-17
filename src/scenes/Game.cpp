@@ -98,13 +98,9 @@ void Game::onInitialRender() {
 
     if (characterState == "fireboy") {
         character = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
-        character->getTransform()->getPosition()->setX(640.0f);
     } else {
         character = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
-        character->getTransform()->getPosition()->setX(340.0f);
     }
-
-    std::cout << character->getTransform()->getPosition()->getX() << std::endl;
 
     addObject(std::move(character));
 
