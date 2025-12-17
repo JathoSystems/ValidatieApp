@@ -21,11 +21,11 @@
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
-#include "../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
 #include "Network/Packet/Handler/PacketHandlerFactory.hpp"
-#include "../includes/server/packet/GameReady.hpp"
 #include "scenes/Game.hpp"
 #include "scenes/Lobby.hpp"
+#include "server/packet/GameReady.hpp"
+#include "server/packet/PlayerAssignPacket.hpp"
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
 
