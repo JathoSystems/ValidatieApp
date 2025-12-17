@@ -53,6 +53,9 @@ void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_p
     PhysicsComponent *componentPointer = component.get();
     addComponent(std::move(component));
     engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
+
+    getTransform()->getPosition()->setX(startPos.getX());
+    getTransform()->getPosition()->setY(startPos.getY());
 }
 
 void BaseCharacter::setMovementDirection(Direction direction) {
