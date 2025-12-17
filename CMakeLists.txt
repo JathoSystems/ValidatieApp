@@ -7,6 +7,22 @@ set(CMAKE_CXX_STANDARD 20)
 # cmp0077
 cmake_policy(SET CMP0077 NEW)
 
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+set(SKIP_INSTALL_ALL TRUE)
+
+set(SDLTTF_INSTALL OFF CACHE BOOL "" FORCE)
+set(SDLTTF_VENDORED ON CACHE BOOL "" FORCE)
+set(PLUTOSVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(PLUTOSVG_INSTALL OFF CACHE BOOL "" FORCE)
+set(PLUTOVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(PLUTOVG_INSTALL OFF CACHE BOOL "" FORCE)
+
+macro(install)
+endmacro()
+
+macro(export)
+endmacro()
+
 add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/characters/Fireboy.hpp
         src/characters/Fireboy.cpp
@@ -63,11 +79,17 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
+        // src/LevelGrid.cpp
+        // src/LevelGrid.h
+        // src/GridCell.h
+        // src/GridRenderer.cpp
+        // src/GridRenderer.h
+        // src/GridManager.cpp
+        // src/GridManager.h
 )
 
 include_directories("includes")
 
-# Link gameengine library
 add_subdirectory(external/GameEngine)
 
 # Voor Game executable
@@ -90,6 +112,7 @@ add_custom_command(TARGET Vuurjongen_Watermeisje_Game POST_BUILD
         $<TARGET_FILE:Engine>
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE:SDL3_image::SDL3_image>
+        $<TARGET_FILE:box2d>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
         $<TARGET_FILE:box2d>
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje_Game>
