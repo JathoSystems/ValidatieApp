@@ -101,7 +101,7 @@ void Game::onInitialRender() {
     } else {
         character = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
     }
-    addObject(std::move(character));
+                                                                addObject(std::move(character));
 
     auto hud = std::make_unique<HUD>();
 

@@ -12,40 +12,19 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
-// [ToDo] fix duplicates
-BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+BaseCharacter::BaseCharacter(Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                              bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(network, getId(), eventManager);
-    if (activePlayer) {
-        auto keyInput = std::make_unique<KeyInputComponent>(this);
-        keyInput->setListener(_controller.get());
-        engine->getSystem<InputSystem>()->registerKeyComponent(keyInput.get());
-        addComponent(std::move(keyInput));
-    }
-
-    addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
-
-    getTransform()->getPosition()->setX(260);
-    getTransform()->getPosition()->setY(0);
-    getTransform()->getSize()->setWidth(50);
-    getTransform()->getSize()->setHeight(100);
-
-    std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
-        engine->getSystem<PhysicsSystem>()->getBox2DFacade());
-    component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
-    component->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    component->setGravityScale(1.0f);
-    component->setFixedRotation(true);
-
-    PhysicsComponent *componentPointer = component.get();
-    addComponent(std::move(component));
-    engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
+    initializeCharacter(getId(), startPos, network, eventManager, engine, activePlayer);
 }
 
-BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+BaseCharacter::BaseCharacter(int parentId, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer) : GameObject(parentId) {
-    _controller = std::make_unique<BaseCharacterController>(network, parentId, eventManager);
+    initializeCharacter(parentId, startPos, network, eventManager, engine, activePlayer);
+}
+
+void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+                                        GameEngine *engine, bool activePlayer) {
+    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager);
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
@@ -55,6 +34,7 @@ BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> networ
     }
 
     addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+
     getTransform()->getPosition()->setX(260);
     getTransform()->getPosition()->setY(0);
     getTransform()->getSize()->setWidth(50);

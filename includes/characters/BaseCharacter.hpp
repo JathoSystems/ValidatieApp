@@ -22,17 +22,17 @@ private:
     std::string falling;
     std::unique_ptr<BaseCharacterController> _controller;
     
-    // Animatie state tracking
     Animation _currentAnimation = Animation::IDLE;
     
-    // Interne methode die daadwerkelijk de animator switch doet
     void updateAnimator(Animation newAnimation);
-
+    void initializeCharacter(int id, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
+                             GameEngine *engine,
+                             bool activePlayer);
 public:
-    BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+    BaseCharacter(Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer);
 
-    BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+    BaseCharacter(int parentId, Position startPos, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer);
 
     void build();

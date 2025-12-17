@@ -7,8 +7,10 @@
 #include "SpawnEvent.hpp"
 #include "GameObjects/ObjectRegistry.hpp"
 
+Position startFireboy = Position(160.0f, 0.0f);
+
 Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                 bool active) : BaseCharacter(network, eventManager, engine, active) {
+                 bool active) : BaseCharacter(startFireboy, network, eventManager, engine, active) {
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");
@@ -19,7 +21,7 @@ Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventMana
 }
 
 Fireboy::Fireboy(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-    bool active): BaseCharacter(parentId, network, eventManager, engine, active) {
+    bool active): BaseCharacter(parentId, startFireboy, network, eventManager, engine, active) {
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");
