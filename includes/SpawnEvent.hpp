@@ -74,11 +74,22 @@ public:
         }
 
         std::unique_ptr<GameObject> object;
-        object = GameObjectFactory::getInstance().create(registryId, "fireboy");
+        object = GameObjectFactory::getInstance().create(registryId, objectName);
         if (!object) {
             std::cout << "Factory returned nullptr" << std::endl;
             return;
         }
+
+        float spawnX = 350.0f;
+        float spawnY = 300.0f;
+        if (objectName == "fireboy") {
+            spawnX = 350.0f;
+        } else if (objectName == "watergirl") {
+            spawnX = 550.0f;
+        }
+        
+        object->getTransform()->getPosition()->setX(spawnX);
+        object->getTransform()->getPosition()->setY(spawnY);
 
         try {
             scene->addObject(std::move(object));

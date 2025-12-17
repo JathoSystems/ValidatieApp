@@ -12,7 +12,7 @@
 
 class BaseCharacterController : public IKeyListener {
 private:
-    bool _grounded = true;
+    bool _grounded = false;
     Direction _movementDirection = Direction::NONE;
     float _movementSpeed = 300.0f;
     float _jumpingSpeed = 5000.0f;

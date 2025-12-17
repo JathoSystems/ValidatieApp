@@ -30,17 +30,24 @@ Data JumpEvent::deserialize(const Package &package) {
 }
 
 void JumpEvent::apply(GameObject *gameObject) {
-    PhysicsComponent *physics = gameObject->getComponent<PhysicsComponent>();
+    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject);
+    if (!baseChar) return;
 
+    PhysicsComponent *physics = gameObject->getComponent<PhysicsComponent>();
     if (!physics) return;
+
+
+    BaseCharacterController *controller = baseChar->getController();
+    if (controller && !controller->isGrounded()) {
+        return;
+    }
 
     float jumpForce = 10000;
     float vx, vy;
     physics->getVelocity(vx, vy);
     physics->setVelocity(vx, -jumpForce);
 
-    // if (BaseCharacter * baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
-    //     baseChar->removeComponent<Animator>(true);
-    //     baseChar->addComponent(std::make_unique<Animator>(baseChar->getJumpingSpritesheet(), 1, 4));
-    // }
+    if (controller) {
+        controller->setGrounded(false);
+    }
 }

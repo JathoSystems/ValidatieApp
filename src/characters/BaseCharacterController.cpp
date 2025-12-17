@@ -36,8 +36,6 @@ void BaseCharacterController::onKeyPress(Key key) {
         case Key::SPACE:
         case Key::W:
         case Key::UP:
-            if (!_grounded) break;
-
             _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
             break;
     }
