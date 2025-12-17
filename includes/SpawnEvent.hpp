@@ -25,12 +25,10 @@ public:
         return "spawn";
     }
 
-    // Zet registryId en objectName om naar een Package
     Package serialize() const override {
         Package p;
         p.push_back(registryId);
 
-        // Zet string om naar bytes
         for (char c: objectName) {
             p.push_back(static_cast<int8_t>(c));
         }
@@ -38,14 +36,12 @@ public:
         return p;
     }
 
-    // Lees registryId en objectName uit Package
     Data deserialize(const Package &package) override {
         Data data;
 
         if (package.size() >= 2) {
             registryId = package[0];
 
-            // String reconstrueren
             std::string name;
             for (size_t i = 1; i < package.size(); ++i) {
                 if (package[i] == 0) break;
@@ -79,17 +75,6 @@ public:
             std::cout << "Factory returned nullptr" << std::endl;
             return;
         }
-
-        float spawnX = 350.0f;
-        float spawnY = 300.0f;
-        if (objectName == "fireboy") {
-            spawnX = 350.0f;
-        } else if (objectName == "watergirl") {
-            spawnX = 550.0f;
-        }
-        
-        object->getTransform()->getPosition()->setX(spawnX);
-        object->getTransform()->getPosition()->setY(spawnY);
 
         try {
             scene->addObject(std::move(object));
