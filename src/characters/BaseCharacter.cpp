@@ -33,7 +33,7 @@ void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_p
         addComponent(std::move(keyInput));
     }
 
-    addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
+    // addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
 
     getTransform()->getPosition()->setX(startPos.getX());
     getTransform()->getPosition()->setY(startPos.getY());
