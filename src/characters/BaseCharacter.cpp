@@ -35,8 +35,8 @@ void BaseCharacter::initializeCharacter(int id, Position startPos, std::shared_p
 
     addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
 
-    getTransform()->getPosition()->setX(260);
-    getTransform()->getPosition()->setY(0);
+    getTransform()->getPosition()->setX(startPos.getX());
+    getTransform()->getPosition()->setY(startPos.getY());
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
