@@ -32,7 +32,7 @@ public:
         for (char c: objectName) {
             p.push_back(static_cast<int8_t>(c));
         }
-        p.push_back(0); // null-terminator
+        p.push_back(0);
         return p;
     }
 
