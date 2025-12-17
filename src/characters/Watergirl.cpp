@@ -9,9 +9,7 @@
 #include "Engine/GameEngine.h"
 #include "GameObjects/Spritesheet/Animator.h"
 
-Position startWatergirl = Position(360.0f, 0.0f);
-
-Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool active): BaseCharacter(startWatergirl, network, eventManager, engine, active){
+Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool active): BaseCharacter(Position(360.0f, 0.0f), network, eventManager, engine, active){
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");
     setIdleSpritesheet(R"(resources/watergirl/idle.png)");
@@ -22,7 +20,7 @@ Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* event
 }
 
 Watergirl::Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-    GameEngine *engine, bool active): BaseCharacter(parentId, startWatergirl, network, eventManager, engine, active) {
+    GameEngine *engine, bool active): BaseCharacter(parentId, Position(360.0f, 0.0f), network, eventManager, engine, active) {
 
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");
