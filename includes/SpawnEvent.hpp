@@ -56,6 +56,11 @@ public:
         return data;
     }
 
+    void apply(GameObject * gameObject) override {
+        // When apply is called (from NetworkEventPacketHandler), spawn the object
+        spawn();
+    }
+
     void spawn() {
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
         if (!system) {
@@ -81,9 +86,6 @@ public:
         } catch (const std::exception &e) {
             std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
         }
-    }
-
-    void apply(GameObject * gameObject) override {
     }
 };
 

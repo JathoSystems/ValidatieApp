@@ -1,14 +1,11 @@
-//
-// Created by jusra on 15-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_GAMEOBJECTFACTORY_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_GAMEOBJECTFACTORY_HPP
 
 #include <functional>
 #include <memory>
+#include <unordered_map>
+#include <iostream>
 
-#include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/GameObject.h"
@@ -29,7 +26,7 @@ public:
     std::unique_ptr<GameObject> create(int parentId, const std::string& name) {
         auto it = creators_.find(name);
         if (it != creators_.end()) {
-            return it->second(parentId); // Roept de geregistreerde functie aan
+            return it->second(parentId);
         }
         return nullptr;
     }
@@ -44,20 +41,40 @@ public:
 
 private:
     std::shared_ptr<NetworkSystem> _network;
-    EventManager * _manager;
+    EventManager * _manager = nullptr;
 
     GameObjectFactory() {
-        std::shared_ptr<NetworkSystem> network = _network;
-        EventManager * manager = _manager;
-        registerType("fireboy", [network, manager](int parentId) {
-            return std::make_unique<Fireboy>(parentId, network, manager, &GameEngine::getInstance(), false);
+        // Capture 'this' to access member variables at runtime
+        registerType("fireboy", [this](int parentId) -> std::unique_ptr<GameObject> {
+            if (!_network || !_manager) {
+                std::cerr << "[Factory] Network or EventManager not set!" << std::endl;
+                return nullptr;
+            }
+            return std::make_unique<Fireboy>(
+                parentId,
+                _network,
+                _manager,
+                &GameEngine::getInstance(),
+                false
+            );
         });
 
-        registerType("watergirl", [network, manager](int parentId) {
+        registerType("watergirl", [this](int parentId) -> std::unique_ptr<GameObject> {
+            if (!_network || !_manager) {
+                std::cerr << "[Factory] Network or EventManager not set!" << std::endl;
+                return nullptr;
+            }
             std::cout << "Watergirl maken" << std::endl;
-            return std::make_unique<Watergirl>(parentId, network, manager, &GameEngine::getInstance(), false);
+            return std::make_unique<Watergirl>(
+                parentId,
+                _network,
+                _manager,
+                &GameEngine::getInstance(),
+                false
+            );
         });
     }
+
     GameObjectFactory(const GameObjectFactory&) = delete;
     GameObjectFactory& operator=(const GameObjectFactory&) = delete;
 

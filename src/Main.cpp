@@ -22,9 +22,12 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 #include "../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
-#include "Network/Packet/Packets/GameReady.hpp"
+#include "Network/Packet/Handler/PacketHandlerFactory.hpp"
+#include "../includes/server/packet/GameReady.hpp"
 #include "scenes/Game.hpp"
 #include "scenes/Lobby.hpp"
+#include "server/packet/handler/GameReadyPacketHandler.hpp"
+#include "server/packet/handler/PlayerAssignPacketHandler.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -60,8 +63,13 @@ int main() {
         EventManager manager(network->getMiddleware());
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
+
         PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+        PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
+
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+        PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
+
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();

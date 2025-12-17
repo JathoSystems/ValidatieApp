@@ -29,6 +29,10 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
         src/scenes/Game.cpp
+        src/server/packet/handler/PlayerAssignPacketHandler.cpp
+        includes/server/packet/handler/PlayerAssignPacketHandler.hpp
+        src/server/packet/handler/GameReadyPacketHandler.cpp
+        includes/server/packet/handler/GameReadyPacketHandler.hpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -53,6 +57,12 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
         src/scenes/Game.cpp
+        includes/server/packet/PlayerAssignPacket.hpp
+        includes/server/packet/GameReady.hpp
+        src/server/packet/handler/PlayerAssignPacketHandler.cpp
+        includes/server/packet/handler/PlayerAssignPacketHandler.hpp
+        src/server/packet/handler/GameReadyPacketHandler.cpp
+        includes/server/packet/handler/GameReadyPacketHandler.hpp
 )
 
 include_directories("includes")

@@ -16,7 +16,7 @@
 #include "GameObjects/ObjectRegistry.hpp"
 #include "server/PlayerManager.hpp"
 #include "../../external/GameEngine/includes/Network/Packet/Packets/PlayerAssignPacket.hpp"
-#include "Network/Packet/Packets/GameReady.hpp"
+#include "../../includes/server/packet/GameReady.hpp"
 
 int main() {
     try {
