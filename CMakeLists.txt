@@ -30,6 +30,9 @@ add_executable(Vuurjongen_Watermeisje
         src/GridRenderer.h
         src/GridManager.cpp
         src/GridManager.h
+        src/Levels/level_1.txt
+        src/LevelCreator.h
+        src/LevelBuilder.h
 )
 
 add_subdirectory(external/GameEngine)
@@ -54,3 +57,5 @@ add_custom_command(TARGET Vuurjongen_Watermeisje POST_BUILD
         ${CMAKE_CURRENT_SOURCE_DIR}/resources
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje>/resources
 )
+
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/src/Levels DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
