@@ -48,16 +48,17 @@ int main() {
         });
 
         // Create server
-        auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 10); // Allow more connections for multiple lobbies
+        auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 10);
+        // Allow more connections for multiple lobbies
 
         Server server(io_context, std::move(listener), port);
         PlayerManager playerManager;
         LobbyManager lobbyManager;
-        
+
         server.onConnect([&server](int32_t clientId) {
             std::cout << "Player " << clientId << " connected\n";
         });
-        
+
         // Note: onDisconnect callback is not available in Server class
         // Disconnection cleanup would need to be handled through other means
         // For now, we'll handle it when trying to send packets fails
@@ -65,22 +66,23 @@ int main() {
         // Set packet callback to handle all packets
         server.setPacketCallback([&server, &lobbyManager, &playerManager](int32_t clientId, const Packet &packet) {
             int packetId = packet.getId();
-            
+
             // Handle CreateLobbyPacket
             if (packetId == 103) {
                 CreateLobbyPacket createPacket;
                 createPacket.getBuffer().setData(packet.getBuffer().getData());
                 createPacket.deserialize();
-                
+
                 int lobbyId = lobbyManager.createLobby(createPacket.levelId, clientId);
-                std::cout << "Lobby " << lobbyId << " created for level " << createPacket.levelId << " by player " << clientId << "\n";
-                
+                std::cout << "Lobby " << lobbyId << " created for level " << createPacket.levelId << " by player " <<
+                        clientId << "\n";
+
                 // Assign fireboy role to first player (lobby creator)
                 playerManager.join(clientId, "fireboy");
                 PlayerAssignPacket assign("fireboy");
                 assign.serialize();
                 server.sendToClient(clientId, assign);
-                
+
                 // Send lobby info to creator
                 LobbyInfoPacket info(lobbyId, createPacket.levelId, 1, "waiting");
                 info.serialize();
@@ -91,35 +93,35 @@ int main() {
                 JoinLobbyPacket joinPacket;
                 joinPacket.getBuffer().setData(packet.getBuffer().getData());
                 joinPacket.deserialize();
-                
-                Lobby* lobby = lobbyManager.getLobby(joinPacket.lobbyId);
-                if (lobby && !lobby->isFull()) {
-                    bool joined = lobbyManager.joinLobby(joinPacket.lobbyId, clientId, joinPacket.levelId);
-                    if (joined) {
-                        // Assign watergirl role to second player
-                        playerManager.join(clientId, "watergirl");
-                        PlayerAssignPacket assign("watergirl");
-                        assign.serialize();
-                        server.sendToClient(clientId, assign);
-                        
-                        // Update lobby info for both players
-                        LobbyInfoPacket info(lobby->lobbyId, lobby->levelId, lobby->getPlayerCount(), 
-                                             lobby->isFull() ? "ready" : "waiting");
-                        info.serialize();
-                        server.broadcast(info);
-                        
-                        // If lobby is full, send GameReadyPacket to both players
-                        if (lobby->isFull()) {
-                            GameReadyPacket ready(lobby->levelId);
-                            ready.serialize();
-                            server.broadcast(ready);
-                        }
-                    } else {
-                        std::cout << "Failed to join lobby " << joinPacket.lobbyId << " for player " << clientId << "\n";
-                    }
-                } else {
+
+                Lobby *lobby = lobbyManager.getLobby(joinPacket.lobbyId);
+                if (!lobby && lobby->isFull()) {
                     std::cout << "Lobby " << joinPacket.lobbyId << " not found or full\n";
+                    return;
                 }
+
+                bool joined = lobbyManager.joinLobby(joinPacket.lobbyId, clientId, joinPacket.levelId);
+                if (!joined) {
+                    std::cout << "Failed to join lobby " << joinPacket.lobbyId << " for player " << clientId << "\n";
+                    return;
+                }
+                // Assign watergirl role to second player
+                playerManager.join(clientId, "watergirl");
+                PlayerAssignPacket assign("watergirl");
+                assign.serialize();
+                server.sendToClient(clientId, assign);
+
+                LobbyInfoPacket info(lobby->lobbyId, lobby->levelId, lobby->getPlayerCount(),
+                                     lobby->isFull() ? "ready" : "waiting");
+                info.serialize();
+                lobby->broadcastInLobby(info, server);
+
+                if (!lobby->isFull()) return;
+
+                GameReadyPacket ready(lobby->levelId);
+                ready.serialize();
+
+                lobby->broadcastInLobby(ready, server);
             }
             // Handle NetworkEventPacket
             else if (packetId == 100) {
@@ -142,9 +144,9 @@ int main() {
                         // Broadcast to other players in the same lobby
                         int lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
                         if (lobbyId > 0) {
-                            Lobby* lobby = lobbyManager.getLobby(lobbyId);
+                            Lobby *lobby = lobbyManager.getLobby(lobbyId);
                             if (lobby) {
-                                for (int32_t playerId : lobby->players) {
+                                for (int32_t playerId: lobby->players) {
                                     if (playerId != clientId) {
                                         server.sendToClient(playerId, packet);
                                     }

@@ -76,20 +76,15 @@ void LevelScene::createBasicLevelGrid() {
 }
 
 void LevelScene::setupLevel() {
-    std::cout << "[LevelScene] Getting GameEngine..." << std::endl;
     GameEngine* gameEngine = &GameEngine::getInstance();
-    std::cout << "[LevelScene] Getting PhysicsSystem..." << std::endl;
     PhysicsSystem* physicsSystem = gameEngine->getSystem<PhysicsSystem>();
 
-    std::cout << "[LevelScene] Setting gravity..." << std::endl;
     physicsSystem->setGravity(0.0f, 981.0f);
 
-    std::cout << "[LevelScene] Creating camera..." << std::endl;
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360));
     setCamera(std::move(camera));
 
-    std::cout << "[LevelScene] Adding level text..." << std::endl;
     auto levelText = std::make_unique<Text>("Level " + std::to_string(_levelNumber) + (_isOnline ? " (Online)" : ""));
     levelText->setColor(std::make_unique<Color>(255, 255, 255));
     auto levelTextObj = std::make_unique<GameObject>();
@@ -100,7 +95,6 @@ void LevelScene::setupLevel() {
     levelTextObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(levelTextObj));
 
-    std::cout << "[LevelScene] Adding back button..." << std::endl;
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([]() {
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
@@ -113,7 +107,6 @@ void LevelScene::setupLevel() {
     backButtonObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(backButtonObj));
 
-    std::cout << "[LevelScene] Creating physics blocks..." << std::endl;
     int cellSize = _levelGrid->getCellSize();
 
 
@@ -147,8 +140,6 @@ void LevelScene::setupLevel() {
             }
         }
     }
-    
-    std::cout << "[LevelScene] Created " << blockCount << " individual blocks" << std::endl;
 }
 
 void LevelScene::setupCharacters() {

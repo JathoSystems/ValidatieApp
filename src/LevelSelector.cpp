@@ -97,7 +97,9 @@ void LevelSelector::onPlayClicked(int levelNumber) {
     std::string sceneName = "level_" + std::to_string(levelNumber);
     
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) {
-        auto levelScene = std::make_unique<LevelScene>(levelNumber, false, _network, _eventManager);        levelScene->initialize();        _sceneSystem->addScene(std::move(levelScene));
+        auto levelScene = std::make_unique<LevelScene>(levelNumber, false, nullptr, _eventManager);
+        levelScene->initialize();
+        _sceneSystem->addScene(std::move(levelScene));
     }
     
     _sceneSystem->setScene(sceneName);

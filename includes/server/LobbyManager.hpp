@@ -9,15 +9,23 @@
 #include <vector>
 #include <cstdint>
 
+#include "Network/Server.h"
+
 struct Lobby {
     int lobbyId;
     int levelId;
-    std::vector<int32_t> players; // client IDs
+    std::vector<int32_t> players;
     
     Lobby(int id, int level) : lobbyId(id), levelId(level) {}
     
     int getPlayerCount() const { return static_cast<int>(players.size()); }
     bool isFull() const { return players.size() >= 2; }
+
+    void broadcastInLobby(const Packet& packet, Server& server) const {
+        for (int32_t playerId : players) {
+            server.sendToClient(playerId, packet);
+        }
+    }
 };
 
 class LobbyManager {
