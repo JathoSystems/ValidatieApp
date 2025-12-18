@@ -4,6 +4,7 @@
 
 #include "server/LobbyManager.hpp"
 #include <algorithm>
+#include <iostream>
 
 int LobbyManager::createLobby(int levelId, int32_t hostId) {
     int lobbyId = _nextLobbyId++;

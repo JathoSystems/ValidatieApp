@@ -164,12 +164,12 @@ void LevelScene::setupCharacters() {
             addObject(std::move(watergirl));
         }
     } else {
-        auto fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
+        auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);
         fireboy->getTransform()->getPosition()->setX(200);
         fireboy->getTransform()->getPosition()->setY(500);
         addObject(std::move(fireboy));
 
-        auto watergirl = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
+        auto watergirl = std::make_unique<Watergirl>(nullptr, _eventManager, gameEngine, true);
         watergirl->getTransform()->getPosition()->setX(400);
         watergirl->getTransform()->getPosition()->setY(500);
         addObject(std::move(watergirl));

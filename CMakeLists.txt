@@ -45,7 +45,12 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/server/LobbyManager.cpp
         includes/server/packet/CreateLobbyPacket.hpp
         includes/server/packet/JoinLobbyPacket.hpp
-        includes/server/packet/LobbyInfoPacket.hpp
+        src/server/packet/handler/LobbyInfoPacketHandler.cpp
+        includes/server/packet/handler/LobbyInfoPacketHandler.hpp
+        includes/scenes/LevelScene.hpp
+        src/scenes/LevelScene.cpp
+        src/LevelGrid.cpp
+        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp

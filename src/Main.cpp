@@ -65,7 +65,29 @@ int main() {
 
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
+        network->connect(getLocalIPAddress(), 7534);
+        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
+            }
+
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
+
         EventManager manager(network->getMiddleware());
+        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
+            }
+
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 

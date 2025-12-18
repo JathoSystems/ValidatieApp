@@ -77,9 +77,9 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
 
     // Handle horizontal movement
     float vx = 0.0f;
-    if (_movementDirection == Direction::EAST) {
+    if (direction == Direction::EAST) {
         vx = -_movementSpeed;
-    } else if (_movementDirection == Direction::WEST) {
+    } else if (direction == Direction::WEST) {
         vx = _movementSpeed;
     }
     

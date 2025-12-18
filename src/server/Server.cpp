@@ -140,15 +140,20 @@ int main() {
                     EventRegistry::getInstance()->createEvent(eventName);
                     auto event = EventRegistry::getInstance()->getEvent(eventName);
 
+                    std::cout << "Event came in " << eventName << " from player " << clientId << "\n";
+
                     if (event) {
                         event->deserialize(eventData);
                         // Broadcast to other players in the same lobby
                         int lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
+                        std::cout << lobbyId << "\n";
                         if (lobbyId > 0) {
                             Lobby* lobby = lobbyManager.getLobby(lobbyId);
                             if (lobby) {
+                                std::cout << "Broadcasting event to lobby " << lobbyId << "\n";
                                 for (int32_t playerId : lobby->players) {
                                     if (playerId != clientId) {
+                                        std::cout << "Send to client\n";
                                         server.sendToClient(playerId, packet);
                                     }
                                 }

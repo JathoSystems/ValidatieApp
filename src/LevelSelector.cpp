@@ -10,30 +10,6 @@
 #include <asio.hpp>
 #include <iostream>
 
-namespace {
-    std::string getLocalIPAddress() {
-        try {
-            asio::io_context io_context;
-            asio::ip::tcp::resolver resolver(io_context);
-            asio::ip::tcp::resolver::query query(asio::ip::host_name(), "");
-            asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
-            asio::ip::tcp::resolver::iterator end;
-
-            while(it != end) {
-                asio::ip::tcp::endpoint endpoint = *it++;
-                asio::ip::address addr = endpoint.address();
-
-                if(addr.is_v4() && !addr.is_loopback()) {
-                    return addr.to_string();
-                }
-            }
-        } catch (std::exception& e) {
-            std::cerr << "Error getting IP: " << e.what() << std::endl;
-        }
-        return "127.0.0.1";
-    }
-}
-
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager)
     : _sceneSystem(sceneSystem), _network(network), _eventManager(eventManager) {
 }

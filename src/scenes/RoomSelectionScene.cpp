@@ -30,14 +30,6 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     // Create New Lobby Button
     auto createButton = std::make_unique<Button>("Create New Lobby", std::make_unique<Color>(0, 200, 0));
     createButton->setOnClick([this]() {
-        // Connect to server
-        std::string ip = "127.0.0.1"; // Default to localhost, should be configurable
-        auto result = _network->connect(ip, 7534);
-        if (!result.isSuccess()) {
-            std::cerr << "Failed to connect to server: " << result.message << std::endl;
-            return;
-        }
-        
         CreateLobbyPacket packet(_selectedLevel);
         packet.serialize();
         // Send packet through NetworkSystem
@@ -110,14 +102,6 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     auto joinButton = std::make_unique<Button>("Join Lobby", std::make_unique<Color>(200, 100, 0));
     joinButton->setOnClick([this]() {
         if (_currentLobbyIdInput > 0) {
-            // Connect to server
-            std::string ip = "127.0.0.1"; // Default to localhost, should be configurable
-            auto result = _network->connect(ip, 7534);
-            if (!result.isSuccess()) {
-                std::cerr << "Failed to connect to server: " << result.message << std::endl;
-                return;
-            }
-            
             JoinLobbyPacket packet(_currentLobbyIdInput);
             packet.serialize();
             // Send packet through NetworkSystem
