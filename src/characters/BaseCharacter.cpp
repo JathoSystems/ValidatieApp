@@ -13,12 +13,12 @@
 #include "Physics/PhysicsSystem.h"
 
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                             bool activePlayer, KeyBindings bindings) {
+                             bool activePlayer, KeyBindings bindings): Broadcastable(this) {
     initializeCharacter(getId(), network, eventManager, engine, activePlayer, bindings);
 }
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : GameObject(parentId) {
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : Broadcastable(this, parentId) {
     initializeCharacter(parentId, network, eventManager, engine, activePlayer, bindings);
 }
 

@@ -3,6 +3,7 @@
 #include "BaseCharacterController.hpp"
 #include "Engine/GameEngine.h"
 #include "events/MoveEvent.hpp"
+#include "GameObjects/Broadcastable.h"
 #include "GameObjects/GameObject.h"
 
 enum class Animation {
@@ -13,7 +14,7 @@ enum class Animation {
     FALLING
 };
 
-class BaseCharacter : public GameObject {
+class BaseCharacter : public GameObject , public Broadcastable {
 private:
     std::string idle;
     std::string left;
