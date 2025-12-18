@@ -14,12 +14,18 @@ int LobbyManager::createLobby(int levelId, int32_t hostId) {
     return lobbyId;
 }
 
-bool LobbyManager::joinLobby(int lobbyId, int32_t clientId) {
+bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
     auto it = _lobbies.find(lobbyId);
     if (it == _lobbies.end() || it->second.isFull()) {
         return false;
     }
-    
+
+    std::cerr << "Attempting to join lobby " << lobbyId << " for level " << levelId << ", level of lobby is: " << it->second.levelId << std::endl;
+    if (levelId != it->second.levelId) {
+        std::cerr << "Level ID mismatch when joining lobby: " << levelId << " != " << it->second.levelId << std::endl;
+        return false;
+    }
+
     // Check if player already in lobby
     for (auto& pair : _lobbies) {
         auto& players = pair.second.players;

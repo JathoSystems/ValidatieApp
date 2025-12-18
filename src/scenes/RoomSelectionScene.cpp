@@ -102,7 +102,7 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     auto joinButton = std::make_unique<Button>("Join Lobby", std::make_unique<Color>(200, 100, 0));
     joinButton->setOnClick([this]() {
         if (_currentLobbyIdInput > 0) {
-            JoinLobbyPacket packet(_currentLobbyIdInput);
+            JoinLobbyPacket packet(_currentLobbyIdInput, _selectedLevel);
             packet.serialize();
             // Send packet through NetworkSystem
             _network->send(packet);

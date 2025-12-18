@@ -94,10 +94,8 @@ int main() {
                 
                 Lobby* lobby = lobbyManager.getLobby(joinPacket.lobbyId);
                 if (lobby && !lobby->isFull()) {
-                    bool joined = lobbyManager.joinLobby(joinPacket.lobbyId, clientId);
+                    bool joined = lobbyManager.joinLobby(joinPacket.lobbyId, clientId, joinPacket.levelId);
                     if (joined) {
-                        std::cout << "Player " << clientId << " joined lobby " << joinPacket.lobbyId << "\n";
-                        
                         // Assign watergirl role to second player
                         playerManager.join(clientId, "watergirl");
                         PlayerAssignPacket assign("watergirl");
@@ -112,7 +110,6 @@ int main() {
                         
                         // If lobby is full, send GameReadyPacket to both players
                         if (lobby->isFull()) {
-                            std::cout << "Lobby " << joinPacket.lobbyId << " is full, starting game for level " << lobby->levelId << "\n";
                             GameReadyPacket ready(lobby->levelId);
                             ready.serialize();
                             server.broadcast(ready);
@@ -140,20 +137,15 @@ int main() {
                     EventRegistry::getInstance()->createEvent(eventName);
                     auto event = EventRegistry::getInstance()->getEvent(eventName);
 
-                    std::cout << "Event came in " << eventName << " from player " << clientId << "\n";
-
                     if (event) {
                         event->deserialize(eventData);
                         // Broadcast to other players in the same lobby
                         int lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
-                        std::cout << lobbyId << "\n";
                         if (lobbyId > 0) {
                             Lobby* lobby = lobbyManager.getLobby(lobbyId);
                             if (lobby) {
-                                std::cout << "Broadcasting event to lobby " << lobbyId << "\n";
                                 for (int32_t playerId : lobby->players) {
                                     if (playerId != clientId) {
-                                        std::cout << "Send to client\n";
                                         server.sendToClient(playerId, packet);
                                     }
                                 }

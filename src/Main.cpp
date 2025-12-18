@@ -100,8 +100,7 @@ int main() {
         PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
         PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
         PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
-        
-        // Set network and event manager for LobbyInfoPacketHandler
+
         auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
         LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
         PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);

@@ -27,7 +27,7 @@ private:
 
 public:
     int createLobby(int levelId, int32_t hostId);
-    bool joinLobby(int lobbyId, int32_t clientId);
+    bool joinLobby(int lobbyId, int32_t clientId, int levelId);
     void leaveLobby(int lobbyId, int32_t clientId);
     Lobby* getLobby(int lobbyId);
     int getLobbyIdForPlayer(int32_t clientId);
