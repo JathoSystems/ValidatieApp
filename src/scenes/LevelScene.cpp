@@ -115,116 +115,40 @@ void LevelScene::setupLevel() {
 
     std::cout << "[LevelScene] Creating physics blocks..." << std::endl;
     int cellSize = _levelGrid->getCellSize();
+
+
+    // Create individual blocks for each ground cell
+    int blockCount = 0;
+    for (int x = 0; x < _levelGrid->getWidth(); ++x) {
+        for (int y = 0; y < _levelGrid->getHeight(); ++y) {
+            if (_levelGrid->getCellType(x, y) == CellType::Ground) {
+                blockCount++;
+                
+                auto block = std::make_unique<GameObject>();
+                block->getTransform()->getPosition()->setX(x * cellSize + cellSize / 2.0f);
+                block->getTransform()->getPosition()->setY(y * cellSize + cellSize / 2.0f);
+                block->getTransform()->getSize()->setWidth(cellSize);
+                block->getTransform()->getSize()->setHeight(cellSize);
+                block->setLayer(0); // Background layer
+
+                auto physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
+                physics->setBodyType(BodyType::STATIC);
+                physics->setCollider(std::make_unique<BoxCollider>(cellSize, cellSize));
+                physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
+
+                PhysicsComponent* physicsPtr = physics.get();
+                block->addComponent(std::move(physics));
+                physicsSystem->registerComponent(physicsPtr);
+
+                auto sprite = std::make_unique<SpriteRenderer>("resources/square.png");
+                block->addComponent(std::move(sprite));
+
+                addObject(std::move(block));
+            }
+        }
+    }
     
-    // Use combined colliders for level geometry instead of individual blocks
-    // This avoids the 70+ object creation issue
-    
-    // Bottom ground (full width)
-    auto groundBlock = std::make_unique<GameObject>();
-    groundBlock->getTransform()->getPosition()->setX(640);  // Center of screen
-    groundBlock->getTransform()->getPosition()->setY(17 * cellSize + cellSize / 2.0f);
-    groundBlock->getTransform()->getSize()->setWidth(32 * cellSize);
-    groundBlock->getTransform()->getSize()->setHeight(cellSize);
-    
-    auto groundPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    groundPhysics->setBodyType(BodyType::STATIC);
-    groundPhysics->setCollider(std::make_unique<BoxCollider>(32 * cellSize, cellSize));
-    groundPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* groundPhysicsPtr = groundPhysics.get();
-    groundBlock->addComponent(std::move(groundPhysics));
-    physicsSystem->registerComponent(groundPhysicsPtr);
-    addObject(std::move(groundBlock));
-    
-    // Left wall
-    auto leftWall = std::make_unique<GameObject>();
-    leftWall->getTransform()->getPosition()->setX(cellSize / 2.0f);
-    leftWall->getTransform()->getPosition()->setY(360);
-    leftWall->getTransform()->getSize()->setWidth(cellSize);
-    leftWall->getTransform()->getSize()->setHeight(18 * cellSize);
-    
-    auto leftPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    leftPhysics->setBodyType(BodyType::STATIC);
-    leftPhysics->setCollider(std::make_unique<BoxCollider>(cellSize, 18 * cellSize));
-    leftPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* leftPhysicsPtr = leftPhysics.get();
-    leftWall->addComponent(std::move(leftPhysics));
-    physicsSystem->registerComponent(leftPhysicsPtr);
-    addObject(std::move(leftWall));
-    
-    // Right wall
-    auto rightWall = std::make_unique<GameObject>();
-    rightWall->getTransform()->getPosition()->setX(31 * cellSize + cellSize / 2.0f);
-    rightWall->getTransform()->getPosition()->setY(360);
-    rightWall->getTransform()->getSize()->setWidth(cellSize);
-    rightWall->getTransform()->getSize()->setHeight(18 * cellSize);
-    
-    auto rightPhysics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    rightPhysics->setBodyType(BodyType::STATIC);
-    rightPhysics->setCollider(std::make_unique<BoxCollider>(cellSize, 18 * cellSize));
-    rightPhysics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* rightPhysicsPtr = rightPhysics.get();
-    rightWall->addComponent(std::move(rightPhysics));
-    physicsSystem->registerComponent(rightPhysicsPtr);
-    addObject(std::move(rightWall));
-    
-    // Platform 1 (left, y=12)
-    auto platform1 = std::make_unique<GameObject>();
-    platform1->getTransform()->getPosition()->setX(8.5f * cellSize);
-    platform1->getTransform()->getPosition()->setY(12 * cellSize + cellSize / 2.0f);
-    platform1->getTransform()->getSize()->setWidth(7 * cellSize);
-    platform1->getTransform()->getSize()->setHeight(cellSize);
-    
-    auto plat1Physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    plat1Physics->setBodyType(BodyType::STATIC);
-    plat1Physics->setCollider(std::make_unique<BoxCollider>(7 * cellSize, cellSize));
-    plat1Physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* plat1PhysicsPtr = plat1Physics.get();
-    platform1->addComponent(std::move(plat1Physics));
-    physicsSystem->registerComponent(plat1PhysicsPtr);
-    addObject(std::move(platform1));
-    
-    // Platform 2 (right, y=12)
-    auto platform2 = std::make_unique<GameObject>();
-    platform2->getTransform()->getPosition()->setX(23.5f * cellSize);
-    platform2->getTransform()->getPosition()->setY(12 * cellSize + cellSize / 2.0f);
-    platform2->getTransform()->getSize()->setWidth(7 * cellSize);
-    platform2->getTransform()->getSize()->setHeight(cellSize);
-    
-    auto plat2Physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    plat2Physics->setBodyType(BodyType::STATIC);
-    plat2Physics->setCollider(std::make_unique<BoxCollider>(7 * cellSize, cellSize));
-    plat2Physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* plat2PhysicsPtr = plat2Physics.get();
-    platform2->addComponent(std::move(plat2Physics));
-    physicsSystem->registerComponent(plat2PhysicsPtr);
-    addObject(std::move(platform2));
-    
-    // Platform 3 (center, y=8)
-    auto platform3 = std::make_unique<GameObject>();
-    platform3->getTransform()->getPosition()->setX(16 * cellSize);
-    platform3->getTransform()->getPosition()->setY(8 * cellSize + cellSize / 2.0f);
-    platform3->getTransform()->getSize()->setWidth(8 * cellSize);
-    platform3->getTransform()->getSize()->setHeight(cellSize);
-    
-    auto plat3Physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-    plat3Physics->setBodyType(BodyType::STATIC);
-    plat3Physics->setCollider(std::make_unique<BoxCollider>(8 * cellSize, cellSize));
-    plat3Physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-    PhysicsComponent* plat3PhysicsPtr = plat3Physics.get();
-    platform3->addComponent(std::move(plat3Physics));
-    physicsSystem->registerComponent(plat3PhysicsPtr);
-    addObject(std::move(platform3));
-    
-    std::cout << "[LevelScene] Created 6 combined colliders" << std::endl;
-    
-    // Add grid renderer to visualize the level (renders all ground cells)
-    std::cout << "[LevelScene] Adding grid renderer..." << std::endl;
-    auto gridRendererObj = std::make_unique<GameObject>();
-    gridRendererObj->setLayer(0); // Render behind other objects
-    gridRendererObj->addComponent(std::make_unique<GridRendererComponent>(_levelGrid.get()));
-    addObject(std::move(gridRendererObj));
-    
-    std::cout << "[LevelScene] Level setup complete" << std::endl;
+    std::cout << "[LevelScene] Created " << blockCount << " individual blocks" << std::endl;
 }
 
 void LevelScene::setupCharacters() {
