@@ -30,7 +30,8 @@ public:
     }
 
     std::string getNextRole() {
-        return _players.empty() ? _roles[0] : _roles[1];
+        // First player gets fireboy, second gets watergirl
+        return _players.empty() ? _roles[1] : _roles[0]; // roles[1] is fireboy, roles[0] is watergirl
     }
 
     void join(int32_t clientId, std::string role);

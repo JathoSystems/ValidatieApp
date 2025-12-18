@@ -30,6 +30,10 @@
 #include "server/packet/PlayerAssignPacket.hpp"
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
+#include "server/packet/handler/LobbyInfoPacketHandler.hpp"
+#include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/CreateLobbyPacket.hpp"
+#include "server/packet/JoinLobbyPacket.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -70,7 +74,15 @@ int main() {
 
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
         PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
-
+        
+        PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
+        PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
+        PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
+        
+        // Set network and event manager for LobbyInfoPacketHandler
+        auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
+        LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
+        PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();

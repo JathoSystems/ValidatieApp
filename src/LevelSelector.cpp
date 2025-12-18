@@ -1,5 +1,6 @@
 #include "LevelSelector.h"
 #include "scenes/LevelScene.hpp"
+#include "scenes/RoomSelectionScene.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
 #include "Scenes/Camera/FixedCamera.h"
@@ -155,20 +156,12 @@ void LevelSelector::setupNetworkCallbacks() {
 }
 
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
-    std::cout << "[NetworkSystem] Attempting to connect..." << std::endl;
-    auto result = _network->connect(getLocalIPAddress(), 7534);
-    if (!result.isSuccess()) {
-        std::cerr << "Failed to connect to server: " << result.message << std::endl;
-        return;
-    }
+    // Navigate to room selection scene for this level
+    std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     
-    std::cout << "[NetworkSystem] Connected successfully!" << std::endl;
+    // Create the room selection scene (addScene handles duplicates or we can track)
+    auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber);
+    _sceneSystem->addScene(std::move(roomScene));
     
-    setupNetworkCallbacks();
-    
-    std::string sceneName = "level_" + std::to_string(levelNumber) + "_online";
-    auto onlineScene = std::make_unique<LevelScene>(levelNumber, true, _network, _eventManager);
-    onlineScene->initialize();
-    _sceneSystem->addScene(std::move(onlineScene));
     _sceneSystem->setScene(sceneName);
 }
