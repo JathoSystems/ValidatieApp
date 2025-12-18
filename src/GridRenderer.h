@@ -14,7 +14,7 @@ private:
     std::string _spritePath;
 
 public:
-    GridRenderer(LevelGrid* grid, Scene* scene, const std::string& spritePath = "resources/sprite2.png");
+    GridRenderer(LevelGrid* grid, Scene* scene, const std::string& spritePath = "../resources/square.png");
     
     // Render a specific cell as a GameObject
     void renderCell(int x, int y);

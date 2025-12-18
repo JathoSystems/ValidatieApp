@@ -79,13 +79,13 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
-        // src/LevelGrid.cpp
-        // src/LevelGrid.h
-        // src/GridCell.h
-        // src/GridRenderer.cpp
-        // src/GridRenderer.h
-        // src/GridManager.cpp
-        // src/GridManager.h
+        src/LevelGrid.cpp
+        src/LevelGrid.h
+        src/GridCell.h
+        src/GridRenderer.cpp
+        src/GridRenderer.h
+        src/GridManager.cpp
+        src/GridManager.h
 )
 
 include_directories("includes")
