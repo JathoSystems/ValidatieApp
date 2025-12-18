@@ -7,6 +7,10 @@ class Fireboy : public BaseCharacter {
 public:
     Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine, bool active);
     Fireboy(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine, bool active);
+    
+    static KeyBindings getDefaultBindings() {
+        return { Key::A, Key::D, Key::W };
+    }
 };
 
-#endif // FIREBOY_HPP
+#endif

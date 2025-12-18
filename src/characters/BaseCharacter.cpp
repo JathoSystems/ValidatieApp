@@ -13,18 +13,18 @@
 #include "Physics/PhysicsSystem.h"
 
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                             bool activePlayer) {
-    initializeCharacter(getId(), network, eventManager, engine, activePlayer);
+                             bool activePlayer, KeyBindings bindings) {
+    initializeCharacter(getId(), network, eventManager, engine, activePlayer, bindings);
 }
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine, bool activePlayer) : GameObject(parentId) {
-    initializeCharacter(parentId, network, eventManager, engine, activePlayer);
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : GameObject(parentId) {
+    initializeCharacter(parentId, network, eventManager, engine, activePlayer, bindings);
 }
 
 void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                                        GameEngine *engine, bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager);
+                                        GameEngine *engine, bool activePlayer, KeyBindings bindings) {
+    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings);
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
@@ -33,7 +33,6 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
         addComponent(std::move(keyInput));
     }
 
-    // addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 

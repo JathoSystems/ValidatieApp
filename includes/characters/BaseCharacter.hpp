@@ -26,14 +26,13 @@ private:
     
     void updateAnimator(Animation newAnimation);
     void initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine,
-                             bool activePlayer);
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings);
 public:
     BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                  bool activePlayer);
+                  bool activePlayer, KeyBindings bindings);
 
     BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                  bool activePlayer);
+                  bool activePlayer, KeyBindings bindings);
 
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;
@@ -47,10 +46,8 @@ public:
 
     void setMovementDirection(Direction direction);
     
-    // Centrale methode die de juiste animatie bepaalt op basis van controller state
     void updateAnimation();
     
-    // Getter voor controller
     BaseCharacterController* getController() { return _controller.get(); }
 
 protected:
@@ -65,4 +62,4 @@ protected:
     void setFallingSpritesheet(std::string falling);
 };
 
-#endif //VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
+#endif
