@@ -32,6 +32,8 @@ Data MoveEvent::deserialize(const Package &package) {
         uint8_t toggle = package.at(1);
         uint8_t direction = package.at(2);
 
+        std::cout << "Deserialized MoveEvent: objectId=" << static_cast<int>(objectId) << "\n";
+
         _objectId = objectId;
         _toggle = static_cast<bool>(toggle);
         _direction = static_cast<Direction>(direction);

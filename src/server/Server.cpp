@@ -105,7 +105,7 @@ int main() {
                     std::cout << "Failed to join lobby " << joinPacket.lobbyId << " for player " << clientId << "\n";
                     return;
                 }
-                // Assign watergirl role to second player
+
                 playerManager.join(clientId, "watergirl");
                 PlayerAssignPacket assign("watergirl");
                 assign.serialize();
@@ -158,7 +158,7 @@ int main() {
                     }
                 } catch (const std::exception &e) {
                     std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";
-                    server.broadcast(packet);
+                    server.broadcastExcept(packet, clientId);
                 }
             }
         });

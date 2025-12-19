@@ -5,6 +5,8 @@
 
 Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                  bool active) : BaseCharacter(network, eventManager, engine, active, getDefaultBindings()) {
+    std::cout << "FIREBOY IS " << (active ? "ACTIVE" : "INACTIVE") << std::endl;
+
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");
@@ -19,6 +21,8 @@ Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventMana
 
 Fireboy::Fireboy(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
     bool active): BaseCharacter(parentId, network, eventManager, engine, active, getDefaultBindings()) {
+    std::cout << "FIREBOY IS " << (active ? "ACTIVE" : "INACTIVE") << std::endl;
+
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");

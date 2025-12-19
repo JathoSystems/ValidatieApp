@@ -27,9 +27,11 @@ private:
     int _parentId;
     std::shared_ptr<NetworkSystem> _network;
     KeyBindings _keyBindings;
+    bool _active;
 
 public:
-    BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager, KeyBindings bindings);
+    BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager,
+                            KeyBindings bindings, bool active);
 
     void onKeyPress(Key key) override;
 

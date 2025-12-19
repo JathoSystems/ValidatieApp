@@ -12,30 +12,31 @@
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
-BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager, KeyBindings bindings) {
+BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager, KeyBindings bindings, bool active) {
     _parentId = parentId;
     _eventManager = eventManager;
     _network = network;
     _keyBindings = bindings;
+    _active = active;
 }
 
 void BaseCharacterController::onKeyPress(Key key) {
     // Handle movement directly for offline mode
     if (key == _keyBindings.left) {
         _movementDirection = Direction::EAST;
-        if (_eventManager) {
+        if (_eventManager && _active) {
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, true));
         }
     } else if (key == _keyBindings.right) {
         _movementDirection = Direction::WEST;
-        if (_eventManager) {
+        if (_eventManager && _active) {
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, true));
         }
     } else if (key == _keyBindings.jump) {
         if (_grounded) {
             _shouldJump = true;
         }
-        if (_eventManager) {
+        if (_eventManager && _active) {
             _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
         }
     }
@@ -49,9 +50,11 @@ void BaseCharacterController::onKeyRelease(Key key) {
     
     if (_eventManager) {
         if (key == _keyBindings.left) {
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, false));
+            if (_active)
+                _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, false));
         } else if (key == _keyBindings.right) {
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, false));
+            if (_active)
+                _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, false));
         }
     }
 }
@@ -77,9 +80,9 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
 
     // Handle horizontal movement
     float vx = 0.0f;
-    if (direction == Direction::EAST) {
+    if (_movementDirection == Direction::EAST) {
         vx = -_movementSpeed;
-    } else if (direction == Direction::WEST) {
+    } else if (_movementDirection == Direction::WEST) {
         vx = _movementSpeed;
     }
     
