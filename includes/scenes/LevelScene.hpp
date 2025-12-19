@@ -19,8 +19,7 @@ public:
     LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);
     ~LevelScene();
     
-    void initialize();
-    
+    void onInitialRender() override;
 private:
     void setupLevel();
     void setupCharacters();

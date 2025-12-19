@@ -23,7 +23,8 @@ void GameReadyPacketHandler::handle(const Packet &packet) {
         
         // Navigate to the level scene (should have been created by LobbyInfoPacketHandler)
         std::string sceneName = "level_" + std::to_string(gameReady.levelId) + "_online";
-        
+
+
         // Just try to set the scene - it should have been created by LobbyInfoPacketHandler
         sceneSystem->setScene(sceneName);
     }

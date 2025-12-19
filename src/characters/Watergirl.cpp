@@ -6,7 +6,6 @@
 
 Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool active)
     : BaseCharacter(network, eventManager, engine, active, getDefaultBindings()) {
-    std::cout << "WATERGIRL IS " << (active ? "ACTIVE" : "INACTIVE") << std::endl;
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");
     setIdleSpritesheet(R"(resources/watergirl/idle.png)");
@@ -23,14 +22,10 @@ Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* event
 Watergirl::Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
     GameEngine *engine, bool active)
     : BaseCharacter(parentId, network, eventManager, engine, active, getDefaultBindings()) {
-
-    std::cout << "WATERGIRL IS " << (active ? "ACTIVE" : "INACTIVE") << std::endl;
-
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");
     setIdleSpritesheet(R"(resources/watergirl/idle.png)");
     setMovingLeftSpritesheet(R"(resources/watergirl/walk-left.png)");
     setMovingRightSpritesheet(R"(resources/watergirl/walk-right.png)");
-
     getTransform()->getPosition()->setX(600);
 }

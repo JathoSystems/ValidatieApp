@@ -26,7 +26,7 @@ LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSy
 
 LevelScene::~LevelScene() = default;
 
-void LevelScene::initialize() {
+void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
     
     std::cout << "[LevelScene] Creating grid..." << std::endl;

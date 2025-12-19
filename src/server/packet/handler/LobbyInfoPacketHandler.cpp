@@ -52,7 +52,6 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
                 if (g_network && g_eventManager) {
                     // Just create it - setScene will handle if it already exists
                     auto newLevelScene = std::make_unique<LevelScene>(lobbyInfo.levelId, true, g_network, g_eventManager);
-                    newLevelScene->initialize();
                     sceneSystem->addScene(std::move(newLevelScene));
                 }
             }

@@ -11,24 +11,45 @@
 #include "characters/events/MoveEvent.hpp"
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
+#include <iostream>
+#include <windows.h>
 
-BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager, KeyBindings bindings, bool active) {
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_BLUE    "\033[34m"
+#define COLOR_MAGENTA "\033[35m"
+#define COLOR_CYAN    "\033[36m"
+#define COLOR_RESET   "\033[0m"
+
+BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId,
+                                                 EventManager *eventManager, KeyBindings bindings, bool active) {
     _parentId = parentId;
     _eventManager = eventManager;
     _network = network;
     _keyBindings = bindings;
     _active = active;
+
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    GetConsoleMode(hOut, &dwMode);
+    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
+    std::cout << COLOR_MAGENTA << "[KeyInputComponent] CREATED for ID: "
+              << parentId << "\033[0m" << std::endl;
+    std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
 }
 
 void BaseCharacterController::onKeyPress(Key key) {
     // Handle movement directly for offline mode
     if (key == _keyBindings.left) {
-        _movementDirection = Direction::EAST;
+        // _movementDirection = Direction::EAST;
         if (_eventManager && _active) {
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, true));
         }
     } else if (key == _keyBindings.right) {
-        _movementDirection = Direction::WEST;
+        // _movementDirection = Direction::WEST;
         if (_eventManager && _active) {
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, true));
         }
@@ -47,7 +68,7 @@ void BaseCharacterController::onKeyRelease(Key key) {
     if (key == _keyBindings.left || key == _keyBindings.right) {
         _movementDirection = Direction::NONE;
     }
-    
+
     if (_eventManager) {
         if (key == _keyBindings.left) {
             if (_active)
@@ -85,6 +106,6 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
     } else if (_movementDirection == Direction::WEST) {
         vx = _movementSpeed;
     }
-    
+
     physics->setVelocity(vx, currentVy);
 }
