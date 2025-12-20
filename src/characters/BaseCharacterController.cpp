@@ -12,7 +12,6 @@
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 #include <iostream>
-#include <windows.h>
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_GREEN   "\033[32m"
@@ -29,11 +28,6 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     _network = network;
     _keyBindings = bindings;
     _active = active;
-
-    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD dwMode = 0;
-    GetConsoleMode(hOut, &dwMode);
-    SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
 
     std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
     std::cout << COLOR_MAGENTA << "[KeyInputComponent] CREATED for ID: "

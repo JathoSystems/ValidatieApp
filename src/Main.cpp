@@ -55,7 +55,7 @@ std::string getLocalIPAddress() {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 
-    return "192.168.2.161";
+    return "127.0.0.1";
 }
 
 int main() {
