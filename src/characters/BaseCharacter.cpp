@@ -24,7 +24,7 @@ BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> networ
 
 void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                                         GameEngine *engine, bool activePlayer, KeyBindings bindings) {
-    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings);
+    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings, activePlayer);
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
@@ -49,26 +49,20 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
 }
 
-void BaseCharacter::setMovementDirection(Direction direction) {
-    _direction = direction;
-}
-
 void BaseCharacter::update(float delta) {
     GameObject::update(delta);
     updateAnimation();
 
     if (_controller) {
-        auto* physics = getComponent<PhysicsComponent>();
+        auto *physics = getComponent<PhysicsComponent>();
         if (physics) {
-            _controller->move(_direction, physics);
+            _controller->move(Direction::NONE, physics);
         }
     }
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
-
     if (collision.normalY > 0.2f) {
-
         if (_controller) {
             _controller->setGrounded(true);
         }
@@ -151,6 +145,10 @@ void BaseCharacter::updateAnimator(Animation newAnimation) {
     }
 }
 
+void BaseCharacter::setMovementDirection(Direction direction) {
+    _controller->setMovementDirection(direction);
+}
+
 void BaseCharacter::updateAnimation() {
     if (!_controller) return;
 
@@ -166,7 +164,7 @@ void BaseCharacter::updateAnimation() {
 
     // 1. Check of karakter in de lucht is
     if (!isGrounded) {
-        if (vy < 0) {
+        if (vy < 0.2) {
             // Omhoog (springen)
             updateAnimator(Animation::JUMP);
         } else {

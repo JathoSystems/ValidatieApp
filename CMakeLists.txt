@@ -41,6 +41,16 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/characters/BaseCharacterController.cpp
         src/server/Player.cpp
         src/server/PlayerManager.cpp
+        includes/server/LobbyManager.hpp
+        src/server/LobbyManager.cpp
+        includes/server/packet/CreateLobbyPacket.hpp
+        includes/server/packet/JoinLobbyPacket.hpp
+        src/server/packet/handler/LobbyInfoPacketHandler.cpp
+        includes/server/packet/handler/LobbyInfoPacketHandler.hpp
+        includes/scenes/LevelScene.hpp
+        src/scenes/LevelScene.cpp
+        src/LevelGrid.cpp
+        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -69,8 +79,13 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/characters/BaseCharacterController.cpp
         includes/server/Player.hpp
         includes/server/PlayerManager.hpp
+        includes/server/packet/CreateLobbyPacket.hpp
+        includes/server/packet/JoinLobbyPacket.hpp
+        includes/server/packet/LobbyInfoPacket.hpp
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
+        includes/scenes/RoomSelectionScene.hpp
+        src/scenes/RoomSelectionScene.cpp
         includes/scenes/Game.hpp
         src/scenes/Game.cpp
         includes/server/packet/PlayerAssignPacket.hpp
@@ -79,6 +94,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
+        src/server/packet/handler/LobbyInfoPacketHandler.cpp
+        includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
         includes/LevelSelector.h
         src/LevelGrid.cpp

@@ -33,6 +33,8 @@ public:
             p.push_back(static_cast<int8_t>(c));
         }
         p.push_back(0);
+
+        std::cout << "SENDING SPAWN EVENT " << objectName << " WITH ID " << registryId << std::endl;
         return p;
     }
 
@@ -62,6 +64,7 @@ public:
     }
 
     void spawn() {
+        std::cout << "SPAWNING " << objectName << " WITH ID " << registryId << std::endl;
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
         if (!system) {
             std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;

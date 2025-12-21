@@ -1,5 +1,6 @@
 #include "LevelSelector.h"
 #include "scenes/LevelScene.hpp"
+#include "scenes/RoomSelectionScene.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
 #include "Scenes/Camera/FixedCamera.h"
@@ -8,30 +9,6 @@
 #include "SpawnEvent.hpp"
 #include <asio.hpp>
 #include <iostream>
-
-namespace {
-    std::string getLocalIPAddress() {
-        try {
-            asio::io_context io_context;
-            asio::ip::tcp::resolver resolver(io_context);
-            asio::ip::tcp::resolver::query query(asio::ip::host_name(), "");
-            asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
-            asio::ip::tcp::resolver::iterator end;
-
-            while(it != end) {
-                asio::ip::tcp::endpoint endpoint = *it++;
-                asio::ip::address addr = endpoint.address();
-
-                if(addr.is_v4() && !addr.is_loopback()) {
-                    return addr.to_string();
-                }
-            }
-        } catch (std::exception& e) {
-            std::cerr << "Error getting IP: " << e.what() << std::endl;
-        }
-        return "127.0.0.1";
-    }
-}
 
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager)
     : _sceneSystem(sceneSystem), _network(network), _eventManager(eventManager) {
@@ -120,7 +97,8 @@ void LevelSelector::onPlayClicked(int levelNumber) {
     std::string sceneName = "level_" + std::to_string(levelNumber);
     
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) {
-        auto levelScene = std::make_unique<LevelScene>(levelNumber, false, _network, _eventManager);        levelScene->initialize();        _sceneSystem->addScene(std::move(levelScene));
+        auto levelScene = std::make_unique<LevelScene>(levelNumber, false, nullptr, _eventManager);
+        _sceneSystem->addScene(std::move(levelScene));
     }
     
     _sceneSystem->setScene(sceneName);
@@ -155,20 +133,12 @@ void LevelSelector::setupNetworkCallbacks() {
 }
 
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
-    std::cout << "[NetworkSystem] Attempting to connect..." << std::endl;
-    auto result = _network->connect(getLocalIPAddress(), 7534);
-    if (!result.isSuccess()) {
-        std::cerr << "Failed to connect to server: " << result.message << std::endl;
-        return;
-    }
+    // Navigate to room selection scene for this level
+    std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     
-    std::cout << "[NetworkSystem] Connected successfully!" << std::endl;
+    // Create the room selection scene (addScene handles duplicates or we can track)
+    auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber);
+    _sceneSystem->addScene(std::move(roomScene));
     
-    setupNetworkCallbacks();
-    
-    std::string sceneName = "level_" + std::to_string(levelNumber) + "_online";
-    auto onlineScene = std::make_unique<LevelScene>(levelNumber, true, _network, _eventManager);
-    onlineScene->initialize();
-    _sceneSystem->addScene(std::move(onlineScene));
     _sceneSystem->setScene(sceneName);
 }
