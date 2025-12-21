@@ -21,7 +21,7 @@ private:
     std::string getCellType(CellType type);
 
 public:
-    GridRenderer(LevelGrid* grid, Scene* scene, Box2DFacade* box2DFacade, const std::string& spritePath = "resources/tile.png");
+    GridRenderer(LevelGrid* grid, Scene* scene, Box2DFacade* box2DFacade); //, const std::string& spritePath = "resources/tile.png"
 
     // Render a specific cell as a GameObject
     void renderCell(int x, int y);
@@ -33,7 +33,7 @@ public:
     bool isTopLeftOfDiamond(int x, int y, CellType diamondType);
 
     // Render all cells of a specific type
-    void renderCellsOfType(CellType type);
+    // void renderCellsOfType(CellType type);
 
     // Render the entire grid
     void renderGrid();

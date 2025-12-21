@@ -20,11 +20,11 @@
 
 class LevelCreator {
 private:
-    static constexpr int GRID_WIDTH = 80;
-    static constexpr int GRID_HEIGHT = 60;
-    static constexpr int CELL_SIZE = 10;
-    static constexpr int WINDOW_WIDTH = 800;
-    static constexpr int WINDOW_HEIGHT = 600;
+    int WINDOW_WIDTH;
+    int WINDOW_HEIGHT;
+    int CELL_SIZE;
+    int GRID_WIDTH;
+    int GRID_HEIGHT;
 
     std::unique_ptr<LevelGrid> levelGrid;
     std::unique_ptr<GridRenderer> gridRenderer;
@@ -32,7 +32,15 @@ private:
     Scene* scenePtr;
 
 public:
-    LevelCreator() : gridPtr(nullptr), scenePtr(nullptr) {}
+    LevelCreator(int window_width, int window_height)
+    : gridPtr(nullptr),
+      scenePtr(nullptr),
+      WINDOW_WIDTH(window_width),
+      WINDOW_HEIGHT(window_height),
+      CELL_SIZE(10),
+      GRID_WIDTH(window_width / 10),
+      GRID_HEIGHT(window_height / 10)
+{}
 
     void initLevel(Scene* scene, Box2DFacade* box2DFacade) {
         scenePtr = scene;
@@ -89,26 +97,26 @@ public:
 
         addBackground();
 
-        for (int x = 0; x < GRID_WIDTH; ++x) {
-            for (int y = GRID_HEIGHT - 5; y < GRID_HEIGHT; ++y) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            for (int y = GRID_HEIGHT - 5; y < GRID_HEIGHT; y++) {
                 gridPtr->setCellType(x, y, CellType::Ground);
             }
         }
 
         for (int x = 0; x < 5; ++x) {
-            for (int y = 0; y < GRID_HEIGHT; ++y) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
                 gridPtr->setCellType(x, y, CellType::Ground);
             }
         }
 
-        for (int x = GRID_WIDTH - 5; x < GRID_WIDTH; ++x) {
-            for (int y = 0; y < GRID_HEIGHT; ++y) {
+        for (int x = GRID_WIDTH - 5; x < GRID_WIDTH; x++) {
+            for (int y = 0; y < GRID_HEIGHT; y++) {
                 gridPtr->setCellType(x, y, CellType::Ground);
             }
         }
 
-        for (int x = 30; x < 50; ++x) {
-            for (int y = 35; y < 37; ++y) {
+        for (int x = 30; x < 50; x++) {
+            for (int y = 35; y < 37; y++) {
                 gridPtr->setCellType(x, y, CellType::Ground);
             }
         }
@@ -127,10 +135,10 @@ public:
 private:
     void addBackground() {
         auto background = std::make_unique<GameObject>();
-        background->getTransform()->getPosition()->setX(400);
-        background->getTransform()->getPosition()->setY(300);
-        background->getTransform()->getSize()->setWidth(800);
-        background->getTransform()->getSize()->setHeight(600);
+        background->getTransform()->getPosition()->setX(WINDOW_WIDTH / 2);
+        background->getTransform()->getPosition()->setY(WINDOW_HEIGHT / 2);
+        background->getTransform()->getSize()->setWidth(WINDOW_WIDTH);
+        background->getTransform()->getSize()->setHeight(WINDOW_HEIGHT);
         background->addComponent(std::make_unique<SpriteRenderer>("resources/bg.png"));
         background->setLayer(-1);
         scenePtr->addObject(std::move(background));

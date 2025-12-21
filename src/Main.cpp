@@ -55,114 +55,70 @@ std::string getLocalIPAddress() {
     return "192.168.2.161";
 }
 
-int main() {
-    try {
-        GameEngine *gameEngine = &GameEngine::getInstance();
-        gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
-
-        // Network mag pas na de init gedaan worden
-        auto network = std::make_shared<NetworkSystem>();
-        auto result = network->connect(getLocalIPAddress(), 7534);
-        EventManager manager(network->getMiddleware());
-
-        PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
-
-        PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
-        PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
-
-        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
-        PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
-
-
-        EventRegistry::getInstance()->registerEvent("jump", []() {
-            return std::make_shared<JumpEvent>();
-        });
-
-        EventRegistry::getInstance()->registerEvent("move", []() {
-            return std::make_shared<MoveEvent>(0, Direction::NONE, false);
-        });
-
-        EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>(0, "watergirl");
-        });
-
-        GameObjectFactory::getInstance().setNetworkSystem(network);
-        GameObjectFactory::getInstance().setEventManager(&manager);
-
-        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
-            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
-                spawn->spawn();
-                return;
-            }
-
-            GameObject *object = ObjectRegistry::getInstance().getObject(id);
-            if (!object) return;
-            event->apply(object);
-        });
-
-        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
-            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
-                spawn->spawn();
-                return;
-            }
-
-            GameObject *object = ObjectRegistry::getInstance().getObject(id);
-
-            if (!object) return;
-
-            event->apply(object);
-        });
-
-        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Lobby>());
-        gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Game>(network, &manager));
-        gameEngine->getSystem<SceneSystem>()->setScene("Lobby");
-
-
-        gameEngine->start();
-    } catch (const std::exception &e) {
-        std::cerr << "ERROR: " << e.what() << std::endl;
-        return 1;
-    }
-
-    return 0;
-}
-
 // int main() {
 //     try {
-//         std::cout << "Initializing Level Viewer" << std::endl;
+//         GameEngine *gameEngine = &GameEngine::getInstance();
+//         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 //
-//         GameEngine gameEngine;
-//         gameEngine.init("Fireboy & Watergirl - Level Viewer", 800, 600);
+//         // Network mag pas na de init gedaan worden
+//         auto network = std::make_shared<NetworkSystem>();
+//         auto result = network->connect(getLocalIPAddress(), 7534);
+//         EventManager manager(network->getMiddleware());
 //
-//         auto physicsFacade = gameEngine.getSystem<PhysicsSystem>();
+//         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 //
-//         std::cout << "Creating Scene " << std::endl;
-//         auto mainScene = std::make_unique<Scene>("MainScene");
+//         PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+//         PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
 //
-//         // Camera instellen
-//         auto viewport = std::make_unique<Viewport>(Size(800, 600), Position(0, 0));
-//         auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(0, 0));
-//         mainScene->setCamera(std::move(camera));
+//         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+//         PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
 //
-//         std::cout << "Creating level..." << std::endl;
-//         LevelCreator levelCreator;
-//         levelCreator.initLevel(mainScene.get(), physicsFacade ? physicsFacade->getBox2DFacade() : nullptr);
 //
-//         levelCreator.createFromTextMap("Levels/level_1.txt");
-//         levelCreator.renderLevel();
-//         levelCreator.registerGrid("MainScene");
+//         EventRegistry::getInstance()->registerEvent("jump", []() {
+//             return std::make_shared<JumpEvent>();
+//         });
 //
-//         std::cout << "Level rendered with " << mainScene->getObjects().size() << " objects" << std::endl;
+//         EventRegistry::getInstance()->registerEvent("move", []() {
+//             return std::make_shared<MoveEvent>(0, Direction::NONE, false);
+//         });
 //
-//         SceneSystem* sceneSystem = gameEngine.getSystem<SceneSystem>();
-//         if (sceneSystem) {
-//             sceneSystem->addScene(std::move(mainScene));
-//             sceneSystem->setScene("MainScene");
-//         }
+//         EventRegistry::getInstance()->registerEvent("spawn", []() {
+//             return std::make_shared<SpawnEvent>(0, "watergirl");
+//         });
 //
-//         std::cout << "Starting Viewer" << std::endl;
-//         gameEngine.start();
+//         GameObjectFactory::getInstance().setNetworkSystem(network);
+//         GameObjectFactory::getInstance().setEventManager(&manager);
 //
+//         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+//             if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+//                 spawn->spawn();
+//                 return;
+//             }
+//
+//             GameObject *object = ObjectRegistry::getInstance().getObject(id);
+//             if (!object) return;
+//             event->apply(object);
+//         });
+//
+//         manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
+//             if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+//                 spawn->spawn();
+//                 return;
+//             }
+//
+//             GameObject *object = ObjectRegistry::getInstance().getObject(id);
+//
+//             if (!object) return;
+//
+//             event->apply(object);
+//         });
+//
+//         gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Lobby>());
+//         gameEngine->getSystem<SceneSystem>()->addScene(std::make_unique<Game>(network, &manager));
+//         gameEngine->getSystem<SceneSystem>()->setScene("Lobby");
+//
+//
+//         gameEngine->start();
 //     } catch (const std::exception &e) {
 //         std::cerr << "ERROR: " << e.what() << std::endl;
 //         return 1;
@@ -170,3 +126,52 @@ int main() {
 //
 //     return 0;
 // }
+
+int main() {
+    try {
+        std::cout << "Initializing Level Viewer" << std::endl;
+
+        GameEngine *gameEngine = &GameEngine::getInstance();
+        gameEngine->init("Fireboy & Watergirl - Level Viewer", 800, 600);
+
+        auto physicsFacade = gameEngine->getSystem<PhysicsSystem>();
+
+        std::cout << "Creating Scene " << std::endl;
+        auto mainScene = std::make_unique<Scene>("MainScene");
+
+        // Camera instellen
+        auto viewport = std::make_unique<Viewport>(Size(800, 600), Position(0, 0));
+        auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(0, 0));
+        mainScene->setCamera(std::move(camera));
+
+        std::cout << "Creating level..." << std::endl;
+
+        int w,h;
+
+        SDL_GetWindowSize(gameEngine->getWindow()->getWindow(), &w, &h);
+
+        LevelCreator levelCreator(w,h);
+        levelCreator.initLevel(mainScene.get(), physicsFacade ? physicsFacade->getBox2DFacade() : nullptr);
+
+        levelCreator.createFromTextMap("Levels/level_1.txt");
+        levelCreator.renderLevel();
+        levelCreator.registerGrid("MainScene");
+
+        std::cout << "Level rendered with " << mainScene->getObjects().size() << " objects" << std::endl;
+
+        SceneSystem* sceneSystem = gameEngine->getSystem<SceneSystem>();
+        if (sceneSystem) {
+            sceneSystem->addScene(std::move(mainScene));
+            sceneSystem->setScene("MainScene");
+        }
+
+        std::cout << "Starting Viewer" << std::endl;
+        gameEngine->start();
+
+    } catch (const std::exception &e) {
+        std::cerr << "ERROR: " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}

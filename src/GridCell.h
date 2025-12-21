@@ -10,15 +10,13 @@ enum class CellType {
     RedDoor,                                // Exit for Fireboy
     BlueDoor,                               // Exit for Watergirl
     Button,                                 // Pressure plate/switch maybe make this for blue and red too
-    DiamondBlue, DiamondRed,                // Collectible
-    SlopeLeft,                              // Slope
-    SlopeRight                              // Slope
+    DiamondBlue, DiamondRed                 // Collectible
 };
 
-// Character types for hazard checking
-enum class CharacterType {
-    Fireboy,
-    Watergirl
-};
+// // Character types for hazard checking
+// enum class CharacterType {
+//     Fireboy,
+//     Watergirl
+// };
 
 #endif //VALIDATIEAPP_GRIDCELL_H

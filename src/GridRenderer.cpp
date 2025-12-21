@@ -1,9 +1,14 @@
 #include "GridRenderer.h"
+
+#include <iostream>
+
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Physics/PhysicsComponent.h"
 
-GridRenderer::GridRenderer(LevelGrid* grid, Scene* scene, Box2DFacade* box2DFacade, const std::string& spritePath)
-    : _grid(grid), _scene(scene), _box2DFacade(box2DFacade), _spritePath(spritePath) {
+GridRenderer::GridRenderer(LevelGrid* grid, Scene* scene, Box2DFacade* box2DFacade)
+    : _grid(grid), _scene(scene), _box2DFacade(box2DFacade){
+    // , const std::string& spritePath
+    // , _spritePath(spritePath)
 }
 
 std::string GridRenderer::getSpritePathForCellType(CellType type) {
@@ -38,10 +43,6 @@ std::string GridRenderer::getSpritePathForCellType(CellType type) {
             return "resources/diamonds/diamond_blue.png";
         case CellType::DiamondRed:
             return "resources/diamonds/diamond_red.png";
-        case CellType::SlopeLeft:
-            return "resources/slope_left.png";
-        case CellType::SlopeRight:
-            return "resources/slope_right.png";
         default:
             return "resources/tile.png";
     }
@@ -52,40 +53,57 @@ bool GridRenderer::isCollidable(CellType type) {
 }
 
 void GridRenderer::renderCell(int x, int y) {
-    if (!_grid || !_scene || !_box2DFacade) return;
+    // Bounds check first
+    if (x < 0 || x >= _grid->getWidth() || y < 0 || y >= _grid->getHeight()) {
+        std::cout << "OUT OF BOUNDS: " << x << ", " << y << std::endl;
+        return;
+    }
+
+    if (!_grid || !_scene || !_box2DFacade) {
+        std::cout << "NULL CHECK FAILED at " << x << ", " << y << std::endl;
+        return;
+    }
 
     CellType cellType = _grid->getCellType(x, y);
     if (cellType == CellType::Empty) return;
 
+    std::cout << "Rendering " << getCellType(cellType) << " at " << x << ", " << y << std::endl;
+
     int cellSize = _grid->getCellSize();
 
     bool isDoor = (cellType == CellType::RedDoor || cellType == CellType::BlueDoor);
-
     if (isDoor) {
+        std::cout << "Checking door at " << x << ", " << y << std::endl;
         if (!isTopLeftOfDoor(x, y, cellType)) {
+            std::cout << "Not top-left of door, skipping" << std::endl;
             return;
         }
+        std::cout << "Rendering door layers..." << std::endl;
         renderDoorLayers(x, y, cellType);
+        std::cout << "Door rendered successfully" << std::endl;
         return;
     }
 
     bool isDiamond = (cellType == CellType::DiamondBlue || cellType == CellType::DiamondRed);
     if (isDiamond) {
+        std::cout << "Checking diamond at " << x << ", " << y << std::endl;
         if (!isTopLeftOfDiamond(x, y, cellType)) {
+            std::cout << "Not top-left of diamond, skipping" << std::endl;
             return;
         }
+        std::cout << "Rendering diamond..." << std::endl;
     }
 
     int spriteWidth = isDiamond ? cellSize * 2 : cellSize;
     int spriteHeight = isDiamond ? cellSize * 2 : cellSize;
-
     int collisionWidth = isDiamond ? cellSize * 2 : cellSize;
     int collisionHeight = isDiamond ? cellSize * 2 : cellSize;
 
+    std::cout << "Creating GameObject..." << std::endl;
     auto block = std::make_unique<GameObject>();
 
-    float xPos = x * cellSize + spriteWidth / 2;
-    float yPos = y * cellSize + spriteHeight / 2;
+    float xPos = x * cellSize + spriteWidth / 2.0f;
+    float yPos = y * cellSize + spriteHeight / 2.0f;
 
     block->getTransform()->getPosition()->setX(xPos);
     block->getTransform()->getPosition()->setY(yPos);
@@ -93,9 +111,11 @@ void GridRenderer::renderCell(int x, int y) {
     block->getTransform()->getSize()->setHeight(spriteHeight);
 
     std::string spritePath = getSpritePathForCellType(cellType);
+    std::cout << "Adding SpriteRenderer: " << spritePath << std::endl;
     auto spriteRenderer = std::make_unique<SpriteRenderer>(spritePath);
     block->addComponent(std::move(spriteRenderer));
 
+    std::cout << "Creating PhysicsComponent..." << std::endl;
     auto physics = std::make_unique<PhysicsComponent>(_box2DFacade);
 
     if (isCollidable(cellType)) {
@@ -106,8 +126,13 @@ void GridRenderer::renderCell(int x, int y) {
         physics->setCollider(std::make_unique<BoxCollider>(collisionWidth, collisionHeight));
     }
 
+    std::cout << "Adding components to GameObject..." << std::endl;
     block->addComponent(std::move(physics));
+
+    std::cout << "Adding GameObject to scene..." << std::endl;
     _scene->addObject(std::move(block));
+
+    std::cout << "Cell rendered successfully!" << std::endl;
 }
 
 void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
@@ -160,23 +185,13 @@ void GridRenderer::renderDoorLayers(int x, int y, CellType doorType) {
     _scene->addObject(std::move(doorFront));
 }
 
-bool GridRenderer::isTopLeftOfDoor(int x, int y, CellType doorType) {
-    const int doorWidthCells = 6;
-    const int doorHeightCells = 6;
-
-    for (int dy = 0; dy < doorHeightCells; ++dy) {
-        for (int dx = 0; dx < doorWidthCells; ++dx) {
-            if (_grid->getCellType(x + dx, y + dy) != doorType) {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
 bool GridRenderer::isTopLeftOfDiamond(int x, int y, CellType diamondType) {
     const int diamondSize = 2;
+
+    // CHECK BOUNDS FIRST!
+    if (x + diamondSize > _grid->getWidth() || y + diamondSize > _grid->getHeight()) {
+        return false;  // Not enough space for 2x2 block
+    }
 
     for (int dy = 0; dy < diamondSize; ++dy) {
         for (int dx = 0; dx < diamondSize; ++dx) {
@@ -185,7 +200,25 @@ bool GridRenderer::isTopLeftOfDiamond(int x, int y, CellType diamondType) {
             }
         }
     }
+    return true;
+}
 
+bool GridRenderer::isTopLeftOfDoor(int x, int y, CellType doorType) {
+    const int doorWidthCells = 6;
+    const int doorHeightCells = 6;
+
+    // CHECK BOUNDS FIRST!
+    if (x + doorWidthCells > _grid->getWidth() || y + doorHeightCells > _grid->getHeight()) {
+        return false;  // Not enough space for 6x6 block
+    }
+
+    for (int dy = 0; dy < doorHeightCells; ++dy) {
+        for (int dx = 0; dx < doorWidthCells; ++dx) {
+            if (_grid->getCellType(x + dx, y + dy) != doorType) {
+                return false;
+            }
+        }
+    }
     return true;
 }
 
@@ -213,27 +246,36 @@ std::string GridRenderer::getCellType(CellType type) {
     }
 }
 
-void GridRenderer::renderCellsOfType(CellType type) {
-    if (!_grid || !_scene) return;
-
-    for (int x = 0; x < _grid->getWidth(); ++x) {
-        for (int y = 0; y < _grid->getHeight(); ++y) {
-            if (_grid->getCellType(x, y) == type) {
-                renderCell(x, y);
-            }
-        }
-    }
-}
+// void GridRenderer::renderCellsOfType(CellType type) {
+//     if (!_grid || !_scene) return;
+//
+//     for (int x = 0; x < _grid->getWidth(); ++x) {
+//         for (int y = 0; y < _grid->getHeight(); ++y) {
+//             if (_grid->getCellType(x, y) == type) {
+//                 renderCell(x, y);
+//             }
+//         }
+//     }
+// }
 
 void GridRenderer::renderGrid() {
     if (!_grid || !_scene) return;
 
-    // Render all non-empty cells
-    for (int x = 0; x < _grid->getWidth(); ++x) {
-        for (int y = 0; y < _grid->getHeight(); ++y) {
+    std::cout << "Starting grid render..." << std::endl;
+
+    int count = 0;
+    for (int x = 0; x < _grid->getWidth(); x++) {
+        for (int y = 0; y < _grid->getHeight(); y++) {
+
             renderCell(x, y);
+            CellType cellType = _grid->getCellType(x, y);
+            std::cout << "Position: " << x << ", " << y << " Count: "<< count << " CellType: " << getCellType(cellType) << std::endl;
+            count++;
+
         }
     }
+
+    std::cout << "Grid render complete!" << std::endl;
 }
 
 void GridRenderer::updateVisualization() {

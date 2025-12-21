@@ -82,12 +82,6 @@ public:
                     case '%':
                         grid->setCellType(x, y, CellType::DiamondRed);
                         break;
-                    case '/':
-                        grid->setCellType(x, y, CellType::SlopeRight);
-                        break;
-                    case '\\':
-                        grid->setCellType(x, y, CellType::SlopeLeft);
-                        break;
                     case '.':
                     case ' ':
                     default:
@@ -146,7 +140,7 @@ public:
     static void buildStairs(LevelGrid* grid, int startX, int startY, int steps, int stepWidth, int stepHeight, bool ascending = true) {
         if (!grid) return;
 
-        for (int i = 0; i < steps; ++i) {
+        for (int i = 0; i < steps; i++) {
             int x = startX + (i * stepWidth);
             int y = ascending ? startY - (i * stepHeight) : startY + (i * stepHeight);
 
@@ -154,7 +148,7 @@ public:
         }
     }
 
-    // Create a pool of liquid (water, fire, poison)
+    // Create a pool of liquid
     static void buildPool(LevelGrid* grid, int startX, int startY, int width, int depth, CellType liquidType) {
         buildPlatform(grid, startX, startY, width, depth, liquidType);
     }
