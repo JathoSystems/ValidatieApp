@@ -15,6 +15,7 @@ Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* event
     if (network && network->getMiddleware()) {
         network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "watergirl"));
     }
+
     getTransform()->getPosition()->setX(600);
 }
 
@@ -26,6 +27,5 @@ Watergirl::Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, Event
     setIdleSpritesheet(R"(resources/watergirl/idle.png)");
     setMovingLeftSpritesheet(R"(resources/watergirl/walk-left.png)");
     setMovingRightSpritesheet(R"(resources/watergirl/walk-right.png)");
-
     getTransform()->getPosition()->setX(600);
 }

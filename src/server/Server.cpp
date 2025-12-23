@@ -13,18 +13,25 @@
 #include "Network/Packet/Packets/NetworkEventPacket.h"
 #include "Events/EventRegistry.h"
 #include "server/PlayerManager.hpp"
+#include "server/LobbyManager.hpp"
 #include "server/packet/GameReady.hpp"
 #include "server/packet/PlayerAssignPacket.hpp"
+#include "server/packet/CreateLobbyPacket.hpp"
+#include "server/packet/JoinLobbyPacket.hpp"
+#include "server/packet/LobbyInfoPacket.hpp"
 
 int main() {
     try {
         asio::io_context io_context;
         int port = 7534;
 
-        // Register packets (we only need NetworkEventPacket now!)
+        // Register packets
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
         PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+        PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
+        PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
+        PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
 
 
         // Register events
@@ -41,34 +48,83 @@ int main() {
         });
 
         // Create server
-        auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 2);
+        auto listener = std::make_unique<TcpNetworkListener>(io_context, port, 10);
+        // Allow more connections for multiple lobbies
 
         Server server(io_context, std::move(listener), port);
         PlayerManager playerManager;
-        server.onConnect([&playerManager, &server](int32_t clientId) {
-            std::string role = playerManager.getNextRole();
-            playerManager.join(clientId, role);
-            std::cout << "Player " << clientId << " connected with role " << role << "\n";
+        LobbyManager lobbyManager;
 
-            PlayerAssignPacket assign(role);
-            assign.serialize();
-            server.sendToClient(clientId, assign);
-
-            std::cout << playerManager.getAmountOfPlayers() << "\n";
-            std::cout << playerManager.getAmountOfRoles() << "\n";
-
-            if (playerManager.getAmountOfPlayers() == playerManager.getAmountOfRoles()) {
-                std::cout << "All roles assigned, sending GameReadyPacket\n";
-                GameReadyPacket ready;
-                ready.serialize();
-                server.broadcast(ready);
-            }
+        server.onConnect([&server](int32_t clientId) {
+            std::cout << "Player " << clientId << " connected\n";
         });
 
-        // Set packet callback to handle NetworkEventPackets
-        server.setPacketCallback([&server](int32_t clientId, const Packet &packet) {
-            // Check if it's a NetworkEventPacket
-            if (packet.getId() == 100) {
+        // Note: onDisconnect callback is not available in Server class
+        // Disconnection cleanup would need to be handled through other means
+        // For now, we'll handle it when trying to send packets fails
+
+        // Set packet callback to handle all packets
+        server.setPacketCallback([&server, &lobbyManager, &playerManager](int32_t clientId, const Packet &packet) {
+            int packetId = packet.getId();
+
+            // Handle CreateLobbyPacket
+            if (packetId == 103) {
+                CreateLobbyPacket createPacket;
+                createPacket.getBuffer().setData(packet.getBuffer().getData());
+                createPacket.deserialize();
+
+                int lobbyId = lobbyManager.createLobby(createPacket.levelId, clientId);
+                std::cout << "Lobby " << lobbyId << " created for level " << createPacket.levelId << " by player " <<
+                        clientId << "\n";
+
+                // Assign fireboy role to first player (lobby creator)
+                playerManager.join(clientId, "fireboy");
+                PlayerAssignPacket assign("fireboy");
+                assign.serialize();
+                server.sendToClient(clientId, assign);
+
+                // Send lobby info to creator
+                LobbyInfoPacket info(lobbyId, createPacket.levelId, 1, "waiting");
+                info.serialize();
+                server.sendToClient(clientId, info);
+            }
+            // Handle JoinLobbyPacket
+            else if (packetId == 104) {
+                JoinLobbyPacket joinPacket;
+                joinPacket.getBuffer().setData(packet.getBuffer().getData());
+                joinPacket.deserialize();
+
+                Lobby *lobby = lobbyManager.getLobby(joinPacket.lobbyId);
+                if (!lobby && lobby->isFull()) {
+                    std::cout << "Lobby " << joinPacket.lobbyId << " not found or full\n";
+                    return;
+                }
+
+                bool joined = lobbyManager.joinLobby(joinPacket.lobbyId, clientId, joinPacket.levelId);
+                if (!joined) {
+                    std::cout << "Failed to join lobby " << joinPacket.lobbyId << " for player " << clientId << "\n";
+                    return;
+                }
+
+                playerManager.join(clientId, "watergirl");
+                PlayerAssignPacket assign("watergirl");
+                assign.serialize();
+                server.sendToClient(clientId, assign);
+
+                LobbyInfoPacket info(lobby->lobbyId, lobby->levelId, lobby->getPlayerCount(),
+                                     lobby->isFull() ? "ready" : "waiting");
+                info.serialize();
+                lobby->broadcastInLobby(info, server);
+
+                if (!lobby->isFull()) return;
+
+                GameReadyPacket ready(lobby->levelId);
+                ready.serialize();
+
+                lobby->broadcastInLobby(ready, server);
+            }
+            // Handle NetworkEventPacket
+            else if (packetId == 100) {
                 // Deserialize the NetworkEventPacket
                 NetworkEventPacket eventPacket;
                 eventPacket.getBuffer().setData(packet.getBuffer().getData());
@@ -85,11 +141,24 @@ int main() {
 
                     if (event) {
                         event->deserialize(eventData);
-                        server.broadcastExcept(packet, clientId);
+                        // Broadcast to other players in the same lobby
+                        int lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
+                        if (lobbyId > 0) {
+                            Lobby *lobby = lobbyManager.getLobby(lobbyId);
+                            if (lobby) {
+                                for (int32_t playerId: lobby->players) {
+                                    if (playerId != clientId) {
+                                        server.sendToClient(playerId, packet);
+                                    }
+                                }
+                            }
+                        } else {
+                            server.broadcastExcept(packet, clientId);
+                        }
                     }
                 } catch (const std::exception &e) {
                     std::cerr << "Error processing event, broadcasting anyway idfc anymore: " << e.what() << "\n";
-                    server.broadcast(packet);
+                    server.broadcastExcept(packet, clientId);
                 }
             }
         });

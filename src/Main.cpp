@@ -30,6 +30,10 @@
 #include "server/packet/PlayerAssignPacket.hpp"
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
+#include "server/packet/handler/LobbyInfoPacketHandler.hpp"
+#include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/CreateLobbyPacket.hpp"
+#include "server/packet/JoinLobbyPacket.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -51,7 +55,7 @@ std::string getLocalIPAddress() {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 
-    return "192.168.2.161";
+    return "127.0.0.1";
 }
 
 int main() {
@@ -61,7 +65,29 @@ int main() {
 
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
+        network->connect(getLocalIPAddress(), 7534);
+        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
+            }
+
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
+
         EventManager manager(network->getMiddleware());
+        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
+            }
+
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
@@ -70,7 +96,14 @@ int main() {
 
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
         PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
+        
+        PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
+        PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
+        PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
 
+        auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
+        LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
+        PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();

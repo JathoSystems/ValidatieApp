@@ -41,12 +41,10 @@ public:
     std::string getIdleSpritesheet() const;
     std::string getFallingSpritesheet() const;
     
-    Direction _direction = Direction::NONE;
-
     virtual ~BaseCharacter() = default;
 
     void setMovementDirection(Direction direction);
-    
+
     void updateAnimation();
     
     BaseCharacterController* getController() { return _controller.get(); }
