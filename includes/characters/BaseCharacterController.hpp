@@ -50,6 +50,8 @@ public:
 
     void move(Direction direction, PhysicsComponent *physics);
 
+    void getCurrentPosition(float &x, float &y);
+
     void updateMovementDirection();
 
     bool isActive() const { return _active; }

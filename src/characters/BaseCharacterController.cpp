@@ -9,6 +9,7 @@
 #include "SpawnEvent.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
@@ -29,6 +30,15 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
 }
 
+void BaseCharacterController::getCurrentPosition(float &x, float &y) {
+    x = 0; y = 0;
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_parentId);
+    if (obj) {
+        x = obj->getTransform()->getPosition()->getX();
+        y = obj->getTransform()->getPosition()->getY();
+    }
+}
+
 // Helper to determine direction based on which keys are held
 void BaseCharacterController::updateMovementDirection() {
     Direction newDirection = Direction::NONE;
@@ -43,8 +53,11 @@ void BaseCharacterController::updateMovementDirection() {
         _movementDirection = newDirection;
 
         if (_eventManager && _active) {
-            // Send the new state
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, _movementDirection, _movementDirection != Direction::NONE));
+            // get position to send as well so the error will be fixed
+            float x, y;
+            getCurrentPosition(x, y);
+
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, _movementDirection, _movementDirection != Direction::NONE, x, y));
         }
     }
 }
