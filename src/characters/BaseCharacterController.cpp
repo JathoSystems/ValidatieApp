@@ -11,15 +11,9 @@
 #include "characters/events/MoveEvent.hpp"
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
-#include <iostream>
 
 #define COLOR_RED     "\033[31m"
-#define COLOR_GREEN   "\033[32m"
-#define COLOR_YELLOW  "\033[33m"
-#define COLOR_BLUE    "\033[34m"
 #define COLOR_MAGENTA "\033[35m"
-#define COLOR_CYAN    "\033[36m"
-#define COLOR_RESET   "\033[0m"
 
 BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId,
                                                  EventManager *eventManager, KeyBindings bindings, bool active) {
@@ -35,18 +29,33 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
 }
 
+// Helper to determine direction based on which keys are held
+void BaseCharacterController::updateMovementDirection() {
+    Direction newDirection = Direction::NONE;
+
+    if (_isLeftPressed && !_isRightPressed) {
+        newDirection = Direction::EAST;
+    } else if (_isRightPressed && !_isLeftPressed) {
+        newDirection = Direction::WEST;
+    }
+
+    if (_movementDirection != newDirection) {
+        _movementDirection = newDirection;
+
+        if (_eventManager && _active) {
+            // Send the new state
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, _movementDirection, _movementDirection != Direction::NONE));
+        }
+    }
+}
+
 void BaseCharacterController::onKeyPress(Key key) {
-    // Handle movement directly for offline mode
     if (key == _keyBindings.left) {
-        // _movementDirection = Direction::EAST;
-        if (_eventManager && _active) {
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, true));
-        }
+        _isLeftPressed = true;
+        updateMovementDirection();
     } else if (key == _keyBindings.right) {
-        // _movementDirection = Direction::WEST;
-        if (_eventManager && _active) {
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, true));
-        }
+        _isRightPressed = true;
+        updateMovementDirection();
     } else if (key == _keyBindings.jump) {
         if (_grounded) {
             _shouldJump = true;
@@ -58,19 +67,12 @@ void BaseCharacterController::onKeyPress(Key key) {
 }
 
 void BaseCharacterController::onKeyRelease(Key key) {
-    // Handle movement directly for offline mode
-    if (key == _keyBindings.left || key == _keyBindings.right) {
-        _movementDirection = Direction::NONE;
-    }
-
-    if (_eventManager) {
-        if (key == _keyBindings.left) {
-            if (_active)
-                _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::WEST, false));
-        } else if (key == _keyBindings.right) {
-            if (_active)
-                _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, Direction::EAST, false));
-        }
+    if (key == _keyBindings.left) {
+        _isLeftPressed = false;
+        updateMovementDirection();
+    } else if (key == _keyBindings.right) {
+        _isRightPressed = false;
+        updateMovementDirection();
     }
 }
 
@@ -86,20 +88,25 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
     float currentVx, currentVy;
     physics->getVelocity(currentVx, currentVy);
 
+    float newVy = currentVy;
+
     // Handle jump
     if (_shouldJump && _grounded) {
-        physics->applyImpulse(0.0f, -_jumpForce);
+        std::cout << "\033[33m[CONTROLLER] JUMP! Setting vertical velocity.\033[0m" << std::endl;
+
+        newVy = -800.0f;
+
         _grounded = false;
         _shouldJump = false;
     }
 
-    // Handle horizontal movement
-    float vx = 0.0f;
+    float targetVx = 0.0f;
+
     if (_movementDirection == Direction::EAST) {
-        vx = -_movementSpeed;
+        targetVx = -_movementSpeed;
     } else if (_movementDirection == Direction::WEST) {
-        vx = _movementSpeed;
+        targetVx = _movementSpeed;
     }
 
-    physics->setVelocity(vx, currentVy);
+    physics->setVelocity(targetVx, newVy);
 }

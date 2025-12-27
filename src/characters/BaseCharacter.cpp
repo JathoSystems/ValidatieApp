@@ -3,6 +3,9 @@
 //
 
 #include "characters/BaseCharacter.hpp"
+#include <iostream>
+#include <cmath>
+#include <iomanip>
 
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
@@ -40,7 +43,8 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
     component->setBodyType(BodyType::DYNAMIC);
     component->setCollider(std::make_unique<BoxCollider>(50, 100));
-    component->setMaterial(Material(1.0f, 0.8f, 0.0f));
+
+    component->setMaterial(Material(1.0f, 0.0f, 0.0f));
     component->setGravityScale(1.0f);
     component->setFixedRotation(true);
 
@@ -50,8 +54,9 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
 }
 
 void BaseCharacter::update(float delta) {
+    if (delta > 0.05f) delta = 0.05f;
+
     GameObject::update(delta);
-    updateAnimation();
 
     if (_controller) {
         auto *physics = getComponent<PhysicsComponent>();
@@ -59,68 +64,61 @@ void BaseCharacter::update(float delta) {
             _controller->move(Direction::NONE, physics);
         }
     }
+
+    if (_controller) {
+        auto *physics = getComponent<PhysicsComponent>();
+        if (physics) {
+            float vx, vy;
+            physics->getVelocity(vx, vy);
+
+            if (_controller->isGrounded() && vy > 1.0f) {
+                _controller->setGrounded(false);
+            }
+        }
+    }
+
+    updateAnimation();
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
     if (collision.normalY > 0.2f) {
         if (_controller) {
+
+            if (!_controller->isGrounded()) {
+                // std::cout << "[BaseCharacter] Landed!" << std::endl;
+            }
             _controller->setGrounded(true);
         }
-
-        removeComponent<Animator>(true);
-        addComponent(std::make_unique<Animator>(idle, 1, 5));
     }
 }
 
-
 void BaseCharacter::onCollisionExit(const CollisionData &) {
-    if (_controller)
+    PhysicsComponent *physics = getComponent<PhysicsComponent>();
+    if (!physics || !_controller) return;
+
+    float vx, vy;
+    physics->getVelocity(vx, vy);
+
+    if (vy < -0.1f) {
         _controller->setGrounded(false);
+    }
 }
 
-void BaseCharacter::setIdleSpritesheet(std::string idle) {
-    this->idle = idle;
-}
+void BaseCharacter::setIdleSpritesheet(std::string idle) { this->idle = idle; }
+void BaseCharacter::setMovingLeftSpritesheet(std::string left) { this->left = left; }
+void BaseCharacter::setMovingRightSpritesheet(std::string right) { this->right = right; }
+void BaseCharacter::setJumpingSpritesheet(std::string jump) { this->jump = jump; }
+void BaseCharacter::setFallingSpritesheet(std::string falling) { this->falling = falling; }
 
-void BaseCharacter::setMovingLeftSpritesheet(std::string left) {
-    this->left = left;
-}
-
-void BaseCharacter::setMovingRightSpritesheet(std::string right) {
-    this->right = right;
-}
-
-void BaseCharacter::setJumpingSpritesheet(std::string jump) {
-    this->jump = jump;
-}
-
-void BaseCharacter::setFallingSpritesheet(std::string falling) {
-    this->falling = falling;
-}
-
-std::string BaseCharacter::getJumpingSpritesheet() const {
-    return jump;
-}
-
-std::string BaseCharacter::getLeftSpritesheet() const {
-    return left;
-}
-
-std::string BaseCharacter::getRightSpritesheet() const {
-    return right;
-}
-
-std::string BaseCharacter::getIdleSpritesheet() const {
-    return idle;
-}
-
-std::string BaseCharacter::getFallingSpritesheet() const {
-    return falling;
-}
+std::string BaseCharacter::getJumpingSpritesheet() const { return jump; }
+std::string BaseCharacter::getLeftSpritesheet() const { return left; }
+std::string BaseCharacter::getRightSpritesheet() const { return right; }
+std::string BaseCharacter::getIdleSpritesheet() const { return idle; }
+std::string BaseCharacter::getFallingSpritesheet() const { return falling; }
 
 void BaseCharacter::updateAnimator(Animation newAnimation) {
     if (_currentAnimation == newAnimation) {
-        return; // Al de juiste animatie, skip
+        return;
     }
 
     _currentAnimation = newAnimation;
@@ -157,24 +155,30 @@ void BaseCharacter::updateAnimation() {
 
     float vx, vy;
     physics->getVelocity(vx, vy);
+
     bool isGrounded = _controller->isGrounded();
     Direction movementDir = _controller->getMovementDirection();
 
-    // Animatie prioriteit: Spring/Val > Beweging > Idle
+    bool effectivelyGrounded = isGrounded || (std::abs(vy) < 0.5f);
 
-    // 1. Check of karakter in de lucht is
-    if (!isGrounded) {
-        if (vy < 0.2) {
-            // Omhoog (springen)
+    if (!effectivelyGrounded) {
+        if (vy < -0.1f) {
             updateAnimator(Animation::JUMP);
-        } else {
-            // Omlaag (vallen)
+        } else if (vy > 0.5f) {
             updateAnimator(Animation::FALLING);
+        } else {
+
+            if (movementDir != Direction::NONE) {
+
+                if(movementDir == Direction::WEST) updateAnimator(Animation::RIGHT);
+                 else updateAnimator(Animation::LEFT);
+            } else {
+                updateAnimator(Animation::IDLE);
+            }
         }
-        return; // Lucht animaties hebben voorrang
+        return;
     }
 
-    // 2. Check beweging (alleen als op grond)
     if (movementDir == Direction::WEST) {
         updateAnimator(Animation::RIGHT);
         return;

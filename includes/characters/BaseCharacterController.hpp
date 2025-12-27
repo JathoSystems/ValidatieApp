@@ -29,6 +29,10 @@ private:
     KeyBindings _keyBindings;
     bool _active;
 
+    // ADDED: Track key states to prevent "Idle flicker" when switching keys
+    bool _isLeftPressed = false;
+    bool _isRightPressed = false;
+
 public:
     BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager,
                             KeyBindings bindings, bool active);
@@ -45,6 +49,10 @@ public:
     void setMovementDirection(Direction direction) { _movementDirection = direction; }
 
     void move(Direction direction, PhysicsComponent *physics);
+
+    void updateMovementDirection();
+
+    bool isActive() const { return _active; }
 };
 
 #endif
