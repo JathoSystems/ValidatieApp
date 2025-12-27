@@ -62,6 +62,36 @@ void BaseCharacterController::updateMovementDirection() {
     }
 }
 
+void BaseCharacterController::update(float delta) {
+    // Only the active player sends sync packets
+    if (!_active || !_eventManager) return;
+
+    // Only sync if we are actually moving
+    if (_movementDirection != Direction::NONE) {
+        _syncTimer += delta;
+
+        // Send a packet every 0.1 seconds (100ms)
+        if (_syncTimer > 0.1f) {
+            _syncTimer = 0.0f;
+
+            // Get current real position
+            float x = 0, y = 0;
+            getCurrentPosition(x, y);
+
+            // Broadcast the correction!
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
+                _parentId,
+                _movementDirection,
+                true, // Toggle is true because we are still moving
+                x,
+                y
+            ));
+        }
+    } else {
+        _syncTimer = 0.0f;
+    }
+}
+
 void BaseCharacterController::onKeyPress(Key key) {
     if (key == _keyBindings.left) {
         _isLeftPressed = true;
@@ -72,10 +102,12 @@ void BaseCharacterController::onKeyPress(Key key) {
     } else if (key == _keyBindings.jump) {
         if (_grounded) {
             _shouldJump = true;
+
+            if (_eventManager && _active) {
+                _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
+            }
         }
-        if (_eventManager && _active) {
-            _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
-        }
+
     }
 }
 

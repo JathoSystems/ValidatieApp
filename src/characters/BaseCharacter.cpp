@@ -59,6 +59,10 @@ void BaseCharacter::update(float delta) {
     GameObject::update(delta);
 
     if (_controller) {
+        _controller->update(delta);
+    }
+
+    if (_controller) {
         auto *physics = getComponent<PhysicsComponent>();
         if (physics) {
             _controller->move(Direction::NONE, physics);

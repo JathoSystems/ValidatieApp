@@ -68,9 +68,9 @@ void MoveEvent::apply(GameObject *gameObject) {
         baseChar->getTransform()->getPosition()->setX(_x);
         baseChar->getTransform()->getPosition()->setY(_y);
 
-        // if(auto* physics = baseChar->getComponent<PhysicsComponent>()){
-        //     physics->setPosition(_x, _y);
-        // }
+        if(auto* physics = baseChar->getComponent<PhysicsComponent>()){
+            physics->setPosition(_x, _y);
+        }
 
         if (!_toggle) {
             baseChar->setMovementDirection(Direction::NONE);
