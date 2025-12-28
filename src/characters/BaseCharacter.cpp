@@ -29,6 +29,9 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
                                         GameEngine *engine, bool activePlayer, KeyBindings bindings) {
     _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings, activePlayer);
 
+    std::cout << "[BaseCharacter] Created with ID: " << id
+              << " Active: " << (activePlayer ? "YES" : "NO") << std::endl;
+
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
         keyInput->setListener(_controller.get());
@@ -106,6 +109,17 @@ void BaseCharacter::applyPendingNetworkUpdate() {
     const float SNAP_THRESHOLD = 100.0f;        // Snap if > 100 pixels off (lag spike)
     const float IGNORE_THRESHOLD = 2.0f;        // Ignore tiny differences < 2 pixels
     const float CORRECTION_SPEED = 0.5f;        // Faster interpolation (was 0.3)
+
+    // DEBUG OUTPUT - remove this once you find the issue
+    static int debugCounter = 0;
+    if (++debugCounter % 30 == 0) {  // Print every 30th update to avoid spam
+        std::cout << "[SYNC] ID: " << getId()
+                  << " Error: " << errorMagnitude << "px"
+                  << " Current: (" << currentX << ", " << currentY << ")"
+                  << " Target: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
+                  << " Active: " << (_controller ? (_controller->isActive() ? "YES" : "NO") : "NULL")
+                  << std::endl;
+    }
 
     if (errorMagnitude > SNAP_THRESHOLD) {
         // Large desync - snap immediately

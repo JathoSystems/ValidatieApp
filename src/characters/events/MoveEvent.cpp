@@ -58,13 +58,21 @@ void MoveEvent::apply(GameObject *gameObject) {
     if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
         BaseCharacterController* controller = baseChar->getController();
 
-        // Don't apply to active player
-        if (controller && controller->isActive()) {
+        // DEBUG: Log what's happening
+        bool isActive = controller && controller->isActive();
+        std::cout << "[MoveEvent] ObjectID: " << _objectId
+                  << " Active: " << (isActive ? "YES" : "NO")
+                  << " Pos: (" << _x << ", " << _y << ")"
+                  << " Dir: " << static_cast<int>(_direction)
+                  << " Toggle: " << _toggle << std::endl;
+
+        // Don't apply to active player - they control themselves
+        if (isActive) {
+            std::cout << "[MoveEvent] Skipping - this is the active player" << std::endl;
             return;
         }
 
         // Store the pending physics update data
-        // We'll apply it in the character's update() method which runs AFTER physics step
         baseChar->setPendingNetworkUpdate(_x, _y, _direction, _toggle);
     }
 }
