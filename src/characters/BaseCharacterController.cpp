@@ -66,29 +66,26 @@ void BaseCharacterController::update(float delta) {
     // Only the active player sends sync packets
     if (!_active || !_eventManager) return;
 
-    // Only sync if we are actually moving
-    if (_movementDirection != Direction::NONE) {
-        _syncTimer += delta;
+    _syncTimer += delta;
 
-        // Send a packet every 0.1 seconds (100ms)
-        if (_syncTimer > 0.1f) {
-            _syncTimer = 0.0f;
-
-            // Get current real position
-            float x = 0, y = 0;
-            getCurrentPosition(x, y);
-
-            // Broadcast the correction!
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
-                _parentId,
-                _movementDirection,
-                true, // Toggle is true because we are still moving
-                x,
-                y
-            ));
-        }
-    } else {
+    // Send sync packets more frequently: every 50ms (20 times per second)
+    // CRITICAL: Sync even when not moving to handle physics drift (gravity, landing, etc.)
+    if (_syncTimer > 0.05f) {
         _syncTimer = 0.0f;
+
+        // Get current real position
+        float x = 0, y = 0;
+        getCurrentPosition(x, y);
+
+        // Broadcast position regardless of movement state
+        // This ensures remote clients stay synced even during falling, landing, etc.
+        _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
+            _parentId,
+            _movementDirection,
+            _movementDirection != Direction::NONE,
+            x,
+            y
+        ));
     }
 }
 
@@ -107,7 +104,6 @@ void BaseCharacterController::onKeyPress(Key key) {
                 _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
             }
         }
-
     }
 }
 

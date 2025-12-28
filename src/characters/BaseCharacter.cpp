@@ -54,7 +54,6 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
 }
 
 void BaseCharacter::update(float delta) {
-    if (delta > 0.05f) delta = 0.05f;
 
     GameObject::update(delta);
 
@@ -62,25 +61,19 @@ void BaseCharacter::update(float delta) {
         _controller->update(delta);
     }
 
-    if (_controller) {
+    if (_controller && _controller->isActive()) {
         auto *physics = getComponent<PhysicsComponent>();
         if (physics) {
             _controller->move(Direction::NONE, physics);
         }
-    }
 
-    if (_controller) {
-        auto *physics = getComponent<PhysicsComponent>();
-        if (physics) {
-            float vx, vy;
-            physics->getVelocity(vx, vy);
-
-            if (_controller->isGrounded() && vy > 1.0f) {
-                _controller->setGrounded(false);
-            }
+        // Check if should leave ground
+        float vx, vy;
+        physics->getVelocity(vx, vy);
+        if (_controller->isGrounded() && vy > 1.0f) {
+            _controller->setGrounded(false);
         }
     }
-
     updateAnimation();
 }
 
