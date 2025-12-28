@@ -102,21 +102,22 @@ void BaseCharacter::applyPendingNetworkUpdate() {
     float errorY = _pendingUpdate.y - currentY;
     float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
 
-    // If error is large (> 50 pixels), snap immediately
-    // Otherwise, smoothly correct over time
-    const float SNAP_THRESHOLD = 50.0f;
-    const float CORRECTION_SPEED = 0.3f;
+    // Tuned thresholds for better sync
+    const float SNAP_THRESHOLD = 100.0f;        // Snap if > 100 pixels off (lag spike)
+    const float IGNORE_THRESHOLD = 2.0f;        // Ignore tiny differences < 2 pixels
+    const float CORRECTION_SPEED = 0.5f;        // Faster interpolation (was 0.3)
 
     if (errorMagnitude > SNAP_THRESHOLD) {
         // Large desync - snap immediately
+        std::cout << "[SYNC] Large error detected (" << errorMagnitude << "px), snapping!" << std::endl;
         getTransform()->getPosition()->setX(_pendingUpdate.x);
         getTransform()->getPosition()->setY(_pendingUpdate.y);
 
         if(auto* physics = getComponent<PhysicsComponent>()) {
             physics->setPosition(_pendingUpdate.x, _pendingUpdate.y);
         }
-    } else if (errorMagnitude > 1.0f) {
-        // Small desync - interpolate smoothly
+    } else if (errorMagnitude > IGNORE_THRESHOLD) {
+        // Medium desync - interpolate smoothly but more aggressively
         float correctedX = currentX + errorX * CORRECTION_SPEED;
         float correctedY = currentY + errorY * CORRECTION_SPEED;
 
@@ -127,6 +128,7 @@ void BaseCharacter::applyPendingNetworkUpdate() {
             physics->setPosition(correctedX, correctedY);
         }
     }
+    // else: error is tiny, ignore to avoid jitter
 
     // Apply velocity based on movement state
     if(auto* physics = getComponent<PhysicsComponent>()) {
@@ -134,8 +136,10 @@ void BaseCharacter::applyPendingNetworkUpdate() {
         physics->getVelocity(vx, vy);
 
         if (!_pendingUpdate.toggle) {
+            // Stopped - set horizontal velocity to 0
             physics->setVelocity(0.0f, vy);
         } else {
+            // Moving - set appropriate horizontal velocity
             float targetVx = (_pendingUpdate.direction == Direction::EAST) ? -300.0f : 300.0f;
             physics->setVelocity(targetVx, vy);
         }
@@ -146,7 +150,8 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 }
 
 void BaseCharacter::update(float delta) {
-    if (delta > 0.05f) delta = 0.05f;
+    // Don't clamp delta - let physics run naturally
+    // if (delta > 0.05f) delta = 0.05f;
 
     // CRITICAL: Apply pending network updates BEFORE anything else
     // This ensures we modify physics outside of the physics step

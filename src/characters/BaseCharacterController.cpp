@@ -68,9 +68,11 @@ void BaseCharacterController::update(float delta) {
 
     _syncTimer += delta;
 
-    // Send sync packets more frequently: every 50ms (20 times per second)
-    // CRITICAL: Sync even when not moving to handle physics drift (gravity, landing, etc.)
-    if (_syncTimer > 0.05f) {
+    // Increased sync frequency: every 33ms (~30 times per second)
+    // This provides smoother synchronization with minimal bandwidth cost
+    const float SYNC_INTERVAL = 0.033f;
+
+    if (_syncTimer >= SYNC_INTERVAL) {
         _syncTimer = 0.0f;
 
         // Get current real position
