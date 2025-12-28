@@ -53,7 +53,105 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
 }
 
+void BaseCharacter::setPendingNetworkUpdate(float x, float y, Direction direction, bool toggle) {
+    _pendingUpdate.hasPending = true;
+    _pendingUpdate.x = x;
+    _pendingUpdate.y = y;
+    _pendingUpdate.direction = direction;
+    _pendingUpdate.toggle = toggle;
+}
+
+void BaseCharacter::setPendingJump(bool shouldJump) {
+    _pendingJump.shouldJump = shouldJump;
+}
+
+void BaseCharacter::applyPendingJump() {
+    if (!_pendingJump.shouldJump) return;
+
+    _pendingJump.shouldJump = false;
+
+    PhysicsComponent *physics = getComponent<PhysicsComponent>();
+    if (!physics) return;
+
+    if (_controller && !_controller->isGrounded()) {
+        return;
+    }
+
+    float jumpVelocity = -800.0f;
+
+    float vx, vy;
+    physics->getVelocity(vx, vy);
+    physics->setVelocity(vx, jumpVelocity);
+
+    if (_controller) {
+        _controller->setGrounded(false);
+    }
+}
+
+void BaseCharacter::applyPendingNetworkUpdate() {
+    if (!_pendingUpdate.hasPending) return;
+
+    _pendingUpdate.hasPending = false;
+
+    // Now it's safe to modify physics (we're in update(), not during physics step)
+    float currentX = getTransform()->getPosition()->getX();
+    float currentY = getTransform()->getPosition()->getY();
+
+    // Calculate error
+    float errorX = _pendingUpdate.x - currentX;
+    float errorY = _pendingUpdate.y - currentY;
+    float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
+
+    // If error is large (> 50 pixels), snap immediately
+    // Otherwise, smoothly correct over time
+    const float SNAP_THRESHOLD = 50.0f;
+    const float CORRECTION_SPEED = 0.3f;
+
+    if (errorMagnitude > SNAP_THRESHOLD) {
+        // Large desync - snap immediately
+        getTransform()->getPosition()->setX(_pendingUpdate.x);
+        getTransform()->getPosition()->setY(_pendingUpdate.y);
+
+        if(auto* physics = getComponent<PhysicsComponent>()) {
+            physics->setPosition(_pendingUpdate.x, _pendingUpdate.y);
+        }
+    } else if (errorMagnitude > 1.0f) {
+        // Small desync - interpolate smoothly
+        float correctedX = currentX + errorX * CORRECTION_SPEED;
+        float correctedY = currentY + errorY * CORRECTION_SPEED;
+
+        getTransform()->getPosition()->setX(correctedX);
+        getTransform()->getPosition()->setY(correctedY);
+
+        if(auto* physics = getComponent<PhysicsComponent>()) {
+            physics->setPosition(correctedX, correctedY);
+        }
+    }
+
+    // Apply velocity based on movement state
+    if(auto* physics = getComponent<PhysicsComponent>()) {
+        float vx, vy;
+        physics->getVelocity(vx, vy);
+
+        if (!_pendingUpdate.toggle) {
+            physics->setVelocity(0.0f, vy);
+        } else {
+            float targetVx = (_pendingUpdate.direction == Direction::EAST) ? -300.0f : 300.0f;
+            physics->setVelocity(targetVx, vy);
+        }
+    }
+
+    // Update visual movement direction
+    setMovementDirection(_pendingUpdate.toggle ? _pendingUpdate.direction : Direction::NONE);
+}
+
 void BaseCharacter::update(float delta) {
+    if (delta > 0.05f) delta = 0.05f;
+
+    // CRITICAL: Apply pending network updates BEFORE anything else
+    // This ensures we modify physics outside of the physics step
+    applyPendingNetworkUpdate();
+    applyPendingJump();
 
     GameObject::update(delta);
 
@@ -80,7 +178,6 @@ void BaseCharacter::update(float delta) {
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
     if (collision.normalY > 0.2f) {
         if (_controller) {
-
             if (!_controller->isGrounded()) {
                 // std::cout << "[BaseCharacter] Landed!" << std::endl;
             }
@@ -164,9 +261,7 @@ void BaseCharacter::updateAnimation() {
         } else if (vy > 0.5f) {
             updateAnimator(Animation::FALLING);
         } else {
-
             if (movementDir != Direction::NONE) {
-
                 if(movementDir == Direction::WEST) updateAnimator(Animation::RIGHT);
                  else updateAnimator(Animation::LEFT);
             } else {

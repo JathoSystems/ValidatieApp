@@ -14,6 +14,18 @@ enum class Animation {
     FALLING
 };
 
+struct PendingNetworkUpdate {
+    bool hasPending = false;
+    float x = 0.0f;
+    float y = 0.0f;
+    Direction direction = Direction::NONE;
+    bool toggle = false;
+};
+
+struct PendingJump {
+    bool shouldJump = false;
+};
+
 class BaseCharacter : public GameObject , public Broadcastable {
 private:
     std::string idle;
@@ -22,12 +34,17 @@ private:
     std::string jump;
     std::string falling;
     std::unique_ptr<BaseCharacterController> _controller;
-    
+
     Animation _currentAnimation = Animation::IDLE;
-    
+    PendingNetworkUpdate _pendingUpdate;
+    PendingJump _pendingJump;
+
     void updateAnimator(Animation newAnimation);
     void initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer, KeyBindings bindings);
+    void applyPendingNetworkUpdate();
+    void applyPendingJump();
+
 public:
     BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer, KeyBindings bindings);
@@ -40,10 +57,12 @@ public:
     std::string getRightSpritesheet() const;
     std::string getIdleSpritesheet() const;
     std::string getFallingSpritesheet() const;
-    
+
     virtual ~BaseCharacter() = default;
 
     void setMovementDirection(Direction direction);
+    void setPendingNetworkUpdate(float x, float y, Direction direction, bool toggle);
+    void setPendingJump(bool shouldJump);
 
     void updateAnimation();
     

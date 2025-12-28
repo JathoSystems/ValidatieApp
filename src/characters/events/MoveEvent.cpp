@@ -1,6 +1,7 @@
 #include "characters/events/MoveEvent.hpp"
 #include <iostream>
-#include <cstring> // For std::memcpy
+#include <cstring>
+#include <cmath>
 
 #include "characters/BaseCharacter.hpp"
 #include "enums/Direction.hpp"
@@ -62,54 +63,8 @@ void MoveEvent::apply(GameObject *gameObject) {
             return;
         }
 
-        // CRITICAL: Apply position correction WITH interpolation to reduce jitter
-        float currentX = baseChar->getTransform()->getPosition()->getX();
-        float currentY = baseChar->getTransform()->getPosition()->getY();
-
-        // Calculate error
-        float errorX = _x - currentX;
-        float errorY = _y - currentY;
-        float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
-
-        // If error is large (> 50 pixels), snap immediately (lag spike or initial spawn)
-        // Otherwise, smoothly correct over time
-        const float SNAP_THRESHOLD = 50.0f;
-        const float CORRECTION_SPEED = 0.3f; // Interpolation factor
-
-        if (errorMagnitude > SNAP_THRESHOLD) {
-            // Large desync - snap immediately
-            baseChar->getTransform()->getPosition()->setX(_x);
-            baseChar->getTransform()->getPosition()->setY(_y);
-
-            if(auto* physics = baseChar->getComponent<PhysicsComponent>()) {
-                physics->setPosition(_x, _y);
-            }
-        } else if (errorMagnitude > 1.0f) {
-            // Small desync - interpolate smoothly
-            float correctedX = currentX + errorX * CORRECTION_SPEED;
-            float correctedY = currentY + errorY * CORRECTION_SPEED;
-
-            baseChar->getTransform()->getPosition()->setX(correctedX);
-            baseChar->getTransform()->getPosition()->setY(correctedY);
-
-            if(auto* physics = baseChar->getComponent<PhysicsComponent>()) {
-                physics->setPosition(correctedX, correctedY);
-            }
-        }
-
-        if(auto* physics = baseChar->getComponent<PhysicsComponent>()) {
-            float vx, vy;
-            physics->getVelocity(vx, vy);
-
-            if (!_toggle) {
-                physics->setVelocity(0.0f, vy);
-            } else {
-                float targetVx = (_direction == Direction::EAST) ? -300.0f : 300.0f;
-                physics->setVelocity(targetVx, vy);
-            }
-        }
-
-        // Update visual movement direction
-        baseChar->setMovementDirection(_toggle ? _direction : Direction::NONE);
+        // Store the pending physics update data
+        // We'll apply it in the character's update() method which runs AFTER physics step
+        baseChar->setPendingNetworkUpdate(_x, _y, _direction, _toggle);
     }
 }

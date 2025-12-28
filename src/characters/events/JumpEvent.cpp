@@ -34,20 +34,6 @@ void JumpEvent::apply(GameObject *gameObject) {
         return;
     }
 
-    PhysicsComponent *physics = gameObject->getComponent<PhysicsComponent>();
-    if (!physics) return;
-
-    if (controller && !controller->isGrounded()) {
-        return;
-    }
-
-    float jumpVelocity = -800.0f;
-
-    float vx, vy;
-    physics->getVelocity(vx, vy);
-    physics->setVelocity(vx, jumpVelocity);
-
-    if (controller) {
-        controller->setGrounded(false);
-    }
+    // Store pending jump instead of applying immediately
+    baseChar->setPendingJump(true);
 }
