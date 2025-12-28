@@ -62,22 +62,18 @@ void BaseCharacter::update(float delta) {
         _controller->update(delta);
     }
 
-    if (_controller) {
+    // ONLY active players run physics-based movement
+    if (_controller && _controller->isActive()) {
         auto *physics = getComponent<PhysicsComponent>();
         if (physics) {
             _controller->move(Direction::NONE, physics);
         }
-    }
 
-    if (_controller) {
-        auto *physics = getComponent<PhysicsComponent>();
-        if (physics) {
-            float vx, vy;
-            physics->getVelocity(vx, vy);
-
-            if (_controller->isGrounded() && vy > 1.0f) {
-                _controller->setGrounded(false);
-            }
+        // Check if should leave ground
+        float vx, vy;
+        physics->getVelocity(vx, vy);
+        if (_controller->isGrounded() && vy > 1.0f) {
+            _controller->setGrounded(false);
         }
     }
 

@@ -58,24 +58,32 @@ Data MoveEvent::deserialize(const Package &package) {
 
 void MoveEvent::apply(GameObject *gameObject) {
     if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
-
         BaseCharacterController* controller = baseChar->getController();
+
+        // Don't apply to active player (they control themselves)
         if (controller && controller->isActive()) {
             return;
         }
 
-        // baseChar->getTransform()->setPosition(_x, _y);
+        // For REMOTE player - apply position AND velocity
         baseChar->getTransform()->getPosition()->setX(_x);
         baseChar->getTransform()->getPosition()->setY(_y);
 
-        if(auto* physics = baseChar->getComponent<PhysicsComponent>()){
+        if(auto* physics = baseChar->getComponent<PhysicsComponent>()) {
             physics->setPosition(_x, _y);
+
+            // Set velocity to match movement
+            float vx, vy;
+            physics->getVelocity(vx, vy);
+
+            if (!_toggle) {
+                physics->setVelocity(0.0f, vy);
+            } else {
+                float targetVx = (_direction == Direction::EAST) ? -300.0f : 300.0f;
+                physics->setVelocity(targetVx, vy);
+            }
         }
 
-        if (!_toggle) {
-            baseChar->setMovementDirection(Direction::NONE);
-        } else {
-            baseChar->setMovementDirection(_direction);
-        }
+        baseChar->setMovementDirection(_toggle ? _direction : Direction::NONE);
     }
 }
