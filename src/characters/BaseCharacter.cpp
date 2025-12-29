@@ -44,11 +44,18 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
-    component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
 
+    // CRITICAL FIX: Remote players should be kinematic, not dynamic!
+    if (activePlayer) {
+        component->setBodyType(BodyType::DYNAMIC);  // Full physics simulation
+        component->setGravityScale(1.0f);          // Normal gravity
+    } else {
+        component->setBodyType(BodyType::KINEMATIC);  // Position-driven only, no physics
+        component->setGravityScale(0.0f);            // No gravity for remote players
+    }
+
+    component->setCollider(std::make_unique<BoxCollider>(50, 100));
     component->setMaterial(Material(1.0f, 0.0f, 0.0f));
-    component->setGravityScale(1.0f);
     component->setFixedRotation(true);
 
     PhysicsComponent *componentPointer = component.get();
@@ -93,86 +100,66 @@ void BaseCharacter::applyPendingJump() {
 
 void BaseCharacter::applyPendingNetworkUpdate() {
     if (!_pendingUpdate.hasPending) return;
-
     _pendingUpdate.hasPending = false;
 
-    // Now it's safe to modify physics (we're in update(), not during physics step)
-    float currentX = getTransform()->getPosition()->getX();
-    float currentY = getTransform()->getPosition()->getY();
+    // Check if this is a remote player
+    bool isRemote = _controller && !_controller->isActive();
 
-    // Calculate error
-    float errorX = _pendingUpdate.x - currentX;
-    float errorY = _pendingUpdate.y - currentY;
-    float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
-
-    if (errorMagnitude > 5.0f) {  // Only log significant errors
-        std::cout << "[DESYNC] ID: " << getId()
-                  << " Error: " << errorMagnitude << "px"
-                  << " Current: (" << currentX << ", " << currentY << ")"
-                  << " Network: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
-                  << std::endl;
-    }
-
-    // Tuned thresholds for better sync
-    const float SNAP_THRESHOLD = 100.0f;        // Snap if > 100 pixels off (lag spike)
-    const float IGNORE_THRESHOLD = 2.0f;        // Ignore tiny differences < 2 pixels
-    const float CORRECTION_SPEED = 0.5f;        // Faster interpolation (was 0.3)
-
-    // DEBUG OUTPUT - remove this once you find the issue
-    static int debugCounter = 0;
-    if (++debugCounter % 30 == 0) {  // Print every 30th update to avoid spam
-        std::cout << "[SYNC] ID: " << getId()
-                  << " Error: " << errorMagnitude << "px"
-                  << " Current: (" << currentX << ", " << currentY << ")"
-                  << " Target: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
-                  << " Active: " << (_controller ? (_controller->isActive() ? "YES" : "NO") : "NULL")
-                  << std::endl;
-    }
-
-    if (errorMagnitude > SNAP_THRESHOLD) {
-        // Large desync - snap immediately
-        std::cout << "[SYNC] Large error detected (" << errorMagnitude << "px), snapping!" << std::endl;
+    if (isRemote) {
+        // Remote players: directly snap to network position (they're kinematic)
         getTransform()->getPosition()->setX(_pendingUpdate.x);
         getTransform()->getPosition()->setY(_pendingUpdate.y);
 
         if(auto* physics = getComponent<PhysicsComponent>()) {
             physics->setPosition(_pendingUpdate.x, _pendingUpdate.y);
         }
-    } else if (errorMagnitude > IGNORE_THRESHOLD) {
-        // Medium desync - interpolate smoothly but more aggressively
-        float correctedX = currentX + errorX * CORRECTION_SPEED;
-        float correctedY = currentY + errorY * CORRECTION_SPEED;
+    } else {
+        // Active player: use interpolation for smooth correction
+        float currentX = getTransform()->getPosition()->getX();
+        float currentY = getTransform()->getPosition()->getY();
 
-        getTransform()->getPosition()->setX(correctedX);
-        getTransform()->getPosition()->setY(correctedY);
+        float errorX = _pendingUpdate.x - currentX;
+        float errorY = _pendingUpdate.y - currentY;
+        float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
 
-        if(auto* physics = getComponent<PhysicsComponent>()) {
-            physics->setPosition(correctedX, correctedY);
+        if (errorMagnitude > 5.0f) {
+            std::cout << "[DESYNC] ID: " << getId()
+                      << " Error: " << errorMagnitude << "px"
+                      << " Current: (" << currentX << ", " << currentY << ")"
+                      << " Network: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
+                      << std::endl;
+        }
+
+        const float SNAP_THRESHOLD = 100.0f;
+        const float IGNORE_THRESHOLD = 2.0f;
+        const float CORRECTION_SPEED = 0.5f;
+
+        if (errorMagnitude > SNAP_THRESHOLD) {
+            getTransform()->getPosition()->setX(_pendingUpdate.x);
+            getTransform()->getPosition()->setY(_pendingUpdate.y);
+
+            if(auto* physics = getComponent<PhysicsComponent>()) {
+                physics->setPosition(_pendingUpdate.x, _pendingUpdate.y);
+            }
+        } else if (errorMagnitude > IGNORE_THRESHOLD) {
+            float correctedX = currentX + errorX * CORRECTION_SPEED;
+            float correctedY = currentY + errorY * CORRECTION_SPEED;
+
+            getTransform()->getPosition()->setX(correctedX);
+            getTransform()->getPosition()->setY(correctedY);
+
+            if(auto* physics = getComponent<PhysicsComponent>()) {
+                physics->setPosition(correctedX, correctedY);
+            }
         }
     }
-    // else: error is tiny, ignore to avoid jitter
 
-    // Apply velocity based on movement state
-    if(auto* physics = getComponent<PhysicsComponent>()) {
-        float vx, vy;
-        physics->getVelocity(vx, vy);
-
-        if (!_pendingUpdate.toggle) {
-            // Stopped - set horizontal velocity to 0
-            physics->setVelocity(0.0f, vy);
-        } else {
-            // Moving - set appropriate horizontal velocity
-            float targetVx = (_pendingUpdate.direction == Direction::EAST) ? -300.0f : 300.0f;
-            physics->setVelocity(targetVx, vy);
-        }
-    }
-
-    // Update visual movement direction
+    // Update visual movement direction for all players
     setMovementDirection(_pendingUpdate.toggle ? _pendingUpdate.direction : Direction::NONE);
 }
 
 void BaseCharacter::update(float delta) {
-    const float PHYSICS_TIMESTEP = 1.0f / 60.0f; // Fixed 60Hz physics
+    const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
 
     // Apply network updates first (outside physics step)
     applyPendingNetworkUpdate();
@@ -189,7 +176,6 @@ void BaseCharacter::update(float delta) {
             if (physics) {
                 _controller->move(Direction::NONE, physics);
 
-                // Check if should leave ground
                 float vx, vy;
                 physics->getVelocity(vx, vy);
                 if (_controller->isGrounded() && vy > 1.0f) {
