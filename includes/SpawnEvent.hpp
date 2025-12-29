@@ -10,6 +10,7 @@
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/IEvent.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Scenes/SceneSystem.h"
 
 class SpawnEvent : public IEvent {
@@ -87,9 +88,15 @@ public:
     }
 
     void spawn() {
-        std::cout << "SPAWNING " << objectName
-                  << " WITH ID " << registryId
-                  << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
+        std::cout << "SPAWNING " << objectName << " WITH ID " << registryId << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
+
+        GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
+        if (existingObj) {
+            existingObj->getTransform()->getPosition()->setX(spawnX);
+            existingObj->getTransform()->getPosition()->setY(spawnY);
+            return;
+        }
+
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
         if (!system) {
             std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
@@ -109,7 +116,6 @@ public:
             return;
         }
 
-        // CRITICAL: Set the spawned object's position from the event
         object->getTransform()->getPosition()->setX(spawnX);
         object->getTransform()->getPosition()->setY(spawnY);
 
