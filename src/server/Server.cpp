@@ -44,7 +44,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>(0, "placeholder", 0.0f, 0.0f);
+            return std::make_shared<SpawnEvent>(0, "watergirl", 0.0f, 0.0f);
         });
 
         // Create server
