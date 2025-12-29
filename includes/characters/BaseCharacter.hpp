@@ -1,6 +1,5 @@
 #ifndef VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
 #define VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
-
 #include "characters/BaseCharacterController.hpp"
 #include "Engine/GameEngine.h"
 #include "characters/events/MoveEvent.hpp"
@@ -21,6 +20,10 @@ struct PendingNetworkUpdate {
     bool hasPending = false;
     float x = 0.0f;
     float y = 0.0f;
+    // NEW: Velocity
+    float vx = 0.0f;
+    float vy = 0.0f;
+
     Direction direction = Direction::NONE;
     bool toggle = false;
 };
@@ -67,7 +70,7 @@ public:
     std::string getFallingSpritesheet() const;
 
     void setMovementDirection(Direction direction);
-    void setPendingNetworkUpdate(float x, float y, Direction direction, bool toggle);
+    void setPendingNetworkUpdate(float x, float y, float vx, float vy, Direction direction, bool toggle);
     void setPendingJump(bool shouldJump);
 
     void updateAnimation();
@@ -86,4 +89,4 @@ protected:
     void setFallingSpritesheet(std::string falling);
 };
 
-#endif // VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
+#endif

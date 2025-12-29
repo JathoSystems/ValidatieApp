@@ -1,11 +1,7 @@
-//
 // Created by jusra on 15-12-2025.
-//
 
 #include "characters/BaseCharacterController.hpp"
-
 #include <iostream>
-
 #include "SpawnEvent.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
@@ -23,23 +19,22 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     _network = network;
     _keyBindings = bindings;
     _active = active;
-
-    std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
-    std::cout << COLOR_MAGENTA << "[KeyInputComponent] CREATED for ID: "
-              << parentId << "\033[0m" << std::endl;
-    std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
 }
 
-void BaseCharacterController::getCurrentPosition(float &x, float &y) {
-    x = 0; y = 0;
+// NEW: Helper to get Position AND Velocity
+void BaseCharacterController::getCurrentPhysicsState(float &x, float &y, float &vx, float &vy) {
+    x = 0; y = 0; vx = 0; vy = 0;
     GameObject* obj = ObjectRegistry::getInstance().getObject(_parentId);
     if (obj) {
         x = obj->getTransform()->getPosition()->getX();
         y = obj->getTransform()->getPosition()->getY();
+
+        if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+            physics->getVelocity(vx, vy);
+        }
     }
 }
 
-// Helper to determine direction based on which keys are held
 void BaseCharacterController::updateMovementDirection() {
     Direction newDirection = Direction::NONE;
 
@@ -53,44 +48,39 @@ void BaseCharacterController::updateMovementDirection() {
         _movementDirection = newDirection;
 
         if (_eventManager && _active) {
-            // get position to send as well so the error will be fixed
-            float x, y;
-            getCurrentPosition(x, y);
+            float x, y, vx, vy;
+            getCurrentPhysicsState(x, y, vx, vy);
 
-            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(_parentId, _movementDirection, _movementDirection != Direction::NONE, x, y));
+            // Send velocity in the packet
+            _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
+                _parentId, _movementDirection, _movementDirection != Direction::NONE, x, y, vx, vy
+            ));
         }
     }
 }
 
 void BaseCharacterController::update(float delta) {
-    // Only the active player sends sync packets
     if (!_active || !_eventManager) return;
 
     _syncTimer += delta;
-
-    // Increased sync frequency: every 33ms (~30 times per second)
-    // This provides smoother synchronization with minimal bandwidth cost
-    const float SYNC_INTERVAL = 0.033f;
+    const float SYNC_INTERVAL = 0.033f; // 30 FPS sync
 
     if (_syncTimer >= SYNC_INTERVAL) {
         _syncTimer = 0.0f;
 
-        // Get current real position
-        float x = 0, y = 0;
-        getCurrentPosition(x, y);
+        float x, y, vx, vy;
+        getCurrentPhysicsState(x, y, vx, vy);
 
-        // Broadcast position regardless of movement state
-        // This ensures remote clients stay synced even during falling, landing, etc.
         _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
             _parentId,
             _movementDirection,
             _movementDirection != Direction::NONE,
-            x,
-            y
+            x, y, vx, vy // Send velocity!
         ));
     }
 }
 
+// ... (Rest of key press/release and move functions remain exactly the same)
 void BaseCharacterController::onKeyPress(Key key) {
     if (key == _keyBindings.left) {
         _isLeftPressed = true;
@@ -101,8 +91,8 @@ void BaseCharacterController::onKeyPress(Key key) {
     } else if (key == _keyBindings.jump) {
         if (_grounded) {
             _shouldJump = true;
-
             if (_eventManager && _active) {
+                // We keep JumpEvent for instant reaction
                 _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
             }
         }
@@ -119,37 +109,23 @@ void BaseCharacterController::onKeyRelease(Key key) {
     }
 }
 
-bool BaseCharacterController::isGrounded() const {
-    return _grounded;
-}
-
-void BaseCharacterController::setGrounded(bool grounded) {
-    _grounded = grounded;
-}
+bool BaseCharacterController::isGrounded() const { return _grounded; }
+void BaseCharacterController::setGrounded(bool grounded) { _grounded = grounded; }
 
 void BaseCharacterController::move(Direction direction, PhysicsComponent *physics) {
     float currentVx, currentVy;
     physics->getVelocity(currentVx, currentVy);
-
     float newVy = currentVy;
 
-    // Handle jump
     if (_shouldJump && _grounded) {
-        std::cout << "\033[33m[CONTROLLER] JUMP! Setting vertical velocity.\033[0m" << std::endl;
-
         newVy = -800.0f;
-
         _grounded = false;
         _shouldJump = false;
     }
 
     float targetVx = 0.0f;
-
-    if (_movementDirection == Direction::EAST) {
-        targetVx = -_movementSpeed;
-    } else if (_movementDirection == Direction::WEST) {
-        targetVx = _movementSpeed;
-    }
+    if (_movementDirection == Direction::EAST) targetVx = -_movementSpeed;
+    else if (_movementDirection == Direction::WEST) targetVx = _movementSpeed;
 
     physics->setVelocity(targetVx, newVy);
 }

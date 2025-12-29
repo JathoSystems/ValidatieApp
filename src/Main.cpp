@@ -12,6 +12,7 @@
 #include "asio/io_context.hpp"
 #include "asio/ip/tcp.hpp"
 #include "asio/ip/host_name.hpp"
+#include "Events/EventRegistry.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"

@@ -38,6 +38,8 @@ public:
     BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager,
                             KeyBindings bindings, bool active);
 
+    void getCurrentPhysicsState(float &x, float &y, float &vx, float &vy);
+
     void onKeyPress(Key key) override;
 
     void onKeyRelease(Key key) override;
