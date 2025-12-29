@@ -105,6 +105,14 @@ void BaseCharacter::applyPendingNetworkUpdate() {
     float errorY = _pendingUpdate.y - currentY;
     float errorMagnitude = std::sqrt(errorX * errorX + errorY * errorY);
 
+    if (errorMagnitude > 5.0f) {  // Only log significant errors
+        std::cout << "[DESYNC] ID: " << getId()
+                  << " Error: " << errorMagnitude << "px"
+                  << " Current: (" << currentX << ", " << currentY << ")"
+                  << " Network: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
+                  << std::endl;
+    }
+
     // Tuned thresholds for better sync
     const float SNAP_THRESHOLD = 100.0f;        // Snap if > 100 pixels off (lag spike)
     const float IGNORE_THRESHOLD = 2.0f;        // Ignore tiny differences < 2 pixels
