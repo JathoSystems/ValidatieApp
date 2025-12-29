@@ -11,10 +11,16 @@ Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventMana
     setMovingLeftSpritesheet(R"(resources/fireboy/walk-left.png)");
     setMovingRightSpritesheet(R"(resources/fireboy/walk-right.png)");
 
-    if (network && network->getMiddleware()) {
-        network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "fireboy"));
-    }
     getTransform()->getPosition()->setX(200);
+    getTransform()->getPosition()->setY(500);
+
+    if (network && network->getMiddleware()) {
+        // Send spawn event with current position
+        float x = getTransform()->getPosition()->getX();
+        float y = getTransform()->getPosition()->getY();
+        network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(getId(), "fireboy", x, y));
+    }
+
 }
 
 Fireboy::Fireboy(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
