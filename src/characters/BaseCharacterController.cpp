@@ -25,8 +25,8 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     _active = active;
 
     std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
-    std::cout << COLOR_MAGENTA << "[KeyInputComponent] CREATED for ID: "
-              << parentId << "\033[0m" << std::endl;
+    std::cout << COLOR_MAGENTA << "[BaseCharacterController] CREATED for ID: "
+              << parentId << " Active: " << (_active ? "YES" : "NO") << "\033[0m" << std::endl;
     std::cout << COLOR_MAGENTA << "========================================\033[0m" << std::endl;
 }
 

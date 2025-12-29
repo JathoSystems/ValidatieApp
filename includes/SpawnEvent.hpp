@@ -4,122 +4,156 @@
 
 #ifndef VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
+
 #include <iostream>
 #include <cstring>
-
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/IEvent.h"
+#include "GameObjects/GameObject.h"
 #include "Scenes/SceneSystem.h"
 
 class SpawnEvent : public IEvent {
 private:
-    int registryId = 0;
-    std::string objectName = "fireboy";
-    float spawnX = 0.0f;
-    float spawnY = 0.0f;
+    int objectId;
+    std::string objectType;
+    float spawnX;
+    float spawnY;
 
 public:
-    SpawnEvent(int id = 0, const std::string &name = "fireboy", float x = 0.0f, float y = 0.0f)
-        : registryId(id), objectName(name), spawnX(x), spawnY(y) {
-    }
+    SpawnEvent(int id, std::string type, float x, float y)
+        : objectId(id), objectType(std::move(type)), spawnX(x), spawnY(y) {}
 
     std::string getName() const override {
         return "spawn";
     }
 
     Package serialize() const override {
-        Package p;
-        p.push_back(registryId);
+        Package data;
 
-        // Serialize X position (4 bytes)
-        uint8_t* xBytes = (uint8_t*)&spawnX;
-        for (int i = 0; i < 4; i++) {
-            p.push_back(xBytes[i]);
-        }
+        // Serialize object ID (4 bytes)
+        data.push_back((objectId >> 24) & 0xFF);
+        data.push_back((objectId >> 16) & 0xFF);
+        data.push_back((objectId >> 8) & 0xFF);
+        data.push_back(objectId & 0xFF);
 
-        // Serialize Y position (4 bytes)
-        uint8_t* yBytes = (uint8_t*)&spawnY;
-        for (int i = 0; i < 4; i++) {
-            p.push_back(yBytes[i]);
-        }
+        // Serialize object type length (4 bytes)
+        uint32_t typeLength = objectType.length();
+        data.push_back((typeLength >> 24) & 0xFF);
+        data.push_back((typeLength >> 16) & 0xFF);
+        data.push_back((typeLength >> 8) & 0xFF);
+        data.push_back(typeLength & 0xFF);
 
-        // Serialize object name
-        for (char c: objectName) {
-            p.push_back(static_cast<int8_t>(c));
-        }
-        p.push_back(0);
+        // Serialize object type string
+        data.insert(data.end(), objectType.begin(), objectType.end());
 
-        std::cout << "SENDING SPAWN EVENT " << objectName
-                  << " WITH ID " << registryId
-                  << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
-        return p;
-    }
+        // Serialize spawn X position (4 bytes)
+        uint32_t xBits;
+        std::memcpy(&xBits, &spawnX, sizeof(float));
+        data.push_back((xBits >> 24) & 0xFF);
+        data.push_back((xBits >> 16) & 0xFF);
+        data.push_back((xBits >> 8) & 0xFF);
+        data.push_back(xBits & 0xFF);
 
-    Data deserialize(const Package &package) override {
-        Data data;
-
-        if (package.size() >= 10) { // 1 (id) + 4 (x) + 4 (y) + 1 (name min)
-            registryId = package[0];
-
-            // Deserialize X position
-            memcpy(&spawnX, &package[1], 4);
-
-            // Deserialize Y position
-            memcpy(&spawnY, &package[5], 4);
-
-            // Deserialize object name
-            std::string name;
-            for (size_t i = 9; i < package.size(); ++i) {
-                if (package[i] == 0) break;
-                name += static_cast<char>(package[i]);
-            }
-            objectName = name;
-
-            data.push_back(registryId);
-        }
+        // Serialize spawn Y position (4 bytes)
+        uint32_t yBits;
+        std::memcpy(&yBits, &spawnY, sizeof(float));
+        data.push_back((yBits >> 24) & 0xFF);
+        data.push_back((yBits >> 16) & 0xFF);
+        data.push_back((yBits >> 8) & 0xFF);
+        data.push_back(yBits & 0xFF);
 
         return data;
     }
 
-    void apply(GameObject * gameObject) override {
-        spawn();
+    Data deserialize(const Package &package) override {
+        if (package.size() < 8) {
+            std::cerr << "Invalid spawn event data" << std::endl;
+            return {};
+        }
+
+        size_t offset = 0;
+
+        // Deserialize object ID (4 bytes)
+        objectId = (package[offset] << 24) | (package[offset + 1] << 16) |
+                   (package[offset + 2] << 8) | package[offset + 3];
+        offset += 4;
+
+        // Deserialize type length (4 bytes)
+        uint32_t typeLength = (package[offset] << 24) | (package[offset + 1] << 16) |
+                              (package[offset + 2] << 8) | package[offset + 3];
+        offset += 4;
+
+        if (offset + typeLength + 8 > package.size()) {
+            std::cerr << "Invalid spawn event: insufficient data" << std::endl;
+            return {};
+        }
+
+        // Deserialize object type string
+        objectType = std::string(package.begin() + offset, package.begin() + offset + typeLength);
+        offset += typeLength;
+
+        // Deserialize spawn X position (4 bytes)
+        uint32_t xBits = (package[offset] << 24) | (package[offset + 1] << 16) |
+                         (package[offset + 2] << 8) | package[offset + 3];
+        std::memcpy(&spawnX, &xBits, sizeof(float));
+        offset += 4;
+
+        // Deserialize spawn Y position (4 bytes)
+        uint32_t yBits = (package[offset] << 24) | (package[offset + 1] << 16) |
+                         (package[offset + 2] << 8) | package[offset + 3];
+        std::memcpy(&spawnY, &yBits, sizeof(float));
+        offset += 4;
+
+        std::cout << "[SpawnEvent] Deserialized: ID=" << objectId
+                  << " Type=" << objectType
+                  << " Pos=(" << spawnX << ", " << spawnY << ")" << std::endl;
+
+        return {};
+    }
+
+    void apply(GameObject *object) override {
+        // Not used - spawn() handles creation
     }
 
     void spawn() {
-        std::cout << "SPAWNING " << objectName
-                  << " WITH ID " << registryId
-                  << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
-        auto system = GameEngine::getInstance().getSystem<SceneSystem>();
-        if (!system) {
-            std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
+        std::cout << "[SpawnEvent] Spawning " << objectType
+                  << " at (" << spawnX << ", " << spawnY << ")" << std::endl;
+
+        GameEngine *engine = &GameEngine::getInstance();
+        SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
+
+        if (!sceneSystem) {
+            std::cerr << "Scene system not found!" << std::endl;
             return;
         }
 
-        Scene *scene = system->getActiveSceneObj();
-        if (!scene) {
-            std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
+        Scene *currentScene = sceneSystem->getActiveSceneObj();
+        if (!currentScene) {
+            std::cerr << "No current scene!" << std::endl;
             return;
         }
 
-        std::unique_ptr<GameObject> object;
-        object = GameObjectFactory::getInstance().create(registryId, objectName);
-        if (!object) {
-            std::cout << "Factory returned nullptr" << std::endl;
-            return;
-        }
+        // Create remote character (active=false)
+        std::unique_ptr<GameObject> character = GameObjectFactory::getInstance().create(
+            objectId, objectType);
 
-        // CRITICAL: Set the spawned object's position from the event
-        object->getTransform()->getPosition()->setX(spawnX);
-        object->getTransform()->getPosition()->setY(spawnY);
+        if (character) {
+            // Set spawn position BEFORE adding to scene
+            character->getTransform()->getPosition()->setX(spawnX);
+            character->getTransform()->getPosition()->setY(spawnY);
 
-        try {
-            scene->addObject(std::move(object));
-        } catch (const std::exception &e) {
-            std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
+            std::cout << "[SpawnEvent] Character positioned at ("
+                      << spawnX << ", " << spawnY << ")" << std::endl;
+
+            currentScene->addObject(std::move(character));
+        } else {
+            std::cerr << "Failed to create character: " << objectType << std::endl;
         }
     }
 
+    int getObjectId() const { return objectId; }
+    std::string getObjectType() const { return objectType; }
     float getSpawnX() const { return spawnX; }
     float getSpawnY() const { return spawnY; }
 };
