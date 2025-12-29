@@ -15,13 +15,29 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
+// ---------------------------------------------------------
+// CONSTRUCTOR 1: Standard (Random ID)
+// Used for offline mode or non-fixed entities
+// ---------------------------------------------------------
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                             bool activePlayer, KeyBindings bindings): Broadcastable(this) {
+                             bool activePlayer, KeyBindings bindings)
+                             : Broadcastable(this) { // Calls Broadcastable(GameObject*) -> Random ID
+
+    std::cout << "DEBUG: Created Random Character. Registry ID: " << getId() << std::endl;
     initializeCharacter(getId(), network, eventManager, engine, activePlayer, bindings);
 }
 
+// ---------------------------------------------------------
+// CONSTRUCTOR 2: Fixed ID
+// Used for Networked Players (Fireboy=99, Watergirl=100)
+// ---------------------------------------------------------
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : Broadcastable(this, parentId) {
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings)
+                             : Broadcastable(this, parentId) { // Calls Broadcastable(GameObject*, int) -> Fixed ID
+
+    std::cout << "DEBUG: Created Fixed Character. Requested: " << parentId
+              << " | Actual Registry ID: " << getId() << std::endl;
+
     initializeCharacter(parentId, network, eventManager, engine, activePlayer, bindings);
 }
 
@@ -29,7 +45,7 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
                                         GameEngine *engine, bool activePlayer, KeyBindings bindings) {
     _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings, activePlayer);
 
-    std::cout << "[BaseCharacter] Created with ID: " << id
+    std::cout << "[BaseCharacter] Initialized with ID: " << id
               << " Active: " << (activePlayer ? "YES" : "NO") << std::endl;
 
     if (activePlayer) {
@@ -45,13 +61,14 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
 
-    // CRITICAL FIX: Remote players should be kinematic, not dynamic!
+    // Remote players should be KINEMATIC (moved by network updates)
+    // Local players should be DYNAMIC (moved by physics/gravity)
     if (activePlayer) {
-        component->setBodyType(BodyType::DYNAMIC);  // Full physics simulation
-        component->setGravityScale(1.0f);          // Normal gravity
+        component->setBodyType(BodyType::DYNAMIC);
+        component->setGravityScale(1.0f);
     } else {
-        component->setBodyType(BodyType::KINEMATIC);  // Position-driven only, no physics
-        component->setGravityScale(0.0f);            // No gravity for remote players
+        component->setBodyType(BodyType::KINEMATIC);
+        component->setGravityScale(0.0f);
     }
 
     component->setCollider(std::make_unique<BoxCollider>(50, 100));
@@ -106,7 +123,7 @@ void BaseCharacter::applyPendingNetworkUpdate() {
     bool isRemote = _controller && !_controller->isActive();
 
     if (isRemote) {
-        // Remote players: directly snap to network position (they're kinematic)
+        // Remote players: directly snap to network position
         getTransform()->getPosition()->setX(_pendingUpdate.x);
         getTransform()->getPosition()->setY(_pendingUpdate.y);
 
@@ -114,7 +131,7 @@ void BaseCharacter::applyPendingNetworkUpdate() {
             physics->setPosition(_pendingUpdate.x, _pendingUpdate.y);
         }
     } else {
-        // Active player: use interpolation for smooth correction
+        // Active player: use interpolation for smooth correction (Server Reconciliation)
         float currentX = getTransform()->getPosition()->getX();
         float currentY = getTransform()->getPosition()->getY();
 
@@ -124,10 +141,7 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 
         if (errorMagnitude > 5.0f) {
             std::cout << "[DESYNC] ID: " << getId()
-                      << " Error: " << errorMagnitude << "px"
-                      << " Current: (" << currentX << ", " << currentY << ")"
-                      << " Network: (" << _pendingUpdate.x << ", " << _pendingUpdate.y << ")"
-                      << std::endl;
+                      << " Error: " << errorMagnitude << "px" << std::endl;
         }
 
         const float SNAP_THRESHOLD = 100.0f;
@@ -161,7 +175,7 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 void BaseCharacter::update(float delta) {
     const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
 
-    // Apply network updates first (outside physics step)
+    // Apply network updates first
     applyPendingNetworkUpdate();
     applyPendingJump();
 
@@ -198,9 +212,6 @@ void BaseCharacter::update(float delta) {
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
     if (collision.normalY > 0.2f) {
         if (_controller) {
-            if (!_controller->isGrounded()) {
-                // std::cout << "[BaseCharacter] Landed!" << std::endl;
-            }
             _controller->setGrounded(true);
         }
     }
@@ -273,6 +284,7 @@ void BaseCharacter::updateAnimation() {
     bool isGrounded = _controller->isGrounded();
     Direction movementDir = _controller->getMovementDirection();
 
+    // Small threshold for "effectively grounded"
     bool effectivelyGrounded = isGrounded || (std::abs(vy) < 0.5f);
 
     if (!effectivelyGrounded) {

@@ -1,10 +1,13 @@
 #ifndef VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
 #define VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
-#include "BaseCharacterController.hpp"
+
+#include "characters/BaseCharacterController.hpp"
 #include "Engine/GameEngine.h"
-#include "events/MoveEvent.hpp"
+#include "characters/events/MoveEvent.hpp"
 #include "GameObjects/Broadcastable.h"
 #include "GameObjects/GameObject.h"
+#include <string>
+#include <memory>
 
 enum class Animation {
     IDLE,
@@ -47,11 +50,15 @@ private:
     void applyPendingJump();
 
 public:
+    // Standard Constructor (Generates Random ID)
     BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer, KeyBindings bindings);
 
+    // Fixed ID Constructor (Uses specific ID like 99 or 100)
     BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer, KeyBindings bindings);
+
+    virtual ~BaseCharacter() = default;
 
     std::string getJumpingSpritesheet() const;
     std::string getLeftSpritesheet() const;
@@ -59,14 +66,12 @@ public:
     std::string getIdleSpritesheet() const;
     std::string getFallingSpritesheet() const;
 
-    virtual ~BaseCharacter() = default;
-
     void setMovementDirection(Direction direction);
     void setPendingNetworkUpdate(float x, float y, Direction direction, bool toggle);
     void setPendingJump(bool shouldJump);
 
     void updateAnimation();
-    
+
     BaseCharacterController* getController() { return _controller.get(); }
 
 protected:
@@ -81,4 +86,4 @@ protected:
     void setFallingSpritesheet(std::string falling);
 };
 
-#endif
+#endif // VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
