@@ -33,6 +33,7 @@ private:
     std::string right;
     std::string jump;
     std::string falling;
+    float _physicsAccumulator = 0.0f;
     std::unique_ptr<BaseCharacterController> _controller;
 
     Animation _currentAnimation = Animation::IDLE;

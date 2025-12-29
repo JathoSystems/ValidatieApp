@@ -164,33 +164,40 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 }
 
 void BaseCharacter::update(float delta) {
-    // Don't clamp delta - let physics run naturally
-    // if (delta > 0.05f) delta = 0.05f;
+    const float PHYSICS_TIMESTEP = 1.0f / 60.0f; // Fixed 60Hz physics
 
-    // CRITICAL: Apply pending network updates BEFORE anything else
-    // This ensures we modify physics outside of the physics step
+    // Apply network updates first (outside physics step)
     applyPendingNetworkUpdate();
     applyPendingJump();
 
     GameObject::update(delta);
 
+    // Fixed timestep physics for active player only
+    if (_controller && _controller->isActive()) {
+        _physicsAccumulator += delta;
+
+        while (_physicsAccumulator >= PHYSICS_TIMESTEP) {
+            auto *physics = getComponent<PhysicsComponent>();
+            if (physics) {
+                _controller->move(Direction::NONE, physics);
+
+                // Check if should leave ground
+                float vx, vy;
+                physics->getVelocity(vx, vy);
+                if (_controller->isGrounded() && vy > 1.0f) {
+                    _controller->setGrounded(false);
+                }
+            }
+
+            _physicsAccumulator -= PHYSICS_TIMESTEP;
+        }
+    }
+
+    // Controller update (handles sync broadcasts)
     if (_controller) {
         _controller->update(delta);
     }
 
-    if (_controller && _controller->isActive()) {
-        auto *physics = getComponent<PhysicsComponent>();
-        if (physics) {
-            _controller->move(Direction::NONE, physics);
-        }
-
-        // Check if should leave ground
-        float vx, vy;
-        physics->getVelocity(vx, vy);
-        if (_controller->isGrounded() && vy > 1.0f) {
-            _controller->setGrounded(false);
-        }
-    }
     updateAnimation();
 }
 
