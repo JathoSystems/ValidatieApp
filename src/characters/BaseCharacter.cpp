@@ -175,13 +175,36 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 void BaseCharacter::update(float delta) {
     const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
 
-    // Apply network updates first
+    // 1. Apply new network packets if they arrived
     applyPendingNetworkUpdate();
     applyPendingJump();
 
+    // 2. Run the standard update (Physics runs here and might mess up the position)
     GameObject::update(delta);
 
-    // Fixed timestep physics for active player only
+    // 3. FIXED: FORCE REMOTE PLAYERS TO STAY AT NETWORK POSITION
+    // This overrides any collision/physics that tries to stick them to the wall.
+    if (_controller && !_controller->isActive()) {
+
+        // Use the last received position from the pending update struct
+        // (We need to persist these coordinates even after the flag is cleared)
+        static float lastRemoteX = 0;
+        static float lastRemoteY = 0;
+
+        // If we just got a new packet, update our "target"
+        if (_pendingUpdate.x != 0 || _pendingUpdate.y != 0) {
+            lastRemoteX = _pendingUpdate.x;
+            lastRemoteY = _pendingUpdate.y;
+        }
+
+        // If we have a valid target, FORCE the transform to it
+        if (lastRemoteX != 0 && lastRemoteY != 0) {
+            getTransform()->getPosition()->setX(lastRemoteX);
+            getTransform()->getPosition()->setY(lastRemoteY);
+        }
+    }
+
+    // Fixed timestep physics for ACTIVE player only
     if (_controller && _controller->isActive()) {
         _physicsAccumulator += delta;
 
@@ -196,7 +219,6 @@ void BaseCharacter::update(float delta) {
                     _controller->setGrounded(false);
                 }
             }
-
             _physicsAccumulator -= PHYSICS_TIMESTEP;
         }
     }
