@@ -59,11 +59,6 @@ std::string getLocalIPAddress() {
     return "127.0.0.1";
 }
 
-// REMOVED: Don't declare these here - use the ones from GameEngine
-// std::mutex eventMutex;
-// std::vector<std::function<void()>> eventQueue;
-
-// Declare as extern to use the ones from GameEngine.cpp
 extern std::mutex eventMutex;
 extern std::vector<std::function<void()>> eventQueue;
 

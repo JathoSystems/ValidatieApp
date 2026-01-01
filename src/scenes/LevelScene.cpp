@@ -153,34 +153,24 @@ void LevelScene::setupCharacters() {
         std::string role = GameState::getInstance().get("role");
 
         if (role == "fireboy") {
-            // I am Fireboy (Active), Watergirl is Remote (Inactive)
-
-            // 1. Create Local Fireboy (Active = true)
             auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
             addObject(std::move(fireboy));
 
-            // 2. Create Remote Watergirl (Active = false)
-            // We set active to false so it listens to network events instead of keyboard
             auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
             // Optional: Set initial off-screen position until sync packet arrives
             watergirl->getTransform()->getPosition()->setX(600);
             watergirl->getTransform()->getPosition()->setY(500);
             addObject(std::move(watergirl));
         } else {
-            // I am Watergirl (Active), Fireboy is Remote (Inactive)
-
-            // 1. Create Remote Fireboy (Active = false)
             auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
             fireboy->getTransform()->getPosition()->setX(200);
             fireboy->getTransform()->getPosition()->setY(500);
             addObject(std::move(fireboy));
 
-            // 2. Create Local Watergirl (Active = true)
             auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
             addObject(std::move(watergirl));
         }
     } else {
-        // Offline mode remains the same
         auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);
         fireboy->getTransform()->getPosition()->setX(200);
         fireboy->getTransform()->getPosition()->setY(500);

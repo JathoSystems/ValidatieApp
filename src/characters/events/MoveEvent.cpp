@@ -8,7 +8,6 @@
 #include "GameObjects/Spritesheet/Animator.h"
 #include "Physics/PhysicsComponent.h"
 
-// NEW: Constructor now accepts vx and vy
 MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle, float x, float y, float vx, float vy)
     : _objectId(objectId), _direction(direction), _toggle(toggle), _x(x), _y(y), _vx(vx), _vy(vy) {
 }
@@ -32,11 +31,11 @@ Package MoveEvent::serialize() const {
     const uint8_t* yBytes = reinterpret_cast<const uint8_t*>(&_y);
     for (int i = 0; i < sizeof(float); ++i) p.push_back(yBytes[i]);
 
-    // NEW: Serialize Velocity X
+    // Serialize Velocity X
     const uint8_t* vxBytes = reinterpret_cast<const uint8_t*>(&_vx);
     for (int i = 0; i < sizeof(float); ++i) p.push_back(vxBytes[i]);
 
-    // NEW: Serialize Velocity Y
+    // Serialize Velocity Y
     const uint8_t* vyBytes = reinterpret_cast<const uint8_t*>(&_vy);
     for (int i = 0; i < sizeof(float); ++i) p.push_back(vyBytes[i]);
 
@@ -55,7 +54,7 @@ Data MoveEvent::deserialize(const Package &package) {
         std::memcpy(&_x, &package[3], sizeof(float));
         std::memcpy(&_y, &package[7], sizeof(float));
 
-        // NEW: Deserialize Velocities
+        // Deserialize Velocities
         std::memcpy(&_vx, &package[11], sizeof(float));
         std::memcpy(&_vy, &package[15], sizeof(float));
     }

@@ -21,7 +21,6 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
     _active = active;
 }
 
-// NEW: Helper to get Position AND Velocity
 void BaseCharacterController::getCurrentPhysicsState(float &x, float &y, float &vx, float &vy) {
     x = 0; y = 0; vx = 0; vy = 0;
     GameObject* obj = ObjectRegistry::getInstance().getObject(_parentId);
@@ -51,7 +50,6 @@ void BaseCharacterController::updateMovementDirection() {
             float x, y, vx, vy;
             getCurrentPhysicsState(x, y, vx, vy);
 
-            // Send velocity in the packet
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
                 _parentId, _movementDirection, _movementDirection != Direction::NONE, x, y, vx, vy
             ));
@@ -63,7 +61,7 @@ void BaseCharacterController::update(float delta) {
     if (!_active || !_eventManager) return;
 
     _syncTimer += delta;
-    const float SYNC_INTERVAL = 0.033f; // 30 FPS sync
+    const float SYNC_INTERVAL = 0.033f;
 
     if (_syncTimer >= SYNC_INTERVAL) {
         _syncTimer = 0.0f;
@@ -75,12 +73,11 @@ void BaseCharacterController::update(float delta) {
             _parentId,
             _movementDirection,
             _movementDirection != Direction::NONE,
-            x, y, vx, vy // Send velocity!
+            x, y, vx, vy
         ));
     }
 }
 
-// ... (Rest of key press/release and move functions remain exactly the same)
 void BaseCharacterController::onKeyPress(Key key) {
     if (key == _keyBindings.left) {
         _isLeftPressed = true;
@@ -92,7 +89,6 @@ void BaseCharacterController::onKeyPress(Key key) {
         if (_grounded) {
             _shouldJump = true;
             if (_eventManager && _active) {
-                // We keep JumpEvent for instant reaction
                 _eventManager->broadcast(_parentId, std::make_shared<JumpEvent>(_parentId));
             }
         }

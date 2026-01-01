@@ -1,5 +1,6 @@
 #ifndef VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
 #define VUURJONGEN_WATERMEISJE_BASECHARACTER_HPP
+
 #include "characters/BaseCharacterController.hpp"
 #include "Engine/GameEngine.h"
 #include "characters/events/MoveEvent.hpp"
@@ -20,10 +21,8 @@ struct PendingNetworkUpdate {
     bool hasPending = false;
     float x = 0.0f;
     float y = 0.0f;
-    // NEW: Velocity
     float vx = 0.0f;
     float vy = 0.0f;
-
     Direction direction = Direction::NONE;
     bool toggle = false;
 };
@@ -46,6 +45,14 @@ private:
     PendingNetworkUpdate _pendingUpdate;
     PendingJump _pendingJump;
 
+    // --- SYNC VARIABLES (Member variables, NOT static) ---
+    // These track the last known network position for THIS character only.
+    float _lastRemoteX = 0.0f;
+    float _lastRemoteY = 0.0f;
+    float _lastRemoteVx = 0.0f;
+    float _lastRemoteVy = 0.0f;
+    // ----------------------------------------------------
+
     void updateAnimator(Animation newAnimation);
     void initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer, KeyBindings bindings);
@@ -53,11 +60,9 @@ private:
     void applyPendingJump();
 
 public:
-    // Standard Constructor (Generates Random ID)
     BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer, KeyBindings bindings);
 
-    // Fixed ID Constructor (Uses specific ID like 99 or 100)
     BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                   bool activePlayer, KeyBindings bindings);
 

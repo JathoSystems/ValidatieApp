@@ -60,7 +60,8 @@ public:
     Data deserialize(const Package &package) override {
         Data data;
 
-        if (package.size() >= 10) { // 1 (id) + 4 (x) + 4 (y) + 1 (name min)
+        // Packet structure: 1 (id) + 4 (x) + 4 (y) + 1 (name min)
+        if (package.size() >= 10) {
             registryId = package[0];
 
             // Deserialize X position
