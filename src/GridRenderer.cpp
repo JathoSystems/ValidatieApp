@@ -1,50 +1,47 @@
 #include "GridRenderer.h"
-#include "GameObjects/Component/SpriteRenderer.h"
+#include "Scenes/Camera/Viewport.h"
+#include <SDL3/SDL.h>
 
-GridRenderer::GridRenderer(LevelGrid* grid, Scene* scene, const std::string& spritePath)
-    : _grid(grid), _scene(scene), _spritePath(spritePath) {
+GridRendererComponent::GridRendererComponent(LevelGrid* grid)
+    : _grid(grid) {
 }
 
-void GridRenderer::renderCell(int x, int y) {
-    if (!_grid || !_scene) return;
+void GridRendererComponent::render(const std::unique_ptr<Window>& window) {
+    if (!_grid || !window) return;
     
-    CellType cellType = _grid->getCellType(x, y);
-    if (cellType == CellType::Empty) return; // Don't render empty cells
+    SDL_Renderer* renderer = window->getRenderer();
+    if (!renderer) return;
     
     int cellSize = _grid->getCellSize();
     
-    auto block = std::make_unique<GameObject>();
-    block->getTransform()->getPosition()->setX(x * cellSize);
-    block->getTransform()->getPosition()->setY(y * cellSize);
-    block->getTransform()->getSize()->setWidth(cellSize);
-    block->getTransform()->getSize()->setHeight(cellSize);
+    // Get viewport offset for camera
+    const Viewport* viewport = window->getActiveViewport();
+    float offsetX = 0, offsetY = 0;
+    if (viewport) {
+        Position viewportPos = viewport->getPosition();
+        offsetX = viewportPos.getX();
+        offsetY = viewportPos.getY();
+    }
     
-    // Add SpriteRenderer so the block is visible
-    auto spriteRenderer = std::make_unique<SpriteRenderer>(_spritePath);
-    block->addComponent(std::move(spriteRenderer));
-    
-    _scene->addObject(std::move(block));
-}
-
-void GridRenderer::renderCellsOfType(CellType type) {
-    if (!_grid || !_scene) return;
-    
+    // Render each ground cell
     for (int x = 0; x < _grid->getWidth(); ++x) {
         for (int y = 0; y < _grid->getHeight(); ++y) {
-            if (_grid->getCellType(x, y) == type) {
-                renderCell(x, y);
+            if (_grid->getCellType(x, y) == CellType::Ground) {
+                SDL_FRect rect;
+                rect.x = x * cellSize - offsetX;
+                rect.y = y * cellSize - offsetY;
+                rect.w = static_cast<float>(cellSize);
+                rect.h = static_cast<float>(cellSize);
+                
+                // Draw a brown/gray rectangle for ground
+                SDL_SetRenderDrawColor(renderer, 100, 80, 60, 255);
+                SDL_RenderFillRect(renderer, &rect);
+                
+                // Draw a darker border
+                SDL_SetRenderDrawColor(renderer, 60, 50, 40, 255);
+                SDL_RenderRect(renderer, &rect);
             }
         }
     }
-}
-
-void GridRenderer::renderGrid() {
-    renderCellsOfType(CellType::Ground);
-}
-
-void GridRenderer::updateVisualization() {
-    // This can be extended to update existing GameObjects instead of recreating them
-    // For now, we'll just re-render the grid
-    renderGrid();
 }
 

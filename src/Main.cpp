@@ -1,160 +1,138 @@
 #include <iostream>
 #include <asio.hpp>
 
-#include "GridManager.h"
+#include "LevelSelector.h"
+#include "SpawnEvent.hpp"
+#include "characters/Fireboy.hpp"
+#include "characters/events/JumpEvent.h"
+#include "characters/events/MoveEvent.hpp"
 #include "Engine/GameEngine.h"
-#include "GameObjects/Component/SpriteRenderer.h"
+#include "Events/EventManager.h"
+#include "GameObjects/ObjectRegistry.hpp"
+#include "asio/io_context.hpp"
+#include "asio/ip/tcp.hpp"
+#include "asio/ip/host_name.hpp"
+#include "Network/NetworkSystem.h"
+#include "Network/Packet/PacketRegistery.h"
+#include "Network/Packet/Packets/NetworkEventPacket.h"
+#include "Network/Sockets/TcpNetworkSocket.h"
+#include "Physics/Collider.h"
+#include "Physics/PhysicsComponent.h"
+#include "Physics/PhysicsSystem.h"
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
+#include "Network/Packet/Handler/PacketHandlerFactory.hpp"
+#include "scenes/MainMenu.hpp"
+#include "scenes/Game.hpp"
+#include "scenes/Lobby.hpp"
+#include "server/packet/GameReady.hpp"
+#include "server/packet/PlayerAssignPacket.hpp"
+#include "server/packet/handler/GameReadyPacketHandler.hpp"
+#include "server/packet/handler/PlayerAssignPacketHandler.hpp"
+#include "server/packet/handler/LobbyInfoPacketHandler.hpp"
+#include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/CreateLobbyPacket.hpp"
+#include "server/packet/JoinLobbyPacket.hpp"
+
+std::string getLocalIPAddress() {
+    try {
+        asio::io_context io_context;
+        asio::ip::tcp::resolver resolver(io_context);
+        asio::ip::tcp::resolver::query query(asio::ip::host_name(), "");
+        asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
+        asio::ip::tcp::resolver::iterator end;
+
+        while(it != end) {
+            asio::ip::tcp::endpoint endpoint = *it++;
+            asio::ip::address addr = endpoint.address();
+
+            if(addr.is_v4() && !addr.is_loopback()) {
+                return addr.to_string();
+            }
+        }
+    } catch (std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
+    return "127.0.0.1";
+}
 
 int main() {
     try {
-        std::cout << "=== Initializing Game Engine ===" << std::endl;
+        GameEngine *gameEngine = &GameEngine::getInstance();
+        gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
-        GameEngine& gameEngine = GameEngine::getInstance();
-        gameEngine.init("Vuurjongen Watermeisje", 800, 600);
-
-        std::cout << "=== Creating Level Grid ===" << std::endl;
-
-        const int GRID_WIDTH = 80;
-        const int GRID_HEIGHT = 60;
-        const int CELL_SIZE = 10;
-        const int WINDOW_WIDTH = 800;
-        const int WINDOW_HEIGHT = 600;
-
-        // Create the grid
-        auto levelGrid = std::make_unique<LevelGrid>(GRID_WIDTH, GRID_HEIGHT, CELL_SIZE);
-        LevelGrid* gridPtr = levelGrid.get();
-
-        auto mainScene = std::make_unique<Scene>("MainScene");
-
-        // Create viewport and camera - ESSENTIAL for rendering!
-        auto viewport = std::make_unique<Viewport>(Size(WINDOW_WIDTH, WINDOW_HEIGHT), Position(0, 0));
-        // Center camera on the grid
-        int gridCenterX = (GRID_WIDTH * CELL_SIZE) / 2;
-        int gridCenterY = (GRID_HEIGHT * CELL_SIZE) / 2;
-        auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(gridCenterX, gridCenterY));
-        mainScene->setCamera(std::move(camera));
-        std::cout << "Camera and viewport created and set" << std::endl;
-
-        // Register grid with GridManager for pathfinding access (after we're done using gridPtr)
-        // We'll register it after setting up all the cells
-
-        for (int x = 0; x < GRID_WIDTH; ++x) {
-            for (int y = GRID_HEIGHT - 5; y < GRID_HEIGHT; ++y) {
-                gridPtr->setCellType(x, y, CellType::Ground);
-
-                auto block = std::make_unique<GameObject>();
-                block->getTransform()->getPosition()->setX(x * CELL_SIZE);
-                block->getTransform()->getPosition()->setY(y * CELL_SIZE);
-                block->getTransform()->getSize()->setWidth(CELL_SIZE);
-                block->getTransform()->getSize()->setHeight(CELL_SIZE);
-
-                // Add SpriteRenderer so the block is visible
-                auto spriteRenderer = std::make_unique<SpriteRenderer>("../resources/sprite2.png");
-                block->addComponent(std::move(spriteRenderer));
-
-                mainScene->addObject(std::move(block));
+        // Network mag pas na de init gedaan worden
+        auto network = std::make_shared<NetworkSystem>();
+        network->connect(getLocalIPAddress(), 7534);
+        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
             }
-        }
-        std::cout << "Ground floor created: " << (GRID_WIDTH * 5) << " blocks" << std::endl;
 
-        // Left wall
-        for (int x = 0; x < 5; ++x) {
-            for (int y = 0; y < GRID_HEIGHT; ++y) {
-                gridPtr->setCellType(x, y, CellType::Ground);
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
 
-                auto block = std::make_unique<GameObject>();
-                block->getTransform()->getPosition()->setX(x * CELL_SIZE);
-                block->getTransform()->getPosition()->setY(y * CELL_SIZE);
-                block->getTransform()->getSize()->setWidth(CELL_SIZE);
-                block->getTransform()->getSize()->setHeight(CELL_SIZE);
-
-                // Add SpriteRenderer so the block is visible
-                auto spriteRenderer = std::make_unique<SpriteRenderer>("../resources/sprite2.png");
-                block->addComponent(std::move(spriteRenderer));
-
-                mainScene->addObject(std::move(block));
+        EventManager manager(network->getMiddleware());
+        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
             }
-        }
-        std::cout << "Left wall created: " << (5 * GRID_HEIGHT) << " blocks" << std::endl;
 
-        // Right wall
-        for (int x = GRID_WIDTH - 5; x < GRID_WIDTH; ++x) {
-            for (int y = 0; y < GRID_HEIGHT; ++y) {
-                gridPtr->setCellType(x, y, CellType::Ground);
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) return;
+            event->apply(object);
+        });
 
-                auto block = std::make_unique<GameObject>();
-                block->getTransform()->getPosition()->setX(x * CELL_SIZE);
-                block->getTransform()->getPosition()->setY(y * CELL_SIZE);
-                block->getTransform()->getSize()->setWidth(CELL_SIZE);
-                block->getTransform()->getSize()->setHeight(CELL_SIZE);
+        PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
 
-                // Add SpriteRenderer so the block is visible
-                auto spriteRenderer = std::make_unique<SpriteRenderer>("../resources/sprite2.png");
-                block->addComponent(std::move(spriteRenderer));
+        PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
+        PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
 
-                mainScene->addObject(std::move(block));
-            }
-        }
-        std::cout << "Right wall created: " << (5 * GRID_HEIGHT) << " blocks" << std::endl;
+        PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
+        PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
+        
+        PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
+        PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
+        PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
 
-        // Middle platform
-        int platformBlocks = 0;
-        for (int x = 30; x < 50; ++x) {
-            for (int y = 35; y < 37; ++y) {
-                gridPtr->setCellType(x, y, CellType::Ground);
+        auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
+        LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
+        PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
-                auto block = std::make_unique<GameObject>();
-                block->getTransform()->getPosition()->setX(x * CELL_SIZE);
-                block->getTransform()->getPosition()->setY(y * CELL_SIZE);
-                block->getTransform()->getSize()->setWidth(CELL_SIZE);
-                block->getTransform()->getSize()->setHeight(CELL_SIZE);
+        EventRegistry::getInstance()->registerEvent("jump", []() {
+            return std::make_shared<JumpEvent>();
+        });
 
-                // Add SpriteRenderer so the block is visible
-                auto spriteRenderer = std::make_unique<SpriteRenderer>("../resources/sprite2.png");
-                block->addComponent(std::move(spriteRenderer));
+        EventRegistry::getInstance()->registerEvent("move", []() {
+            return std::make_shared<MoveEvent>(0, Direction::NONE, false);
+        });
 
-                mainScene->addObject(std::move(block));
-                platformBlocks++;
-            }
-        }
-        std::cout << "Middle platform created: " << platformBlocks << " blocks" << std::endl;
-        std::cout << "Grid created: " << GRID_WIDTH << "x" << GRID_HEIGHT << std::endl;
-        std::cout << "Total objects in scene: " << mainScene->getObjects().size() << std::endl;
+        EventRegistry::getInstance()->registerEvent("spawn", []() {
+            return std::make_shared<SpawnEvent>(0, "watergirl");
+        });
 
-        // Register grid with GridManager for pathfinding access (now that we're done using gridPtr)
-        GridManager::registerGrid("MainScene", std::move(levelGrid));
+        GameObjectFactory::getInstance().setNetworkSystem(network);
+        GameObjectFactory::getInstance().setEventManager(&manager);
 
-        // Get SceneSystem using getSystem method
-        SceneSystem* sceneSystem = gameEngine.getSystem<SceneSystem>();
+        SceneSystem* sceneSystem = gameEngine->getSystem<SceneSystem>();
+        
+        sceneSystem->addScene(std::make_unique<MainMenu>());
+        
+        LevelSelector levelSelector(sceneSystem, network, &manager);
+        levelSelector.createLevelSelectorScene();
+        
+        sceneSystem->addScene(std::make_unique<Lobby>());
+        sceneSystem->addScene(std::make_unique<Game>(network, &manager));
+        
+        sceneSystem->setScene("MainMenu");
 
-        if (sceneSystem) {
-            sceneSystem->addScene(std::move(mainScene));
-            sceneSystem->setScene("MainScene");
-            std::cout << "Scene created and set as active" << std::endl;
-        }
-
-        // Verify grid data
-        LevelGrid* registeredGrid = GridManager::getGrid("MainScene");
-        if (registeredGrid) {
-            const auto& grid = registeredGrid->getGrid();
-            int groundCount = 0;
-            for (const auto& column : grid) {
-                for (const auto& cell : column) {
-                    if (cell == CellType::Ground) {
-                        groundCount++;
-                    }
-                }
-            }
-            std::cout << "Total ground cells in grid: " << groundCount << std::endl;
-            std::cout << "Grid registered and accessible for pathfinding" << std::endl;
-        }
-
-        // Start the game engine
-        gameEngine.start();
-
+        gameEngine->start();
     } catch (const std::exception &e) {
         std::cerr << "ERROR: " << e.what() << std::endl;
         return 1;
