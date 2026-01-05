@@ -67,7 +67,6 @@ int main() {
         GameEngine *gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
-        // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
         network->connect(getLocalIPAddress(), 7534);
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {

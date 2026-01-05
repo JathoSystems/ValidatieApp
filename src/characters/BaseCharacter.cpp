@@ -12,9 +12,6 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
-// -------------------------------------------------------------------------
-// CONSTRUCTORS
-// -------------------------------------------------------------------------
 
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                              bool activePlayer, KeyBindings bindings): Broadcastable(this) {
@@ -43,26 +40,18 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
-    // =========================================================
-    // DEBUG: VISUALIZE PHYSICS COLLIDER
-    // =========================================================
-    SDL_Color debugColor = activePlayer ? SDL_Color{0, 255, 0, 255} : SDL_Color{0, 0, 255, 255};
-    auto debugRenderer = std::make_unique<RectangleRenderer>(debugColor, false);
-    addComponent(std::move(debugRenderer));
-    setLayer(100);
-    // =========================================================
+    // SDL_Color debugColor = activePlayer ? SDL_Color{0, 255, 0, 255} : SDL_Color{0, 0, 255, 255};
+    // auto debugRenderer = std::make_unique<RectangleRenderer>(debugColor, false);
+    // addComponent(std::move(debugRenderer));
+    // setLayer(100);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
 
-    // =========================================================
-    // FIX: Both Local AND Remote are DYNAMIC for proper collision
-    // =========================================================
     component->setBodyType(BodyType::DYNAMIC);
     component->setGravityScale(1.0f);
     component->setCollider(std::make_unique<BoxCollider>(50, 100));
 
-    // Remote players get higher friction to stabilize network corrections
     if (!activePlayer) {
         component->setMaterial(Material(1.0f, 0.3f, 0.0f));
     } else {
@@ -75,10 +64,6 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     addComponent(std::move(component));
     engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
 }
-
-// -------------------------------------------------------------------------
-// SYNC LOGIC
-// -------------------------------------------------------------------------
 
 void BaseCharacter::setPendingNetworkUpdate(float x, float y, float vx, float vy, Direction direction, bool toggle) {
     _pendingUpdate.hasPending = true;
@@ -123,19 +108,15 @@ void BaseCharacter::applyPendingNetworkUpdate() {
 void BaseCharacter::update(float delta) {
     const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
 
-    // Apply network updates BEFORE physics processing
     applyPendingNetworkUpdate();
     applyPendingJump();
 
     GameObject::update(delta);
 
-    // =========================================================
-    // REMOTE PLAYER SYNC - SMOOTH CORRECTION
-    // =========================================================
+    // Remote Player Sync / correction part
     if (_controller && !_controller->isActive()) {
         PhysicsComponent* physics = getComponent<PhysicsComponent>();
 
-        // Apply smooth correction if we have valid network data
         if (_lastRemoteX != 0 && _lastRemoteY != 0 && physics) {
             float currentX = getTransform()->getPosition()->getX();
             float currentY = getTransform()->getPosition()->getY();
@@ -144,34 +125,28 @@ void BaseCharacter::update(float delta) {
             float errorY = _lastRemoteY - currentY;
             float errorDistance = std::sqrt(errorX * errorX + errorY * errorY);
 
-            // Large error (>100px): Snap immediately (teleport/spawn scenario)
             if (errorDistance > 100.0f) {
                 std::cout << "[Remote Sync] Large error detected (" << errorDistance
                          << "px), snapping to network position" << std::endl;
                 physics->setPosition(_lastRemoteX, _lastRemoteY);
                 physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
             }
-            // Medium error (5-100px): Apply correction force
             else if (errorDistance > 5.0f) {
                 const float CORRECTION_STRENGTH = 15.0f;
                 float correctionVx = errorX * CORRECTION_STRENGTH;
                 float correctionVy = errorY * CORRECTION_STRENGTH;
 
-                // Blend network velocity with correction (70% network, 30% correction)
                 float finalVx = _lastRemoteVx * 0.7f + correctionVx * 0.3f;
                 float finalVy = _lastRemoteVy * 0.7f + correctionVy * 0.3f;
 
                 physics->setVelocity(finalVx, finalVy);
             }
-            // Small error (<5px): Just follow network velocity
             else {
                 physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
             }
         }
     }
-    // =========================================================
 
-    // Active Player Physics Loop
     if (_controller && _controller->isActive()) {
         _physicsAccumulator += delta;
 
@@ -196,10 +171,6 @@ void BaseCharacter::update(float delta) {
 
     updateAnimation();
 }
-
-// -------------------------------------------------------------------------
-// EVENTS & ANIMATION
-// -------------------------------------------------------------------------
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
     if (collision.normalY > 0.2f && _controller) _controller->setGrounded(true);
