@@ -64,6 +64,8 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/grid/GridRenderer.cpp
         includes/grid/GridManager.h
         src/grid/GridManager.cpp
+        includes/grid/AStarPathfinder.h
+        src/grid/AStarPathfinder.cpp
         includes/bat/Bat.h
         src/bat/Bat.cpp
         includes/bat/BatAI.h
@@ -122,6 +124,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/grid/GridRenderer.cpp
         includes/grid/GridManager.h
         src/grid/GridManager.cpp
+        includes/grid/AStarPathfinder.h
+        src/grid/AStarPathfinder.cpp
         includes/bat/Bat.h
         src/bat/Bat.cpp
         includes/bat/BatAI.h

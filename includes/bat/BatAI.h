@@ -3,10 +3,13 @@
 
 #include "GameObjects/Component/Component.h"
 #include "grid/LevelGrid.h"
+#include "grid/AStarPathfinder.h"
 #include "Events/EventManager.h"
 #include "Scenes/Scene.h"
 #include <random>
 #include <memory>
+#include <vector>
+#include <queue>
 
 class Bat;
 
@@ -17,15 +20,20 @@ private:
     int _cellSize;
     float _speed;
 
-    float _directionX;
-    float _directionY;
-    float _changeDirectionTimer;
-    float _changeDirectionInterval;
+    // Pathfinding
+    std::unique_ptr<AStarPathfinder> _pathfinder;
+    std::vector<std::pair<float, float>> _currentPath;
+    size_t _currentPathIndex;
+    float _targetChangeTimer;
+    float _targetChangeInterval;
+    float _stuckTimer;
+    
+    // Movement accumulation for sub-pixel movement
+    float _accumulatedX;
+    float _accumulatedY;
     
     std::mt19937 _rng;
-    std::uniform_real_distribution<float> _directionDist;
     std::uniform_real_distribution<float> _timerDist;
-    std::uniform_int_distribution<int> _directionTypeDist;
 
     bool _isNetworked;
     float _networkSyncTimer;
@@ -35,7 +43,7 @@ private:
     bool _isAuthoritative;
 
 public:
-    BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed = 50.0f, bool isNetworked = false, EventManager* eventManager = nullptr, int objectId = -1, bool isAuthoritative = true);
+    BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed = 80.0f, bool isNetworked = false, EventManager* eventManager = nullptr, int objectId = -1, bool isAuthoritative = true);
     
     void update(float deltaTime) override;
     void render(const std::unique_ptr<Window>& window) override;
@@ -46,12 +54,13 @@ public:
     void setDirection(float directionX, float directionY);
     
     // Get current direction for sprite flipping
-    float getDirectionX() const { return _directionX; }
-    float getDirectionY() const { return _directionY; }
+    float getDirectionX() const;
+    float getDirectionY() const;
 
 private:
     void updateMovement(float deltaTime);
-    void chooseNewDirection();
+    void chooseNewTarget();
+    void updatePathfinding(float deltaTime);
     bool canMoveTo(float worldX, float worldY) const;
     bool isPositionWalkable(float worldX, float worldY) const;
     bool collidesWithDynamicObjects(float worldX, float worldY, float batWidth, float batHeight) const;
