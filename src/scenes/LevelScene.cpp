@@ -247,7 +247,7 @@ void LevelScene::createBat() {
         return;
     }
 
-    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f); // Faster speed
 
     float worldX, worldY;
     grid->gridToWorld(startGridX, startGridY, worldX, worldY);
