@@ -35,8 +35,10 @@
 #include "server/packet/LobbyInfoPacket.hpp"
 #include "server/packet/CreateLobbyPacket.hpp"
 #include "server/packet/JoinLobbyPacket.hpp"
+#include "server/packet/NextLevelPacket.hpp"
 #include "server/packet/QuitPacket.hpp"
 #include "server/packet/RestartPacket.hpp"
+#include "server/packet/handler/NextLevelHandler.hpp"
 #include "server/packet/handler/QuitLevelPacketHandler.hpp"
 #include "server/packet/handler/RestartLevelPacketHandler.hpp"
 
@@ -48,15 +50,15 @@ std::string getLocalIPAddress() {
         asio::ip::tcp::resolver::iterator it = resolver.resolve(query);
         asio::ip::tcp::resolver::iterator end;
 
-        while(it != end) {
+        while (it != end) {
             asio::ip::tcp::endpoint endpoint = *it++;
             asio::ip::address addr = endpoint.address();
 
-            if(addr.is_v4() && !addr.is_loopback()) {
+            if (addr.is_v4() && !addr.is_loopback()) {
                 return addr.to_string();
             }
         }
-    } catch (std::exception& e) {
+    } catch (std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 
@@ -109,9 +111,12 @@ int main() {
 
         PacketRegistery::getInstance().registerPacket<RestartPacket>(121);
         PacketHandlerFactory::getInstance().registerHandler(121, std::make_shared<RestartLevelPacketHandler>());
+        PacketRegistery::getInstance().registerPacket<NextLevelPacket>(122);
+        PacketHandlerFactory::getInstance().registerHandler(122, std::make_shared<NextLevelPacketHandler>());
 
         auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
         LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
+        NextLevelPacketHandler::setNetworkAndEventManager(network, &manager);
         PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -129,17 +134,17 @@ int main() {
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 
-        SceneSystem* sceneSystem = gameEngine->getSystem<SceneSystem>();
-        
+        SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
+
         sceneSystem->addScene(std::make_unique<MainMenu>());
-        
+
         LevelSelector levelSelector(sceneSystem, network, &manager);
         levelSelector.createLevelSelectorScene();
-        
+
         sceneSystem->addScene(std::make_unique<Lobby>());
         sceneSystem->addScene(std::make_unique<RestartScene>(network));
         sceneSystem->addScene(std::make_unique<Game>(network, &manager));
-        
+
         sceneSystem->setScene("MainMenu");
 
         gameEngine->start();

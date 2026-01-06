@@ -7,6 +7,7 @@
 #include "cell/Water.hpp"
 #include "diamond/RedDiamond.hpp"
 #include "diamond/BlueDiamond.hpp"
+#include "door/Door.hpp"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Input/InputSystem.h"
@@ -127,6 +128,7 @@ void LevelScene::onUpdate(float deltaTime) {
 
     updateDiamondCounters();
     checkDiamondCollisions();
+    checkDoorCollisions();
 }
 
 Fireboy *getFireboy(Scene *scene) {
@@ -193,6 +195,8 @@ void LevelScene::createBasicLevelGrid() {
     }
     _levelGrid->setCellType(15, 16, CellType::RedDiamond);
     _levelGrid->setCellType(18, 16, CellType::BlueDiamond);
+    _levelGrid->setCellType(3, 16, CellType::RedDoor);
+    _levelGrid->setCellType(22, 16, CellType::BlueDoor);
 
     for (int y = 0; y < 18; y++) {
         _levelGrid->setCellType(0, y, CellType::Ground);
@@ -209,6 +213,22 @@ void LevelScene::createBasicLevelGrid() {
 
     for (int x = 12; x < 20; x++) {
         _levelGrid->setCellType(x, 8, CellType::Ground);
+    }
+}
+
+void LevelScene::checkDoorCollisions() {
+    Fireboy* fire = _fireboy ? _fireboy : getFireboy(this);
+    Watergirl* water = _watergirl ? _watergirl : getWatergirl(this);
+    if (!fire && !water)
+        return;
+
+    auto &objects = getObjects();
+
+    for (auto &obj : objects) {
+        if (Door* door = dynamic_cast<Door*>(obj.get())) {
+            if (fire) door->checkCollisionWith(fire);
+            if (water) door->checkCollisionWith(water);
+        }
     }
 }
 
@@ -289,6 +309,12 @@ void LevelScene::setupLevel() {
 
             if (type == CellType::BlueDiamond)
                 addObject(std::make_unique<BlueDiamond>(_levelGrid.get(), x, y));
+
+            if (type == CellType::RedDoor)
+                addObject(std::make_unique<Door>(this, _levelGrid->getCellSize(), x, y));
+
+            if (type == CellType::BlueDoor)
+                addObject(std::make_unique<Door>(this, _levelGrid->getCellSize(), x, y, "blue"));
         }
     }
 }

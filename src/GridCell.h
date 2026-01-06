@@ -6,7 +6,8 @@ enum class CellType {
     Ground,
     Water,
     Lava,
-    Door,
+    RedDoor,
+    BlueDoor,
     RedDiamond,
     BlueDiamond
 };

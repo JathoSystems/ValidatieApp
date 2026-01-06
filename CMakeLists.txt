@@ -74,6 +74,7 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/diamond/RedDiamond.cpp
         includes/diamond/BlueDiamond.hpp
         src/diamond/BlueDiamond.cpp
+        includes/server/packet/handler/NextLevelHandler.hpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -139,6 +140,9 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/diamond/RedDiamond.cpp
         includes/diamond/BlueDiamond.hpp
         src/diamond/BlueDiamond.cpp
+        includes/door/Door.hpp
+        includes/server/packet/NextLevelPacket.hpp
+        includes/server/packet/handler/NextLevelHandler.hpp
 )
 
 include_directories("includes")
