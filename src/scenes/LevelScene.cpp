@@ -169,21 +169,18 @@ void LevelScene::checkDiamondCollisions() {
 }
 
 void LevelScene::updateDiamondCounters() {
-    // Update Fireboy diamond count
     Fireboy *fire = _fireboy;
     if (!fire) fire = getFireboy(this);
 
     if (_fireboyDiamondText && fire) {
-        int diamonds = fire->getDiamonds();  // ✅ Gebruik fire
+        int diamonds = fire->getDiamonds();
         _fireboyDiamondText->setText("Fireboy: " + std::to_string(diamonds));
     }
 
-    // Update Watergirl diamond count
     Watergirl *water = _watergirl;
     if (!water) water = getWatergirl(this);
-
-    if (_watergirlDiamondText && water) {  // ✅ Check water
-        int diamonds = water->getDiamonds();  // ✅ Gebruik water
+    if (_watergirlDiamondText && water) {
+        int diamonds = water->getDiamonds();
         _watergirlDiamondText->setText("Watergirl: " + std::to_string(diamonds));
     }
 }
