@@ -9,7 +9,7 @@
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "bat/Bat.h"
-#include "bat/BatSpriteRenderer.h"
+#include "GameObjects/Spritesheet/Animator.h"
 #include "grid/GridManager.h"
 #include "GameObjects/GameObject.h"
 
@@ -92,8 +92,8 @@ private:
             bat->getTransform()->getSize()->setWidth(BAT_SIZE);
             bat->getTransform()->getSize()->setHeight(BAT_SIZE);
             
-            auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
-            bat->addComponent(std::move(batRenderer));
+            auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
+            bat->addComponent(std::move(batAnimator));
             
             return bat;
         });

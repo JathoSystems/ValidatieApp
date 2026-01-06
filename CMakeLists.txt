@@ -68,8 +68,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/bat/Bat.cpp
         includes/bat/BatAI.h
         src/bat/BatAI.cpp
-        includes/bat/BatSpriteRenderer.h
-        src/bat/BatSpriteRenderer.cpp
         includes/bat/events/BatMoveEvent.hpp
         src/bat/events/BatMoveEvent.cpp
         includes/SpawnEvent.hpp
@@ -128,8 +126,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/bat/Bat.cpp
         includes/bat/BatAI.h
         src/bat/BatAI.cpp
-        includes/bat/BatSpriteRenderer.h
-        src/bat/BatSpriteRenderer.cpp
         includes/bat/events/BatMoveEvent.hpp
         src/bat/events/BatMoveEvent.cpp
         includes/SpawnEvent.hpp

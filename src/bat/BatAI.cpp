@@ -3,7 +3,7 @@
 #include "grid/LevelGrid.h"
 #include "GameObjects/Transform/Position.h"
 #include "GameObjects/Transform/Transform.h"
-#include "bat/BatSpriteRenderer.h"
+#include "GameObjects/Spritesheet/Animator.h"
 #include "bat/events/BatMoveEvent.hpp"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
@@ -70,9 +70,21 @@ void BatAI::updateMovement(float deltaTime) {
     Position* pos = transform->getPosition();
     if (!pos) return;
     
-    BatSpriteRenderer* spriteRenderer = _parent->getComponent<BatSpriteRenderer>();
-    if (spriteRenderer) {
-        spriteRenderer->setFlipHorizontal(_directionX < 0.0f);
+    // Flip sprite based on direction (negative width flips horizontally)
+    if (transform) {
+        Size* size = transform->getSize();
+        if (size) {
+            float currentWidth = size->getWidth();
+            float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
+            
+            if (_directionX < 0.0f) {
+                // Facing left - flip by using negative width
+                size->setWidth(-absWidth);
+            } else {
+                // Facing right - normal width
+                size->setWidth(absWidth);
+            }
+        }
     }
     
     float currentX = static_cast<float>(pos->getX());

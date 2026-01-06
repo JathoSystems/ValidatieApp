@@ -18,7 +18,6 @@
 #include "grid/GridManager.h"
 #include "bat/Bat.h"
 #include "bat/BatAI.h"
-#include "bat/BatSpriteRenderer.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "SpawnEvent.hpp"
@@ -263,8 +262,8 @@ void Game::createBat() {
 
     int batId = ObjectRegistry::getInstance().registerObject(bat.get());
 
-    auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
-    bat->addComponent(std::move(batRenderer));
+    auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
+    bat->addComponent(std::move(batAnimator));
 
     bool isNetworked = (_network != nullptr);
     bool isAuthoritative = true;

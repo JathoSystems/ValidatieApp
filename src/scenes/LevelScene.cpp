@@ -18,7 +18,7 @@
 #include "Network/GameState.hpp"
 #include "bat/Bat.h"
 #include "bat/BatAI.h"
-#include "bat/BatSpriteRenderer.h"
+#include "GameObjects/Spritesheet/Animator.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
 
@@ -263,8 +263,8 @@ void LevelScene::createBat() {
 
     int batId = ObjectRegistry::getInstance().registerObject(bat.get());
 
-    auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
-    bat->addComponent(std::move(batRenderer));
+    auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
+    bat->addComponent(std::move(batAnimator));
 
     bool isNetworked = (_network != nullptr);
     bool isAuthoritative = true;
