@@ -132,15 +132,13 @@ int main() {
                 quitPacket.getBuffer().setData(packet.getBuffer().getData());
                 quitPacket.deserialize();
 
-                // ToDo: fix hardcoded
-                int playerId = 1;
-                int lobbyId = lobbyManager.getLobbyIdForPlayer(playerId);
-                Lobby *lobby = lobbyManager.getLobby(lobbyId);
+                Lobby *lobby = lobbyManager.getLobby(quitPacket.getLobby());
+                std::cout << "Disbanding " << std::to_string(quitPacket.getLobby()) << std::endl;
                 lobby->broadcastInLobby(quitPacket, server);
                 for (int32_t player: lobby->players)
-                    lobbyManager.leaveLobby(lobbyId, player);
+                    lobbyManager.leaveLobby(quitPacket.getLobby(), player);
 
-                lobbyManager.removeLobby(lobbyId);
+                lobbyManager.removeLobby(quitPacket.getLobby());
             } else if (packetId == 121) {
                 RestartPacket restart;
                 restart.getBuffer().setData(packet.getBuffer().getData());
