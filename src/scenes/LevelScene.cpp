@@ -129,40 +129,61 @@ void LevelScene::onUpdate(float deltaTime) {
     checkDiamondCollisions();
 }
 
+Fireboy *getFireboy(Scene *scene) {
+    auto &objects = scene->getObjects();
+    for (auto &obj: objects) {
+        if (Fireboy *fireboy = dynamic_cast<Fireboy *>(obj.get())) {
+            return fireboy;
+        }
+    }
+    return nullptr;
+}
+
+Watergirl *getWatergirl(Scene *scene) {
+    auto &objects = scene->getObjects();
+    for (auto &obj: objects) {
+        if (Watergirl *watergirl = dynamic_cast<Watergirl *>(obj.get())) {
+            return watergirl;
+        }
+    }
+    return nullptr;
+}
+
 void LevelScene::checkDiamondCollisions() {
     // Null-check before dereferencing to prevent crashes during reinitialization
     if (!_fireboy && !_watergirl) {
-        return;  // Characters not yet initialized
+        return; // Characters not yet initialized
     }
 
     // Get all game objects from scene
-    auto& objects = getObjects();
+    auto &objects = getObjects();
 
-    for (auto& obj : objects) {
+    for (auto &obj: objects) {
         // Check if object is a diamond
-        if (RedDiamond* redDiamond = dynamic_cast<RedDiamond*>(obj.get())) {
-            if (_fireboy) {
-                redDiamond->checkCollisionWith(_fireboy);
-            }
-        }
-        else if (BlueDiamond* blueDiamond = dynamic_cast<BlueDiamond*>(obj.get())) {
-            if (_watergirl) {
-                blueDiamond->checkCollisionWith(_watergirl);
-            }
+        if (RedDiamond *redDiamond = dynamic_cast<RedDiamond *>(obj.get())) {
+            redDiamond->checkCollisionWith(getFireboy(this));
+        } else if (BlueDiamond *blueDiamond = dynamic_cast<BlueDiamond *>(obj.get())) {
+            blueDiamond->checkCollisionWith(getWatergirl(this));
         }
     }
 }
 
 void LevelScene::updateDiamondCounters() {
     // Update Fireboy diamond count
-    if (_fireboyDiamondText && _fireboy) {
-        int diamonds = _fireboy->getDiamonds();
+    Fireboy *fire = _fireboy;
+    if (!fire) fire = getFireboy(this);
+
+    if (_fireboyDiamondText && fire) {
+        int diamonds = fire->getDiamonds();  // ✅ Gebruik fire
         _fireboyDiamondText->setText("Fireboy: " + std::to_string(diamonds));
     }
 
     // Update Watergirl diamond count
-    if (_watergirlDiamondText && _watergirl) {
-        int diamonds = _watergirl->getDiamonds();
+    Watergirl *water = _watergirl;
+    if (!water) water = getWatergirl(this);
+
+    if (_watergirlDiamondText && water) {  // ✅ Check water
+        int diamonds = water->getDiamonds();  // ✅ Gebruik water
         _watergirlDiamondText->setText("Watergirl: " + std::to_string(diamonds));
     }
 }
