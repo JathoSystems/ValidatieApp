@@ -88,7 +88,7 @@ private:
             const int CELL_SIZE = 10;
             auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
             
-            const int BAT_SIZE = CELL_SIZE * 4;
+            const int BAT_SIZE = CELL_SIZE;
             bat->getTransform()->getSize()->setWidth(BAT_SIZE);
             bat->getTransform()->getSize()->setHeight(BAT_SIZE);
             

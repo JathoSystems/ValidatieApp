@@ -13,7 +13,7 @@ private:
     bool _isOnline;
     std::shared_ptr<NetworkSystem> _network;
     EventManager* _eventManager;
-    std::unique_ptr<LevelGrid> _levelGrid;
+    bool _batCreated;
 
 public:
     LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);
@@ -24,6 +24,7 @@ private:
     void setupLevel();
     void setupCharacters();
     void createBasicLevelGrid();
+    void createBat();
 };
 
 #endif

@@ -6,6 +6,7 @@
 #define VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
 #include <iostream>
 #include <cstring>
+#include <unordered_map>
 
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
@@ -15,6 +16,7 @@
 
 class SpawnEvent : public IEvent {
 private:
+    static std::unordered_map<int, int> idMapping;
     int registryId = 0;
     std::string objectName = "fireboy";
     float spawnX = 0.0f;
@@ -129,6 +131,8 @@ public:
 
     float getSpawnX() const { return spawnX; }
     float getSpawnY() const { return spawnY; }
+    
+    static int getMappedId(int originalId);
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP

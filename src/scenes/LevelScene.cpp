@@ -1,8 +1,9 @@
 #include "scenes/LevelScene.hpp"
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
+#include "grid/GridManager.h"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
-#include "GridRenderer.h"
+#include "grid/GridRenderer.h"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Input/InputSystem.h"
@@ -15,13 +16,19 @@
 #include "UI/Text.h"
 #include "UI/FPSCounter.h"
 #include "Network/GameState.hpp"
+#include "bat/Bat.h"
+#include "bat/BatAI.h"
+#include "bat/BatSpriteRenderer.h"
+#include "GameObjects/ObjectRegistry.hpp"
+#include "SpawnEvent.hpp"
 
 LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network, EventManager* eventManager)
     : Scene("level_" + std::to_string(levelNumber) + (isOnline ? "_online" : "")),
       _levelNumber(levelNumber),
       _isOnline(isOnline),
       _network(network),
-      _eventManager(eventManager) {
+      _eventManager(eventManager),
+      _batCreated(false) {
 }
 
 LevelScene::~LevelScene() = default;
@@ -38,6 +45,9 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Setting up characters..." << std::endl;
     setupCharacters();
     
+    std::cout << "[LevelScene] Creating bat..." << std::endl;
+    createBat();
+    
     std::cout << "[LevelScene] Setting up HUD..." << std::endl;
     auto hud = std::make_unique<HUD>();
     auto fpsCounter = std::make_unique<FPSCounter>();
@@ -51,28 +61,32 @@ void LevelScene::onInitialRender() {
 }
 
 void LevelScene::createBasicLevelGrid() {
-    _levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
+    auto levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
     
     for (int x = 0; x < 32; x++) {
-        _levelGrid->setCellType(x, 17, CellType::Ground);
+        levelGrid->setCellType(x, 17, CellType::Ground);
     }
     
     for (int y = 0; y < 18; y++) {
-        _levelGrid->setCellType(0, y, CellType::Ground);
-        _levelGrid->setCellType(31, y, CellType::Ground);
+        levelGrid->setCellType(0, y, CellType::Ground);
+        levelGrid->setCellType(31, y, CellType::Ground);
     }
     
     for (int x = 5; x < 12; x++) {
-        _levelGrid->setCellType(x, 12, CellType::Ground);
+        levelGrid->setCellType(x, 12, CellType::Ground);
     }
     
     for (int x = 20; x < 27; x++) {
-        _levelGrid->setCellType(x, 12, CellType::Ground);
+        levelGrid->setCellType(x, 12, CellType::Ground);
     }
     
     for (int x = 12; x < 20; x++) {
-        _levelGrid->setCellType(x, 8, CellType::Ground);
+        levelGrid->setCellType(x, 8, CellType::Ground);
     }
+    
+    // Register grid in GridManager
+    std::string sceneName = getName();
+    GridManager::registerGrid(sceneName, std::move(levelGrid));
 }
 
 void LevelScene::setupLevel() {
@@ -107,14 +121,21 @@ void LevelScene::setupLevel() {
     backButtonObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(backButtonObj));
 
-    int cellSize = _levelGrid->getCellSize();
+    std::string sceneName = getName();
+    LevelGrid* grid = GridManager::getGrid(sceneName);
+    if (!grid) {
+        std::cout << "[LevelScene] Grid not found for scene: " << sceneName << std::endl;
+        return;
+    }
+    
+    int cellSize = grid->getCellSize();
 
 
     // Create individual blocks for each ground cell
     int blockCount = 0;
-    for (int x = 0; x < _levelGrid->getWidth(); ++x) {
-        for (int y = 0; y < _levelGrid->getHeight(); ++y) {
-            if (_levelGrid->getCellType(x, y) == CellType::Ground) {
+    for (int x = 0; x < grid->getWidth(); ++x) {
+        for (int y = 0; y < grid->getHeight(); ++y) {
+            if (grid->getCellType(x, y) == CellType::Ground) {
                 blockCount++;
                 
                 auto block = std::make_unique<GameObject>();
@@ -180,5 +201,80 @@ void LevelScene::setupCharacters() {
         watergirl->getTransform()->getPosition()->setX(400);
         watergirl->getTransform()->getPosition()->setY(500);
         addObject(std::move(watergirl));
+    }
+}
+
+void LevelScene::createBat() {
+    if (_batCreated) return;
+
+    std::string sceneName = getName();
+    LevelGrid* grid = GridManager::getGrid(sceneName);
+    if (!grid) {
+        std::cout << "[LevelScene] Grid not found for scene: " << sceneName << std::endl;
+        return;
+    }
+
+    const int CELL_SIZE = grid->getCellSize();
+    const int GRID_WIDTH = grid->getWidth();
+    const int GRID_HEIGHT = grid->getHeight();
+
+    int startGridX = GRID_WIDTH / 2;
+    int startGridY = GRID_HEIGHT / 2;
+    bool foundStart = false;
+
+    // Find a walkable position starting from center
+    for (int radius = 0; radius < std::min(GRID_WIDTH, GRID_HEIGHT) / 2 && !foundStart; ++radius) {
+        for (int y = startGridY - radius; y <= startGridY + radius && !foundStart; ++y) {
+            for (int x = startGridX - radius; x <= startGridX + radius && !foundStart; ++x) {
+                if (x > startGridX - radius && x < startGridX + radius &&
+                    y > startGridY - radius && y < startGridY + radius) {
+                    continue;
+                }
+                
+                if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                    if (grid->isWalkable(x, y)) {
+                        startGridX = x;
+                        startGridY = y;
+                        foundStart = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!foundStart) {
+        std::cout << "[LevelScene] Could not find walkable position for bat" << std::endl;
+        return;
+    }
+
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+
+    float worldX, worldY;
+    grid->gridToWorld(startGridX, startGridY, worldX, worldY);
+    worldX += CELL_SIZE / 2.0f;
+    worldY += CELL_SIZE / 2.0f;
+    
+    bat->getTransform()->getPosition()->setX(static_cast<int>(worldX));
+    bat->getTransform()->getPosition()->setY(static_cast<int>(worldY));
+    
+    const int BAT_SIZE = CELL_SIZE;
+    bat->getTransform()->getSize()->setWidth(BAT_SIZE);
+    bat->getTransform()->getSize()->setHeight(BAT_SIZE);
+
+    int batId = ObjectRegistry::getInstance().registerObject(bat.get());
+
+    auto batRenderer = std::make_unique<BatSpriteRenderer>("resources/sprite2.png");
+    bat->addComponent(std::move(batRenderer));
+
+    bool isNetworked = (_network != nullptr);
+    bool isAuthoritative = true;
+    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId, isAuthoritative);
+    bat->addComponent(std::move(batAI));
+
+    addObject(std::move(bat));
+    _batCreated = true;
+
+    if (_network && _eventManager) {
+        _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(batId, "bat"));
     }
 }

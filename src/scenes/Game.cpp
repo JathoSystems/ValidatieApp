@@ -257,7 +257,7 @@ void Game::createBat() {
     bat->getTransform()->getPosition()->setX(static_cast<int>(worldX));
     bat->getTransform()->getPosition()->setY(static_cast<int>(worldY));
     
-    const int BAT_SIZE = CELL_SIZE * 4;
+    const int BAT_SIZE = CELL_SIZE;
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
 

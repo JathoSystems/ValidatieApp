@@ -49,8 +49,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         includes/scenes/LevelScene.hpp
         src/scenes/LevelScene.cpp
-        src/LevelGrid.cpp
-        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -115,13 +113,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
         includes/LevelSelector.h
-        src/LevelGrid.cpp
-        src/LevelGrid.h
-        src/GridCell.h
-        src/GridRenderer.cpp
-        src/GridRenderer.h
-        src/GridManager.cpp
-        src/GridManager.h
         includes/scenes/MainMenu.hpp
         src/scenes/MainMenu.cpp
         includes/scenes/LevelScene.hpp
