@@ -22,6 +22,7 @@ private:
     std::string jump;
     std::string falling;
     std::unique_ptr<BaseCharacterController> _controller;
+    int _diamonds = 0;
     
     Animation _currentAnimation = Animation::IDLE;
     
@@ -46,6 +47,10 @@ public:
     void setMovementDirection(Direction direction);
 
     void updateAnimation();
+
+    void addDiamond() { _diamonds++; }
+    int getDiamonds() {return _diamonds;}
+
     
     BaseCharacterController* getController() { return _controller.get(); }
 

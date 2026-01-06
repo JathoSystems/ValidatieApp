@@ -19,6 +19,8 @@
 #include "server/packet/CreateLobbyPacket.hpp"
 #include "server/packet/JoinLobbyPacket.hpp"
 #include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/QuitPacket.hpp"
+#include "server/packet/RestartPacket.hpp"
 
 int main() {
     try {
@@ -32,6 +34,8 @@ int main() {
         PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
         PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
         PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
+        PacketRegistery::getInstance().registerPacket<QuitPacket>(120);
+        PacketRegistery::getInstance().registerPacket<RestartPacket>(121);
 
 
         // Register events
@@ -122,9 +126,35 @@ int main() {
                 ready.serialize();
 
                 lobby->broadcastInLobby(ready, server);
-            }
+            } else if (packetId == 120) {
+                QuitPacket quitPacket;
+                quitPacket.getBuffer().setData(packet.getBuffer().getData());
+                quitPacket.deserialize();
+
+                // ToDo: fix hardcoded
+                int playerId = 1;
+                int lobbyId = lobbyManager.getLobbyIdForPlayer(playerId);
+                Lobby* lobby = lobbyManager.getLobby(lobbyId);
+                lobby->broadcastInLobby(quitPacket, server);
+                for (int32_t player : lobby->players)
+                    lobbyManager.leaveLobby(lobbyId, player);
+
+                lobbyManager.removeLobby(lobbyId);
+            } else if (packetId == 121) {
+                RestartPacket restart;
+                restart.getBuffer().setData(packet.getBuffer().getData());
+                restart.deserialize();
+
+                Lobby* lobby = lobbyManager.getLobby(restart.getLobby());
+                if (!lobby) {
+                    std::cerr << "Could not restart, lobby does not exist\n";
+                    return;
+                }
+
+                std::cout << "Restarting lobby: " << restart.getLobby() << "\n";
+                lobby->broadcastInLobby(restart, server);
             // Handle NetworkEventPacket
-            else if (packetId == 100) {
+            } else if (packetId == 100) {
                 // Deserialize the NetworkEventPacket
                 NetworkEventPacket eventPacket;
                 eventPacket.getBuffer().setData(packet.getBuffer().getData());

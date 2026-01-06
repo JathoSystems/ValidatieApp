@@ -26,6 +26,7 @@
 #include "scenes/MainMenu.hpp"
 #include "scenes/Game.hpp"
 #include "scenes/Lobby.hpp"
+#include "scenes/RestartScene.hpp"
 #include "server/packet/GameReady.hpp"
 #include "server/packet/PlayerAssignPacket.hpp"
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
@@ -34,6 +35,10 @@
 #include "server/packet/LobbyInfoPacket.hpp"
 #include "server/packet/CreateLobbyPacket.hpp"
 #include "server/packet/JoinLobbyPacket.hpp"
+#include "server/packet/QuitPacket.hpp"
+#include "server/packet/RestartPacket.hpp"
+#include "server/packet/handler/QuitLevelPacketHandler.hpp"
+#include "server/packet/handler/RestartLevelPacketHandler.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -63,8 +68,7 @@ int main() {
         GameEngine *gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
-        // Network mag pas na de init gedaan worden
-        auto network = std::make_shared<NetworkSystem>();
+        std::shared_ptr<NetworkSystem> network = std::make_shared<NetworkSystem>();
         network->connect(getLocalIPAddress(), 7534);
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
@@ -96,10 +100,15 @@ int main() {
 
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
         PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
-        
+
         PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
         PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
         PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
+        PacketRegistery::getInstance().registerPacket<QuitPacket>(120);
+        PacketHandlerFactory::getInstance().registerHandler(120, std::make_shared<QuitLevelPacketHandler>());
+
+        PacketRegistery::getInstance().registerPacket<RestartPacket>(121);
+        PacketHandlerFactory::getInstance().registerHandler(121, std::make_shared<RestartLevelPacketHandler>());
 
         auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
         LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
@@ -128,6 +137,7 @@ int main() {
         levelSelector.createLevelSelectorScene();
         
         sceneSystem->addScene(std::make_unique<Lobby>());
+        sceneSystem->addScene(std::make_unique<RestartScene>(network));
         sceneSystem->addScene(std::make_unique<Game>(network, &manager));
         
         sceneSystem->setScene("MainMenu");
