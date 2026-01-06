@@ -1,6 +1,7 @@
 #include <iostream>
 #include <asio.hpp>
 
+#include "LevelSelector.h"
 #include "SpawnEvent.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
@@ -11,6 +12,7 @@
 #include "asio/io_context.hpp"
 #include "asio/ip/tcp.hpp"
 #include "asio/ip/host_name.hpp"
+#include "Events/EventRegistry.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -22,6 +24,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 #include "Network/Packet/Handler/PacketHandlerFactory.hpp"
+#include "scenes/MainMenu.hpp"
 #include "scenes/Game.hpp"
 #include "scenes/Lobby.hpp"
 #include "server/packet/GameReady.hpp"
@@ -29,6 +32,10 @@
 #include "server/packet/handler/GameReadyPacketHandler.hpp"
 #include "bat/events/BatMoveEvent.hpp"
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
+#include "server/packet/handler/LobbyInfoPacketHandler.hpp"
+#include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/CreateLobbyPacket.hpp"
+#include "server/packet/JoinLobbyPacket.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -53,6 +60,9 @@ std::string getLocalIPAddress() {
     return "192.168.2.161";
 }
 
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
+
 int main() {
     try {
         GameEngine *gameEngine = &GameEngine::getInstance();
@@ -63,16 +73,41 @@ int main() {
             std::cerr << "[Main] ERROR: SceneSystem is null!" << std::endl;
             return 1;
         }
-        
+
         sceneSystem->addScene(std::make_unique<Lobby>());
 
         // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
-        auto result = network->connect(getLocalIPAddress(), 7534);
+        network->connect(getLocalIPAddress(), 7534);
+        network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
+            std::lock_guard<std::mutex> lock(eventMutex);
+            eventQueue.push_back([id, event]() {
+                if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                    spawn->spawn();
+                    return;
+                }
+                GameObject *object = ObjectRegistry::getInstance().getObject(id);
+                if (!object) return;
+                event->apply(object);
+            });
+        });
+
         EventManager manager(network->getMiddleware());
-        
+
         auto gameScene = std::make_unique<Game>(network, &manager);
         std::string gameSceneName = gameScene->getName();
+        manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
+            // std::lock_guard<std::mutex> lock(eventMutex);
+            // eventQueue.push_back([id, event]() {
+            //     if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+            //         spawn->spawn();
+            //         return;
+            //     }
+            //     GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            //     if (!object) return;
+            //     event->apply(object);
+            // });
+        });
 
         sceneSystem->addScene(std::move(gameScene));
 
@@ -84,6 +119,13 @@ int main() {
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
         PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
 
+        PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
+        PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
+        PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
+
+        auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
+        LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
+        PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
@@ -94,7 +136,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>(0, "watergirl");
+            return std::make_shared<SpawnEvent>(0, "watergirl", 0.0f, 0.0f);
         });
 
         EventRegistry::getInstance()->registerEvent("batmove", []() {
@@ -104,6 +146,17 @@ int main() {
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 
+        SceneSystem* sceneSystem = gameEngine->getSystem<SceneSystem>();
+
+        sceneSystem->addScene(std::make_unique<MainMenu>());
+
+        LevelSelector levelSelector(sceneSystem, network, &manager);
+        levelSelector.createLevelSelectorScene();
+
+        sceneSystem->addScene(std::make_unique<Lobby>());
+        sceneSystem->addScene(std::make_unique<Game>(network, &manager));
+
+        sceneSystem->setScene("MainMenu");
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
                 spawn->spawn();

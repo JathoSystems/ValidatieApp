@@ -1,30 +1,34 @@
-//
-// Created by jusra on 9-12-2025.
-//
-
 #include "characters/BaseCharacter.hpp"
+#include <iostream>
+#include <cmath>
+#include <iomanip>
 
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "GameObjects/Component/SpriteRenderer.h"
+#include "GameObjects/Component/RectangleRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "Input/InputSystem.h"
 #include "Physics/Box2DFacade.h"
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
+
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                             bool activePlayer) {
-    initializeCharacter(getId(), network, eventManager, engine, activePlayer);
+                             bool activePlayer, KeyBindings bindings): Broadcastable(this) {
+    initializeCharacter(getId(), network, eventManager, engine, activePlayer, bindings);
 }
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine, bool activePlayer) : GameObject(parentId) {
-    initializeCharacter(parentId, network, eventManager, engine, activePlayer);
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : Broadcastable(this, parentId) {
+    initializeCharacter(parentId, network, eventManager, engine, activePlayer, bindings);
 }
 
 void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                                        GameEngine *engine, bool activePlayer) {
-    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager);
+                                        GameEngine *engine, bool activePlayer, KeyBindings bindings) {
+    _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings, activePlayer);
+
+    std::cout << "[BaseCharacter] Created with ID: " << id
+              << " Active: " << (activePlayer ? "YES" : "NO") << std::endl;
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
@@ -33,16 +37,27 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
         addComponent(std::move(keyInput));
     }
 
-    // addComponent(std::make_unique<Animator>("resources/fireboy/idle.png", 1, 5));
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
 
+    // SDL_Color debugColor = activePlayer ? SDL_Color{0, 255, 0, 255} : SDL_Color{0, 0, 255, 255};
+    // auto debugRenderer = std::make_unique<RectangleRenderer>(debugColor, false);
+    // addComponent(std::move(debugRenderer));
+    // setLayer(100);
+
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
+
     component->setBodyType(BodyType::DYNAMIC);
-    component->setCollider(std::make_unique<BoxCollider>(50, 100));
-    component->setMaterial(Material(1.0f, 0.8f, 0.0f));
     component->setGravityScale(1.0f);
+    component->setCollider(std::make_unique<BoxCollider>(50, 100));
+
+    if (!activePlayer) {
+        component->setMaterial(Material(1.0f, 0.3f, 0.0f));
+    } else {
+        component->setMaterial(Material(1.0f, 0.0f, 0.0f));
+    }
+
     component->setFixedRotation(true);
 
     PhysicsComponent *componentPointer = component.get();
@@ -50,157 +65,188 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     engine->getSystem<PhysicsSystem>()->registerComponent(componentPointer);
 }
 
-void BaseCharacter::setMovementDirection(Direction direction) {
-    _direction = direction;
+void BaseCharacter::setPendingNetworkUpdate(float x, float y, float vx, float vy, Direction direction, bool toggle) {
+    _pendingUpdate.hasPending = true;
+    _pendingUpdate.x = x;
+    _pendingUpdate.y = y;
+    _pendingUpdate.vx = vx;
+    _pendingUpdate.vy = vy;
+    _pendingUpdate.direction = direction;
+    _pendingUpdate.toggle = toggle;
+}
+
+void BaseCharacter::setPendingJump(bool shouldJump) {
+    _pendingJump.shouldJump = shouldJump;
+}
+
+void BaseCharacter::applyPendingJump() {
+    if (!_pendingJump.shouldJump) return;
+    _pendingJump.shouldJump = false;
+
+    if (auto* physics = getComponent<PhysicsComponent>()) {
+         physics->setVelocity(0, -800.0f);
+    }
+    if (_controller) {
+        _controller->setGrounded(false);
+    }
+}
+
+void BaseCharacter::applyPendingNetworkUpdate() {
+    if (!_pendingUpdate.hasPending) return;
+
+    // Store the values BEFORE clearing the flag
+    _lastRemoteX = _pendingUpdate.x;
+    _lastRemoteY = _pendingUpdate.y;
+    _lastRemoteVx = _pendingUpdate.vx;
+    _lastRemoteVy = _pendingUpdate.vy;
+
+    setMovementDirection(_pendingUpdate.toggle ? _pendingUpdate.direction : Direction::NONE);
+
+    _pendingUpdate.hasPending = false;
 }
 
 void BaseCharacter::update(float delta) {
-    GameObject::update(delta);
-    updateAnimation();
+    const float PHYSICS_TIMESTEP = 1.0f / 60.0f;
 
-    if (_controller) {
-        auto* physics = getComponent<PhysicsComponent>();
-        if (physics) {
-            _controller->move(_direction, physics);
-        } else {
-            static float debugTimer = 0.0f;
-            debugTimer += delta;
-            if (debugTimer >= 2.0f) {
-                std::cout << "[BaseCharacter] WARNING: Character has no PhysicsComponent!" << std::endl;
-                debugTimer = 0.0f;
+    applyPendingNetworkUpdate();
+    applyPendingJump();
+
+    GameObject::update(delta);
+
+    // Remote Player Sync / correction part
+    if (_controller && !_controller->isActive()) {
+        PhysicsComponent* physics = getComponent<PhysicsComponent>();
+
+        if (_lastRemoteX != 0 && _lastRemoteY != 0 && physics) {
+            float currentX = getTransform()->getPosition()->getX();
+            float currentY = getTransform()->getPosition()->getY();
+
+            float errorX = _lastRemoteX - currentX;
+            float errorY = _lastRemoteY - currentY;
+            float errorDistance = std::sqrt(errorX * errorX + errorY * errorY);
+
+            if (errorDistance > 100.0f) {
+                std::cout << "[Remote Sync] Large error detected (" << errorDistance
+                         << "px), snapping to network position" << std::endl;
+                physics->setPosition(_lastRemoteX, _lastRemoteY);
+                physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
+            }
+            else if (errorDistance > 5.0f) {
+                const float CORRECTION_STRENGTH = 15.0f;
+                float correctionVx = errorX * CORRECTION_STRENGTH;
+                float correctionVy = errorY * CORRECTION_STRENGTH;
+
+                float finalVx = _lastRemoteVx * 0.7f + correctionVx * 0.3f;
+                float finalVy = _lastRemoteVy * 0.7f + correctionVy * 0.3f;
+
+                physics->setVelocity(finalVx, finalVy);
+            }
+            else {
+                physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
             }
         }
-    } else {
-        static float debugTimer = 0.0f;
-        debugTimer += delta;
-        if (debugTimer >= 2.0f) {
-            std::cout << "[BaseCharacter] WARNING: Character has no controller!" << std::endl;
-            debugTimer = 0.0f;
+    }
+
+    if (_controller && _controller->isActive()) {
+        _physicsAccumulator += delta;
+
+        while (_physicsAccumulator >= PHYSICS_TIMESTEP) {
+            auto *physics = getComponent<PhysicsComponent>();
+            if (physics) {
+                _controller->move(Direction::NONE, physics);
+
+                float vx, vy;
+                physics->getVelocity(vx, vy);
+                if (_controller->isGrounded() && vy > 1.0f) {
+                    _controller->setGrounded(false);
+                }
+            }
+            _physicsAccumulator -= PHYSICS_TIMESTEP;
         }
     }
+
+    if (_controller) {
+        _controller->update(delta);
+    }
+
+    updateAnimation();
 }
 
 void BaseCharacter::onCollisionEnter(const CollisionData &collision) {
-
-    if (collision.normalY > 0.2f) {
-
-        if (_controller) {
-            _controller->setGrounded(true);
-        }
-
-        removeComponent<Animator>(true);
-        addComponent(std::make_unique<Animator>(idle, 1, 5));
-    }
+    if (collision.normalY > 0.2f && _controller) _controller->setGrounded(true);
 }
-
 
 void BaseCharacter::onCollisionExit(const CollisionData &) {
-    if (_controller)
-        _controller->setGrounded(false);
+    PhysicsComponent *physics = getComponent<PhysicsComponent>();
+    if (!physics || !_controller) return;
+    float vx, vy;
+    physics->getVelocity(vx, vy);
+    if (vy < -0.1f) _controller->setGrounded(false);
 }
 
-void BaseCharacter::setIdleSpritesheet(std::string idle) {
-    this->idle = idle;
-}
+void BaseCharacter::setIdleSpritesheet(std::string idle) { this->idle = idle; }
+void BaseCharacter::setMovingLeftSpritesheet(std::string left) { this->left = left; }
+void BaseCharacter::setMovingRightSpritesheet(std::string right) { this->right = right; }
+void BaseCharacter::setJumpingSpritesheet(std::string jump) { this->jump = jump; }
+void BaseCharacter::setFallingSpritesheet(std::string falling) { this->falling = falling; }
 
-void BaseCharacter::setMovingLeftSpritesheet(std::string left) {
-    this->left = left;
-}
-
-void BaseCharacter::setMovingRightSpritesheet(std::string right) {
-    this->right = right;
-}
-
-void BaseCharacter::setJumpingSpritesheet(std::string jump) {
-    this->jump = jump;
-}
-
-void BaseCharacter::setFallingSpritesheet(std::string falling) {
-    this->falling = falling;
-}
-
-std::string BaseCharacter::getJumpingSpritesheet() const {
-    return jump;
-}
-
-std::string BaseCharacter::getLeftSpritesheet() const {
-    return left;
-}
-
-std::string BaseCharacter::getRightSpritesheet() const {
-    return right;
-}
-
-std::string BaseCharacter::getIdleSpritesheet() const {
-    return idle;
-}
-
-std::string BaseCharacter::getFallingSpritesheet() const {
-    return falling;
-}
+std::string BaseCharacter::getJumpingSpritesheet() const { return jump; }
+std::string BaseCharacter::getLeftSpritesheet() const { return left; }
+std::string BaseCharacter::getRightSpritesheet() const { return right; }
+std::string BaseCharacter::getIdleSpritesheet() const { return idle; }
+std::string BaseCharacter::getFallingSpritesheet() const { return falling; }
 
 void BaseCharacter::updateAnimator(Animation newAnimation) {
-    if (_currentAnimation == newAnimation) {
-        return; // Al de juiste animatie, skip
-    }
-
+    if (_currentAnimation == newAnimation) return;
     _currentAnimation = newAnimation;
     removeComponent<Animator>(true);
-
     switch (newAnimation) {
-        case Animation::IDLE:
-            addComponent(std::make_unique<Animator>(idle, 1, 5));
-            break;
-        case Animation::LEFT:
-            addComponent(std::make_unique<Animator>(left, 1, 7));
-            break;
-        case Animation::RIGHT:
-            addComponent(std::make_unique<Animator>(right, 1, 7));
-            break;
-        case Animation::JUMP:
-            addComponent(std::make_unique<Animator>(jump, 1, 4));
-            break;
-        case Animation::FALLING:
-            addComponent(std::make_unique<Animator>(falling, 1, 4));
-            break;
+        case Animation::IDLE: addComponent(std::make_unique<Animator>(idle, 1, 5)); break;
+        case Animation::LEFT: addComponent(std::make_unique<Animator>(left, 1, 7)); break;
+        case Animation::RIGHT: addComponent(std::make_unique<Animator>(right, 1, 7)); break;
+        case Animation::JUMP: addComponent(std::make_unique<Animator>(jump, 1, 4)); break;
+        case Animation::FALLING: addComponent(std::make_unique<Animator>(falling, 1, 4)); break;
     }
+}
+
+void BaseCharacter::setMovementDirection(Direction direction) {
+    _controller->setMovementDirection(direction);
 }
 
 void BaseCharacter::updateAnimation() {
     if (!_controller) return;
-
     PhysicsComponent *physics = getComponent<PhysicsComponent>();
     if (!physics) return;
 
     float vx, vy;
     physics->getVelocity(vx, vy);
+
     bool isGrounded = _controller->isGrounded();
     Direction movementDir = _controller->getMovementDirection();
+    bool effectivelyGrounded = isGrounded || (std::abs(vy) < 0.5f);
 
-    // Animatie prioriteit: Spring/Val > Beweging > Idle
-
-    // 1. Check of karakter in de lucht is
-    if (!isGrounded) {
-        if (vy < 0) {
-            // Omhoog (springen)
+    if (!effectivelyGrounded) {
+        if (vy < -0.1f) {
             updateAnimator(Animation::JUMP);
-        } else {
-            // Omlaag (vallen)
+        } else if (vy > 0.5f) {
             updateAnimator(Animation::FALLING);
+        } else {
+            if (movementDir != Direction::NONE) {
+                if(movementDir == Direction::WEST) updateAnimator(Animation::RIGHT);
+                 else updateAnimator(Animation::LEFT);
+            } else {
+                updateAnimator(Animation::IDLE);
+            }
         }
-        return; // Lucht animaties hebben voorrang
+        return;
     }
-
-    // 2. Check beweging (alleen als op grond)
     if (movementDir == Direction::WEST) {
         updateAnimator(Animation::RIGHT);
         return;
     }
-
     if (movementDir == Direction::EAST) {
         updateAnimator(Animation::LEFT);
         return;
     }
-
     updateAnimator(Animation::IDLE);
 }

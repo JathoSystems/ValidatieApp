@@ -4,6 +4,7 @@ project(Vuurjongen_Watermeisje_Game LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# cmp0077
 cmake_policy(SET CMP0077 NEW)
 
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
@@ -40,6 +41,16 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/characters/BaseCharacterController.cpp
         src/server/Player.cpp
         src/server/PlayerManager.cpp
+        includes/server/LobbyManager.hpp
+        src/server/LobbyManager.cpp
+        includes/server/packet/CreateLobbyPacket.hpp
+        includes/server/packet/JoinLobbyPacket.hpp
+        src/server/packet/handler/LobbyInfoPacketHandler.cpp
+        includes/server/packet/handler/LobbyInfoPacketHandler.hpp
+        includes/scenes/LevelScene.hpp
+        src/scenes/LevelScene.cpp
+        src/LevelGrid.cpp
+        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -67,8 +78,7 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/SpawnEvent.cpp
 )
 
-add_executable(Vuurjongen_Watermeisje_Game
-        src/Main.cpp
+add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/characters/Fireboy.hpp
         src/characters/Fireboy.cpp
         src/characters/Watergirl.cpp
@@ -86,8 +96,13 @@ add_executable(Vuurjongen_Watermeisje_Game
         src/characters/BaseCharacterController.cpp
         includes/server/Player.hpp
         includes/server/PlayerManager.hpp
+        includes/server/packet/CreateLobbyPacket.hpp
+        includes/server/packet/JoinLobbyPacket.hpp
+        includes/server/packet/LobbyInfoPacket.hpp
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
+        includes/scenes/RoomSelectionScene.hpp
+        src/scenes/RoomSelectionScene.cpp
         includes/scenes/Game.hpp
         src/scenes/Game.cpp
         includes/server/packet/PlayerAssignPacket.hpp
@@ -96,6 +111,21 @@ add_executable(Vuurjongen_Watermeisje_Game
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
+        src/server/packet/handler/LobbyInfoPacketHandler.cpp
+        includes/server/packet/handler/LobbyInfoPacketHandler.hpp
+        src/LevelSelector.cpp
+        includes/LevelSelector.h
+        src/LevelGrid.cpp
+        src/LevelGrid.h
+        src/GridCell.h
+        src/GridRenderer.cpp
+        src/GridRenderer.h
+        src/GridManager.cpp
+        src/GridManager.h
+        includes/scenes/MainMenu.hpp
+        src/scenes/MainMenu.cpp
+        includes/scenes/LevelScene.hpp
+        src/scenes/LevelScene.cpp
         includes/grid/LevelGrid.h
         src/grid/LevelGrid.cpp
         includes/grid/GridCell.h
@@ -116,6 +146,7 @@ add_executable(Vuurjongen_Watermeisje_Game
 )
 
 include_directories("includes")
+include_directories("src")
 
 add_subdirectory(external/GameEngine)
 

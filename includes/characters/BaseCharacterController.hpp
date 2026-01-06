@@ -10,18 +10,35 @@
 #include "Network/NetworkSystem.h"
 #include "Physics/PhysicsComponent.h"
 
+struct KeyBindings {
+    Key left;
+    Key right;
+    Key jump;
+};
+
 class BaseCharacterController : public IKeyListener {
 private:
     bool _grounded = false;
+    bool _shouldJump = false;
     Direction _movementDirection = Direction::NONE;
     float _movementSpeed = 300.0f;
-    float _jumpingSpeed = 5000.0f;
+    float _jumpForce = 50000.0f;
     EventManager *_eventManager;
     int _parentId;
     std::shared_ptr<NetworkSystem> _network;
+    KeyBindings _keyBindings;
+    bool _active;
+
+    bool _isLeftPressed = false;
+    bool _isRightPressed = false;
+
+    float _syncTimer = 0.0f;
 
 public:
-    BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager);
+    BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager,
+                            KeyBindings bindings, bool active);
+
+    void getCurrentPhysicsState(float &x, float &y, float &vx, float &vy);
 
     void onKeyPress(Key key) override;
 
@@ -37,8 +54,15 @@ public:
     Direction getMovementDirection() const { return _movementDirection; }
     void setMovementDirection(Direction direction) { _movementDirection = direction; }
 
-
     void move(Direction direction, PhysicsComponent *physics);
+
+    void getCurrentPosition(float &x, float &y);
+
+    void updateMovementDirection();
+
+    bool isActive() const { return _active; }
+
+    void update(float delta);
 };
 
-#endif //VUURJONGEN_WATERMEISJE_GAME_BASECHARACTERCONTROLLER_HPP
+#endif

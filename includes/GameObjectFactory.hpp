@@ -71,7 +71,6 @@ private:
                 std::cerr << "[Factory] Network or EventManager not set!" << std::endl;
                 return nullptr;
             }
-            std::cout << "Watergirl maken" << std::endl;
             return std::make_unique<Watergirl>(
                 parentId,
                 _network,
