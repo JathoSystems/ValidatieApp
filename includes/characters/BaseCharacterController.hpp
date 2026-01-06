@@ -29,9 +29,16 @@ private:
     KeyBindings _keyBindings;
     bool _active;
 
+    bool _isLeftPressed = false;
+    bool _isRightPressed = false;
+
+    float _syncTimer = 0.0f;
+
 public:
     BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId, EventManager *eventManager,
                             KeyBindings bindings, bool active);
+
+    void getCurrentPhysicsState(float &x, float &y, float &vx, float &vy);
 
     void onKeyPress(Key key) override;
 
@@ -45,6 +52,14 @@ public:
     void setMovementDirection(Direction direction) { _movementDirection = direction; }
 
     void move(Direction direction, PhysicsComponent *physics);
+
+    void getCurrentPosition(float &x, float &y);
+
+    void updateMovementDirection();
+
+    bool isActive() const { return _active; }
+
+    void update(float delta);
 };
 
 #endif

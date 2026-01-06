@@ -12,6 +12,7 @@
 #include "asio/io_context.hpp"
 #include "asio/ip/tcp.hpp"
 #include "asio/ip/host_name.hpp"
+#include "Events/EventRegistry.h"
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -58,35 +59,41 @@ std::string getLocalIPAddress() {
     return "127.0.0.1";
 }
 
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
+
 int main() {
     try {
         GameEngine *gameEngine = &GameEngine::getInstance();
         gameEngine->init("Fireboy and watergirl revanced!", 1280, 720);
 
-        // Network mag pas na de init gedaan worden
         auto network = std::make_shared<NetworkSystem>();
         network->connect(getLocalIPAddress(), 7534);
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
-            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
-                spawn->spawn();
-                return;
-            }
-
-            GameObject *object = ObjectRegistry::getInstance().getObject(id);
-            if (!object) return;
-            event->apply(object);
+            std::lock_guard<std::mutex> lock(eventMutex);
+            eventQueue.push_back([id, event]() {
+                if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                    spawn->spawn();
+                    return;
+                }
+                GameObject *object = ObjectRegistry::getInstance().getObject(id);
+                if (!object) return;
+                event->apply(object);
+            });
         });
 
         EventManager manager(network->getMiddleware());
         manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {
-            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
-                spawn->spawn();
-                return;
-            }
-
-            GameObject *object = ObjectRegistry::getInstance().getObject(id);
-            if (!object) return;
-            event->apply(object);
+            // std::lock_guard<std::mutex> lock(eventMutex);
+            // eventQueue.push_back([id, event]() {
+            //     if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+            //         spawn->spawn();
+            //         return;
+            //     }
+            //     GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            //     if (!object) return;
+            //     event->apply(object);
+            // });
         });
 
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
@@ -114,7 +121,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>(0, "watergirl");
+            return std::make_shared<SpawnEvent>(0, "watergirl", 0.0f, 0.0f);
         });
 
         GameObjectFactory::getInstance().setNetworkSystem(network);

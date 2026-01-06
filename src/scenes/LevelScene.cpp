@@ -143,15 +143,31 @@ void LevelScene::setupLevel() {
 }
 
 void LevelScene::setupCharacters() {
-    GameEngine* gameEngine = &GameEngine::getInstance();
+    GameEngine *gameEngine = &GameEngine::getInstance();
+
+    // Define Fixed IDs so both clients agree
+    const int FIREBOY_ID = 99;
+    const int WATERGIRL_ID = 100;
 
     if (_isOnline) {
         std::string role = GameState::getInstance().get("role");
+
         if (role == "fireboy") {
-            auto fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
+            auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
             addObject(std::move(fireboy));
+
+            auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
+            // Optional: Set initial off-screen position until sync packet arrives
+            watergirl->getTransform()->getPosition()->setX(600);
+            watergirl->getTransform()->getPosition()->setY(500);
+            addObject(std::move(watergirl));
         } else {
-            auto watergirl = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
+            auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
+            fireboy->getTransform()->getPosition()->setX(200);
+            fireboy->getTransform()->getPosition()->setY(500);
+            addObject(std::move(fireboy));
+
+            auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
             addObject(std::move(watergirl));
         }
     } else {
