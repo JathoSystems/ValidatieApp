@@ -20,7 +20,6 @@ void LevelSwitcher::openLevel(int level, bool online) {
 
     std::string levelSceneName = "level_" + std::to_string(level) + (online ? "_online" : "");
 
-    // Create and add the new level scene
     auto newLevelScene = std::make_unique<LevelScene>(
         level,
         online,

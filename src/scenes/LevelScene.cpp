@@ -195,8 +195,8 @@ void LevelScene::createBasicLevelGrid() {
     }
     _levelGrid->setCellType(15, 16, CellType::RedDiamond);
     _levelGrid->setCellType(18, 16, CellType::BlueDiamond);
-    _levelGrid->setCellType(3, 16, CellType::RedDoor);
-    _levelGrid->setCellType(22, 16, CellType::BlueDoor);
+    _levelGrid->setCellType(3, 15, CellType::RedDoor);
+    _levelGrid->setCellType(22, 15, CellType::BlueDoor);
 
     for (int y = 0; y < 18; y++) {
         _levelGrid->setCellType(0, y, CellType::Ground);

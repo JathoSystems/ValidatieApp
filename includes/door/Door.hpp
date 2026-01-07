@@ -17,16 +17,21 @@ public:
     explicit Door(LevelScene* scene, int cellSize, int x, int y, std::string color = "red")
         : _color(color), _scene(scene), _isOccupied(false) {
 
-        int temp = cellSize * 2;
-        getTransform()->getPosition()->setX(x * cellSize - cellSize);
-        getTransform()->getPosition()->setY(y * cellSize - cellSize);
-        getTransform()->getSize()->setWidth(temp);
-        getTransform()->getSize()->setHeight(temp);
+        float half = cellSize * 0.5f;
+        float scale = 2.0f;
+        auto* pos = getTransform()->getPosition();
+        auto* size = getTransform()->getSize();
+
+        pos->setX(x * cellSize + half);
+        pos->setY(y * cellSize + cellSize);
+        size->setWidth(cellSize * scale);
+        size->setHeight(cellSize * scale);
         setLayer(5);
 
+
         std::string sprite = color == "red" ?
-            "C:\\Users\\jusra\\CLionProjects\\ValidatieApp\\resources\\doors\\door_red.png" :
-            "C:\\Users\\jusra\\CLionProjects\\ValidatieApp\\resources\\doors\\door_blue.png";
+            "resources\\doors\\door_red.png" :
+            "resources\\doors\\door_blue.png";
 
         std::cout << "Loading door sprite: " << sprite << std::endl;
         auto spriteRenderer = std::make_unique<SpriteRenderer>(sprite);
