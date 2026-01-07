@@ -20,36 +20,8 @@ public:
         nextLevel.getBuffer().setData(packet.getBuffer().getData());
         nextLevel.deserialize();
 
-        std::cout << "Loading next level: " << nextLevel.getNextLevel()
-                << " for lobby: " << nextLevel.getLobby() << "\n";
-
-        GameEngine *engine = &GameEngine::getInstance();
-        SceneSystem* sceneSystem = engine->getSystem<SceneSystem>();
-        
-        if (!sceneSystem) {
-            std::cerr << "SceneSystem not found!\n";
-            return;
-        }
-
-        if (!g_network || !g_eventManager) {
-            std::cerr << "Network or EventManager not initialized!\n";
-            return;
-        }
-
-        std::string levelSceneName = "level_" + std::to_string(nextLevel.getNextLevel()) + "_online";
-        
-        // Create and add the new level scene
-        auto newLevelScene = std::make_unique<LevelScene>(
-            nextLevel.getNextLevel(), 
-            true, 
-            g_network, 
-            g_eventManager
-        );
-
-        sceneSystem->addScene(std::move(newLevelScene));
-        sceneSystem->setScene(levelSceneName);
-        
-        std::cout << "Switched to level scene: " << levelSceneName << "\n";
+        LevelSwitcher switcher {g_network, g_eventManager};
+        switcher.openLevel(nextLevel.getNextLevel(), true);
     }
 
     static void setNetworkAndEventManager(const std::shared_ptr<NetworkSystem> &network, EventManager *eventManager) {

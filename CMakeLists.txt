@@ -75,6 +75,8 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/diamond/BlueDiamond.hpp
         src/diamond/BlueDiamond.cpp
         includes/server/packet/handler/NextLevelHandler.hpp
+        includes/LevelSwitcher.hpp
+        src/LevelSwitcher.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -143,6 +145,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/door/Door.hpp
         includes/server/packet/NextLevelPacket.hpp
         includes/server/packet/handler/NextLevelHandler.hpp
+        includes/LevelSwitcher.hpp
+        src/LevelSwitcher.cpp
 )
 
 include_directories("includes")

@@ -5,6 +5,7 @@
 #include "Network/NetworkSystem.h"
 #include "Scenes/Scene.h"
 #include "LevelGrid.h"
+#include "LevelSwitcher.hpp"
 #include "server/packet/NextLevelPacket.hpp"
 #include "UI/Text.h"
 
@@ -15,13 +16,15 @@ class Watergirl;
 class LevelScene : public Scene {
 public:
     explicit LevelScene(int levelNumber, bool isOnline = false,
-                       std::shared_ptr<NetworkSystem> network = nullptr,
-                       EventManager* eventManager = nullptr);
+                        std::shared_ptr<NetworkSystem> network = nullptr,
+                        EventManager *eventManager = nullptr);
 
     void onInitialRender() override;
+
     void onUpdate(float deltaTime) override;
 
     void checkDiamondCollisions();
+
     void resetCharacterPointers() {
         _fireboy = nullptr;
         _watergirl = nullptr;
@@ -31,22 +34,19 @@ public:
 
     void reachedDoor() {
         _peopleAtDoor++;
-        std::cout << "People at door: " << _peopleAtDoor << "/2" << std::endl;
 
         if (_peopleAtDoor >= 2) {
-            std::cout << "BOTH CHARACTERS AT DOOR - NEXT LEVEL!" << std::endl;
             if (_isOnline && _network) {
                 int nextLevel = _levelNumber + 1;
-                std::cout << "Sending NextLevelPacket for level " << nextLevel << std::endl;
 
                 NextLevelPacket packet(nextLevel);
                 packet.serialize();
                 _network->send(packet);
-                // TODO: JANKEN
-            } else {
-                // Offline mode - just load next level directly
-                // TODO: Implement local level transition
+                return;
             }
+
+            LevelSwitcher switcher{_network, _eventManager};
+            switcher.openLevel(_levelNumber + 1, false);
         }
     }
 
@@ -59,27 +59,33 @@ public:
 
 private:
     void createBasicLevelGrid();
+
     void checkDoorCollisions();
+
     void setupLevel();
+
     void setupCharacters();
+
     void setupHUD();
+
     void cleanup();
+
     void updateDiamondCounters();
 
     int _levelNumber;
     bool _isOnline;
     std::shared_ptr<NetworkSystem> _network;
-    EventManager* _eventManager;
+    EventManager *_eventManager;
     std::unique_ptr<LevelGrid> _levelGrid;
     bool _isInitialized;
 
     // Pointers naar characters voor diamond counting
-    Fireboy* _fireboy = nullptr;
-    Watergirl* _watergirl = nullptr;
+    Fireboy *_fireboy = nullptr;
+    Watergirl *_watergirl = nullptr;
 
     // Pointers naar diamond counter text elements
-    Text* _fireboyDiamondText = nullptr;
-    Text* _watergirlDiamondText = nullptr;
+    Text *_fireboyDiamondText = nullptr;
+    Text *_watergirlDiamondText = nullptr;
 
     int _peopleAtDoor = 0;
 };
