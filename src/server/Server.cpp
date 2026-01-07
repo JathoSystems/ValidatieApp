@@ -49,7 +49,7 @@ int main() {
         });
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
-            return std::make_shared<SpawnEvent>(0, "watergirl");
+            return std::make_shared<SpawnEvent>(0, "watergirl", 0.0f, 0.0f);
         });
 
         // Create server
@@ -174,8 +174,13 @@ int main() {
                 lobby->broadcastInLobby(nextLevel, server);
             } else if (packetId == 100) {
                 // Deserialize the NetworkEventPacket
+                std::cout << "[SERVER] Received event from client " << clientId << std::endl;
+
                 NetworkEventPacket eventPacket;
                 eventPacket.getBuffer().setData(packet.getBuffer().getData());
+                eventPacket.deserialize();
+
+                std::cout << "[SERVER] Event: " << eventPacket.getEventName() << std::endl;
 
                 try {
                     eventPacket.deserialize();
@@ -191,10 +196,16 @@ int main() {
                         event->deserialize(eventData);
                         // Broadcast to other players in the same lobby
                         int lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
+                        std::cout << "[SERVER] ClientID: " << clientId << " LobbyID: " << lobbyId << std::endl;
+
                         if (lobbyId > 0) {
                             Lobby *lobby = lobbyManager.getLobby(lobbyId);
                             if (lobby) {
+                                std::cout << "[SERVER] Broadcasting to lobby " << lobbyId
+                                          << " (" << lobby->players.size() << " players)" << std::endl;
                                 for (int32_t playerId: lobby->players) {
+                                    std::cout << "[SERVER] PlayerID: " << playerId
+                                              << (playerId == clientId ? " (SENDER - SKIP)" : " (SEND)") << std::endl;
                                     if (playerId != clientId) {
                                         server.sendToClient(playerId, packet);
                                     }

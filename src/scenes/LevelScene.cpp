@@ -189,7 +189,7 @@ void LevelScene::updateDiamondCounters() {
 
 void LevelScene::createBasicLevelGrid() {
     _levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
-
+    
     for (int x = 0; x < 32; x++) {
         _levelGrid->setCellType(x, 17, CellType::Ground);
     }
@@ -322,16 +322,34 @@ void LevelScene::setupLevel() {
 void LevelScene::setupCharacters() {
     GameEngine *gameEngine = &GameEngine::getInstance();
 
+    // Define Fixed IDs so both clients agree
+    const int FIREBOY_ID = 99;
+    const int WATERGIRL_ID = 100;
+
     if (_isOnline) {
         std::string role = GameState::getInstance().get("role");
+
         if (role == "fireboy") {
             auto fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
             _fireboy = fireboy.get(); // Bewaar pointer
-            addObject(std::move(fireboy));
+            auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
+            addObject(std::move(fire));
+
+            auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
+            // Optional: Set initial off-screen position until sync packet arrives
+            water->getTransform()->getPosition()->setX(600);
+            water->getTransform()->getPosition()->setY(500);
+            addObject(std::move(water));
         } else {
             auto watergirl = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
             _watergirl = watergirl.get(); // Bewaar pointer
-            addObject(std::move(watergirl));
+            auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
+            fire->getTransform()->getPosition()->setX(200);
+            fire->getTransform()->getPosition()->setY(500);
+            addObject(std::move(fire));
+
+            auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
+            addObject(std::move(water));
         }
     } else {
         auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);
