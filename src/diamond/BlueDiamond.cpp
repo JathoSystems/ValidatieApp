@@ -26,7 +26,7 @@ BlueDiamond::BlueDiamond(LevelGrid* grid, int x, int y) {
     setLayer(0);
 
     auto sprite = std::make_unique<SpriteRenderer>(
-        "C:\\Users\\jusra\\CLionProjects\\ValidatieApp\\resources\\diamonds\\diamond_blue.png");
+        "resources\\diamonds\\diamond_blue.png");
     addComponent(std::move(sprite));
 }
 
