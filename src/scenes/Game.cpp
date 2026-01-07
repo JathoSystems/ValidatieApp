@@ -14,14 +14,15 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
+#include "UI/Text.h"
 
-Game::Game(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) : Scene("Game") {
+Game::Game(std::shared_ptr<NetworkSystem> network, EventManager *eventManager) : Scene("Game") {
     _network = network;
     _eventManager = eventManager;
 }
 
 void Game::onInitialRender() {
-    GameEngine* gameEngine = &GameEngine::getInstance();
+    GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
@@ -110,6 +111,29 @@ void Game::onInitialRender() {
     fpsCounter->setPosition(5.0f, 5.0f);
     fpsCounter->setSize(80.0f, 30.0f);
     fpsCounter->setFontSize(20);
+
+    Fireboy *fireboy = nullptr;
+    for (const std::unique_ptr<GameObject>& gameObject : getObjects()) {
+        if (Fireboy *temp = dynamic_cast<Fireboy *>(gameObject.get())) {
+            fireboy = temp;
+        }
+    }
+
+    if (fireboy) {
+        std::cout << "Adding!";
+        auto gameObject = std::make_unique<GameObject>();
+        auto red = std::make_unique<Text>(
+            "Red: " + std::to_string(fireboy->getDiamonds())
+        );
+
+        gameObject->getTransform()->getPosition()->setX(5);
+        gameObject->getTransform()->getPosition()->setY(40);
+        gameObject->getTransform()->getSize()->setWidth(150);
+        gameObject->getTransform()->getSize()->setHeight(30);
+        red->setFontSize(20);
+
+        hud->addObject(std::move(gameObject));
+    }
 
     hud->setFPSCounter(std::move(fpsCounter));
     setHUD(std::move(hud));

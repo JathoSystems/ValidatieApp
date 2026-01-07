@@ -19,6 +19,9 @@
 #include "server/packet/CreateLobbyPacket.hpp"
 #include "server/packet/JoinLobbyPacket.hpp"
 #include "server/packet/LobbyInfoPacket.hpp"
+#include "server/packet/NextLevelPacket.hpp"
+#include "server/packet/QuitPacket.hpp"
+#include "server/packet/RestartPacket.hpp"
 
 int main() {
     try {
@@ -32,7 +35,9 @@ int main() {
         PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
         PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);
         PacketRegistery::getInstance().registerPacket<LobbyInfoPacket>(105);
-
+        PacketRegistery::getInstance().registerPacket<QuitPacket>(120);
+        PacketRegistery::getInstance().registerPacket<RestartPacket>(121);
+        PacketRegistery::getInstance().registerPacket<NextLevelPacket>(122);
 
         // Register events
         EventRegistry::getInstance()->registerEvent("jump", []() {
@@ -122,9 +127,52 @@ int main() {
                 ready.serialize();
 
                 lobby->broadcastInLobby(ready, server);
-            }
-            // Handle NetworkEventPacket
-            else if (packetId == 100) {
+            } else if (packetId == 120) {
+                QuitPacket quitPacket;
+                quitPacket.getBuffer().setData(packet.getBuffer().getData());
+                quitPacket.deserialize();
+
+                Lobby *lobby = lobbyManager.getLobby(quitPacket.getLobby());
+                std::cout << "Disbanding " << std::to_string(quitPacket.getLobby()) << std::endl;
+                lobby->broadcastInLobby(quitPacket, server);
+                for (int32_t player: lobby->players)
+                    lobbyManager.leaveLobby(quitPacket.getLobby(), player);
+
+                lobbyManager.removeLobby(quitPacket.getLobby());
+            } else if (packetId == 121) {
+                RestartPacket restart;
+                restart.getBuffer().setData(packet.getBuffer().getData());
+                restart.deserialize();
+
+                Lobby *lobby = lobbyManager.getLobby(restart.getLobby());
+                if (!lobby) {
+                    std::cerr << "Could not restart, lobby does not exist\n";
+                    return;
+                }
+
+                std::cout << "Restarting lobby: " << restart.getLobby() << "\n";
+                lobby->broadcastInLobby(restart, server);
+                // Handle NetworkEventPacket
+            } else if (packetId == 122) {
+                NextLevelPacket nextLevel;
+                nextLevel.getBuffer().setData(packet.getBuffer().getData());
+                nextLevel.deserialize();
+
+                Lobby *lobby = lobbyManager.getLobby(nextLevel.getLobby());
+                if (!lobby) {
+                    std::cerr << "Could not load next level, lobby does not exist\n";
+                    return;
+                }
+
+                std::cout << "Next level " << nextLevel.getNextLevel()
+                        << " for lobby: " << nextLevel.getLobby() << "\n";
+
+                // Update lobby's level
+                lobby->levelId = nextLevel.getNextLevel();
+
+                // Broadcast to all players in lobby
+                lobby->broadcastInLobby(nextLevel, server);
+            } else if (packetId == 100) {
                 // Deserialize the NetworkEventPacket
                 std::cout << "[SERVER] Received event from client " << clientId << std::endl;
 
