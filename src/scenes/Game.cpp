@@ -22,8 +22,9 @@
 #include "GameObjects/Spritesheet/Animator.h"
 #include "SpawnEvent.hpp"
 #include "GameObjectFactory.hpp"
+#include "UI/Text.h"
 
-Game::Game(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) : Scene("Game") {
+Game::Game(std::shared_ptr<NetworkSystem> network, EventManager *eventManager) : Scene("Game") {
     _network = network;
     _eventManager = eventManager;
     _characterCreated = false;
@@ -31,11 +32,11 @@ Game::Game(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) :
 }
 
 void Game::onInitialRender() {
-    GameEngine* gameEngine = &GameEngine::getInstance();
+    GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
-    if (!inputSystem) {
+    if (!inputSystem)
         return;
     }
 
@@ -164,6 +165,30 @@ void Game::onInitialRender() {
     fpsCounter->setPosition(5.0f, 5.0f);
     fpsCounter->setSize(80.0f, 30.0f);
     fpsCounter->setFontSize(20);
+
+    Fireboy *fireboy = nullptr;
+    for (const std::unique_ptr<GameObject>& gameObject : getObjects()) {
+        if (Fireboy *temp = dynamic_cast<Fireboy *>(gameObject.get())) {
+            fireboy = temp;
+        }
+    }
+
+    if (fireboy) {
+        std::cout << "Adding!";
+        auto gameObject = std::make_unique<GameObject>();
+        auto red = std::make_unique<Text>(
+            "Red: " + std::to_string(fireboy->getDiamonds())
+        );
+
+        gameObject->getTransform()->getPosition()->setX(5);
+        gameObject->getTransform()->getPosition()->setY(40);
+        gameObject->getTransform()->getSize()->setWidth(150);
+        gameObject->getTransform()->getSize()->setHeight(30);
+        red->setFontSize(20);
+
+        hud->addObject(std::move(gameObject));
+    }
+
     hud->setFPSCounter(std::move(fpsCounter));
     setHUD(std::move(hud));
 }
@@ -232,7 +257,7 @@ void Game::createBat() {
                     y > startGridY - radius && y < startGridY + radius) {
                     continue;
                 }
-                
+
                 if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
                     if (grid->isWalkable(x, y)) {
                         startGridX = x;
@@ -252,10 +277,10 @@ void Game::createBat() {
     grid->gridToWorld(startGridX, startGridY, worldX, worldY);
     worldX += CELL_SIZE / 2.0f;
     worldY += CELL_SIZE / 2.0f;
-    
+
     bat->getTransform()->getPosition()->setX(static_cast<int>(worldX));
     bat->getTransform()->getPosition()->setY(static_cast<int>(worldY));
-    
+
     const int BAT_SIZE = CELL_SIZE;
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
@@ -280,14 +305,14 @@ void Game::createBat() {
 
 void Game::createCharacter() {
     if (_characterCreated) return;
-    
+
     GameEngine* gameEngine = &GameEngine::getInstance();
     std::string characterState = GameState::getInstance().get("role");
 
     if (characterState.empty()) {
         return;
     }
-    
+
     std::unique_ptr<BaseCharacter> character = nullptr;
 
     if (characterState == "fireboy") {
@@ -318,10 +343,10 @@ void Game::createCharacter() {
             size->setHeight(100);
         }
 
-        std::string idleSprite = characterState == "fireboy" 
-            ? "resources/fireboy/idle.png" 
+        std::string idleSprite = characterState == "fireboy"
+            ? "resources/fireboy/idle.png"
             : "resources/watergirl/idle.png";
-        
+
         auto animator = std::make_unique<Animator>(idleSprite, 1, 5);
         character->addComponent(std::move(animator));
 
