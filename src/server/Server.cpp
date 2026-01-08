@@ -8,6 +8,7 @@
 #include "SpawnEvent.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
+#include "bat/events/BatMoveEvent.hpp"
 #include "Network/Listeners/TcpNetworkListener.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
@@ -45,6 +46,10 @@ int main() {
 
         EventRegistry::getInstance()->registerEvent("spawn", []() {
             return std::make_shared<SpawnEvent>(0, "watergirl", 0.0f, 0.0f);
+        });
+
+        EventRegistry::getInstance()->registerEvent("batmove", []() {
+            return std::make_shared<BatMoveEvent>(0, 0.0f, 0.0f);
         });
 
         // Create server

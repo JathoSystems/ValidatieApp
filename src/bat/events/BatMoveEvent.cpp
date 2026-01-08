@@ -3,9 +3,10 @@
 #include "GameObjects/Transform/Transform.h"
 #include "GameObjects/Transform/Position.h"
 #include <cmath>
+#include <cstring>
 
-BatMoveEvent::BatMoveEvent(int objectId, float directionX, float directionY)
-    : _objectId(objectId), _directionX(directionX), _directionY(directionY) {
+BatMoveEvent::BatMoveEvent(int objectId, float x, float y)
+    : _objectId(objectId), _x(x), _y(y) {
 }
 
 std::string BatMoveEvent::getName() const {
@@ -15,13 +16,16 @@ std::string BatMoveEvent::getName() const {
 Package BatMoveEvent::serialize() const {
     Package p;
 
-    p.push_back(static_cast<uint8_t>(_objectId));
+    const uint8_t* idBytes = reinterpret_cast<const uint8_t*>(&_objectId);
+    for (int i = 0; i < sizeof(int); ++i) {
+        p.push_back(idBytes[i]);
+    }
 
-    int8_t dirXScaled = static_cast<int8_t>(_directionX * 100.0f);
-    int8_t dirYScaled = static_cast<int8_t>(_directionY * 100.0f);
-    
-    p.push_back(static_cast<uint8_t>(dirXScaled));
-    p.push_back(static_cast<uint8_t>(dirYScaled));
+    const uint8_t* xBytes = reinterpret_cast<const uint8_t*>(&_x);
+    for (int i = 0; i < sizeof(float); ++i) p.push_back(xBytes[i]);
+
+    const uint8_t* yBytes = reinterpret_cast<const uint8_t*>(&_y);
+    for (int i = 0; i < sizeof(float); ++i) p.push_back(yBytes[i]);
     
     return p;
 }
@@ -29,16 +33,15 @@ Package BatMoveEvent::serialize() const {
 Data BatMoveEvent::deserialize(const Package &package) {
     Data data;
     
-    if (package.size() >= 3) {
-        // Deserialize object ID
-        _objectId = static_cast<int>(package[0]);
+    if (package.size() >= 12) {
+        // Deserialize object ID as 4 bytes (int)
+        std::memcpy(&_objectId, &package[0], sizeof(int));
         
-        // Deserialize directionX and directionY (scaled back from int)
-        int8_t dirXScaled = static_cast<int8_t>(package[1]);
-        int8_t dirYScaled = static_cast<int8_t>(package[2]);
+        // Deserialize X position
+        std::memcpy(&_x, &package[4], sizeof(float));
         
-        _directionX = static_cast<float>(dirXScaled) / 100.0f;
-        _directionY = static_cast<float>(dirYScaled) / 100.0f;
+        // Deserialize Y position
+        std::memcpy(&_y, &package[8], sizeof(float));
         
         // Copy back to data
         for (size_t i = 0; i < package.size(); ++i) {
@@ -56,5 +59,5 @@ void BatMoveEvent::apply(GameObject* gameObject) {
     BatAI* batAI = gameObject->getComponent<BatAI>();
     if (!batAI) return;
 
-    batAI->setDirection(_directionX, _directionY);
+    batAI->setNetworkPosition(_x, _y);
 }

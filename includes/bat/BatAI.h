@@ -32,6 +32,11 @@ private:
     float _accumulatedX;
     float _accumulatedY;
     
+    // Runaway behavior
+    float _fleeDistance; // Distance at which bat starts fleeing
+    bool _isFleeing;
+    float _fleeSpeedMultiplier; // Speed multiplier when fleeing
+    
     std::mt19937 _rng;
     std::uniform_real_distribution<float> _timerDist;
 
@@ -41,6 +46,15 @@ private:
     EventManager* _eventManager;
     int _objectId;
     bool _isAuthoritative;
+    
+    // Network position synchronization (similar to BaseCharacter)
+    float _lastNetworkX;
+    float _lastNetworkY;
+    bool _hasNetworkUpdate;
+    
+    // Track previous position for direction calculation (non-authoritative clients)
+    float _previousX;
+    float _previousY;
 
 public:
     BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed = 80.0f, bool isNetworked = false, EventManager* eventManager = nullptr, int objectId = -1, bool isAuthoritative = true);
@@ -52,6 +66,7 @@ public:
     void setIsNetworked(bool networked) { _isNetworked = networked; }
     void setEventManager(EventManager* eventManager) { _eventManager = eventManager; }
     void setDirection(float directionX, float directionY);
+    void setNetworkPosition(float x, float y);
     
     // Get current direction for sprite flipping
     float getDirectionX() const;
@@ -60,11 +75,14 @@ public:
 private:
     void updateMovement(float deltaTime);
     void chooseNewTarget();
+    void chooseFleeTarget(float playerX, float playerY);
     void updatePathfinding(float deltaTime);
     bool canMoveTo(float worldX, float worldY) const;
     bool isPositionWalkable(float worldX, float worldY) const;
     bool collidesWithDynamicObjects(float worldX, float worldY, float batWidth, float batHeight) const;
+    GameObject* findNearestPlayer(float& distance) const;
     void syncToNetwork();
+    void applyNetworkPosition();
 };
 
 #endif //VALIDATIEAPP_BATAI_H

@@ -7,11 +7,11 @@
 class BatMoveEvent : public IEvent {
 private:
     int _objectId;
-    float _directionX;
-    float _directionY;
+    float _x;
+    float _y;
 
 public:
-    BatMoveEvent(int objectId, float directionX, float directionY);
+    BatMoveEvent(int objectId, float x, float y);
 
     std::string getName() const override;
     Package serialize() const override;

@@ -31,10 +31,25 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _timerDist(3.0f, 7.0f), // 3-7 seconds instead of 1-3
       _isNetworked(isNetworked),
       _networkSyncTimer(0.0f),
-      _networkSyncInterval(0.1f),
+      _networkSyncInterval(0.033f), // Sync every ~33ms (30 times per second) for smoother sync
       _eventManager(eventManager),
       _objectId(objectId),
-      _isAuthoritative(isAuthoritative) {
+      _isAuthoritative(isAuthoritative),
+      _lastNetworkX(0.0f),
+      _lastNetworkY(0.0f),
+      _hasNetworkUpdate(false),
+      _previousX(0.0f),
+      _previousY(0.0f) {
+    
+    if (_parent && !_isAuthoritative) {
+        Transform* transform = _parent->getTransform();
+        if (transform && transform->getPosition()) {
+            _lastNetworkX = static_cast<float>(transform->getPosition()->getX());
+            _lastNetworkY = static_cast<float>(transform->getPosition()->getY());
+            _previousX = _lastNetworkX;
+            _previousY = _lastNetworkY;
+        }
+    }
 
     if (_isAuthoritative && _grid) {
         float minWorldX, minWorldY, maxWorldX, maxWorldY;
@@ -49,6 +64,10 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
 
 void BatAI::update(float deltaTime) {
     if (!_parent || !_grid || !_pathfinder) return;
+
+    if (!_isAuthoritative && _isNetworked) {
+        applyNetworkPosition();
+    }
     
     if (_isAuthoritative) {
         updatePathfinding(deltaTime);
@@ -103,6 +122,10 @@ void BatAI::updatePathfinding(float deltaTime) {
 
 void BatAI::updateMovement(float deltaTime) {
     if (!_parent || !_grid) return;
+    
+    if (!_isAuthoritative) {
+        return;
+    }
     
     Transform* transform = _parent->getTransform();
     if (!transform) return;
@@ -653,15 +676,95 @@ void BatAI::syncToNetwork() {
     if (!_parent || !_eventManager) return;
     if (_objectId == -1) return;
     
-    float dirX = getDirectionX();
-    float dirY = getDirectionY();
-    auto event = std::make_shared<BatMoveEvent>(_objectId, dirX, dirY);
+    // Send current position instead of direction
+    Transform* transform = _parent->getTransform();
+    if (!transform) return;
+    
+    Position* pos = transform->getPosition();
+    if (!pos) return;
+    
+    float x = static_cast<float>(pos->getX());
+    float y = static_cast<float>(pos->getY());
+    
+    auto event = std::make_shared<BatMoveEvent>(_objectId, x, y);
     _eventManager->broadcast(_objectId, event);
 }
 
 void BatAI::setDirection(float directionX, float directionY) {
     // This is for network sync - not used with pathfinding
     // But we keep it for compatibility
+}
+
+void BatAI::setNetworkPosition(float x, float y) {
+    _lastNetworkX = x;
+    _lastNetworkY = y;
+    _hasNetworkUpdate = true;
+}
+
+void BatAI::applyNetworkPosition() {
+    if (!_parent) return;
+    
+    Transform* transform = _parent->getTransform();
+    if (!transform) return;
+    
+    Position* pos = transform->getPosition();
+    if (!pos) return;
+    
+    float currentX = static_cast<float>(pos->getX());
+    float currentY = static_cast<float>(pos->getY());
+    
+    if (!_hasNetworkUpdate && _lastNetworkX == 0.0f && _lastNetworkY == 0.0f) {
+        _lastNetworkX = currentX;
+        _lastNetworkY = currentY;
+        _previousX = currentX;
+        _previousY = currentY;
+    }
+    
+    float errorX = _lastNetworkX - currentX;
+    float errorY = _lastNetworkY - currentY;
+    float errorDistance = std::sqrt(errorX * errorX + errorY * errorY);
+    
+    float movementX = currentX - _previousX;
+    
+    if (std::abs(movementX) > 0.1f) { // Only update if there's significant horizontal movement
+        Size* size = transform->getSize();
+        if (size) {
+            float currentWidth = size->getWidth();
+            float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
+            
+            if (movementX < 0.0f) {
+                // Moving left - flip by using negative width
+                size->setWidth(-absWidth);
+            } else {
+                // Moving right - normal width
+                size->setWidth(absWidth);
+            }
+        }
+    }
+    
+    if (errorDistance > 50.0f) {
+        // Large error - snap to network position immediately
+        pos->setX(static_cast<int>(_lastNetworkX));
+        pos->setY(static_cast<int>(_lastNetworkY));
+    } else if (errorDistance > 3.0f) {
+        // Medium error - interpolate towards network position more aggressively
+        const float CORRECTION_STRENGTH = 0.5f; // Increased from 0.3f for faster correction
+        float newX = currentX + errorX * CORRECTION_STRENGTH;
+        float newY = currentY + errorY * CORRECTION_STRENGTH;
+        pos->setX(static_cast<int>(newX));
+        pos->setY(static_cast<int>(newY));
+    } else if (errorDistance > 0.5f) {
+        // Small error - just set directly
+        pos->setX(static_cast<int>(_lastNetworkX));
+        pos->setY(static_cast<int>(_lastNetworkY));
+    }
+    
+    if (_hasNetworkUpdate) {
+        _hasNetworkUpdate = false;
+    }
+    
+    _previousX = currentX;
+    _previousY = currentY;
 }
 
 float BatAI::getDirectionX() const {

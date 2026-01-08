@@ -9,9 +9,15 @@
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "bat/Bat.h"
+#include "bat/BatAI.h"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "grid/GridManager.h"
 #include "GameObjects/GameObject.h"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
+#include "Scenes/Scene.h"
+#include "Network/GameState.hpp"
+#include "GameObjects/ObjectRegistry.hpp"
 
 class GameObjectFactory {
 public:
@@ -81,11 +87,26 @@ private:
         });
         
         registerType("bat", [this](int parentId) -> std::unique_ptr<GameObject> {
-            LevelGrid* grid = GridManager::getGrid("Game");
-            if (!grid) {
+            auto system = GameEngine::getInstance().getSystem<SceneSystem>();
+            if (!system) {
+                std::cerr << "[Factory] SceneSystem is null when creating bat!" << std::endl;
                 return nullptr;
             }
-            const int CELL_SIZE = 10;
+            
+            Scene* activeScene = system->getActiveSceneObj();
+            if (!activeScene) {
+                std::cerr << "[Factory] Active scene is null when creating bat!" << std::endl;
+                return nullptr;
+            }
+            
+            std::string sceneName = activeScene->getName();
+            LevelGrid* grid = GridManager::getGrid(sceneName);
+            if (!grid) {
+                std::cerr << "[Factory] Grid not found for scene: " << sceneName << std::endl;
+                return nullptr;
+            }
+            
+            const int CELL_SIZE = grid->getCellSize();
             auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
             
             const int BAT_SIZE = CELL_SIZE;
@@ -94,6 +115,20 @@ private:
             
             auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
             bat->addComponent(std::move(batAnimator));
+            
+            Bat* batPtr = bat.get();
+            
+            bool isNetworked = (_network != nullptr);
+            bool isAuthoritative = false;
+            if (isNetworked) {
+                std::string role = GameState::getInstance().get("role");
+                isAuthoritative = (role == "fireboy");
+            } else {
+                isAuthoritative = true; // Single player
+            }
+            
+            auto batAI = std::make_unique<BatAI>(batPtr, grid, activeScene, CELL_SIZE, 80.0f, isNetworked, _manager, parentId, isAuthoritative);
+            bat->addComponent(std::move(batAI));
             
             return bat;
         });

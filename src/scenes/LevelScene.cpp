@@ -28,7 +28,8 @@ LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSy
       _isOnline(isOnline),
       _network(network),
       _eventManager(eventManager),
-      _batCreated(false) {
+      _batCreated(false),
+      _batCount(0) {
 }
 
 LevelScene::~LevelScene() = default;
@@ -205,7 +206,15 @@ void LevelScene::setupCharacters() {
 }
 
 void LevelScene::createBat() {
-    if (_batCreated) return;
+    // In multiplayer mode, only the authoritative client (fireboy) creates bats locally
+    // Non-authoritative clients create bats from SpawnEvents
+    if (_isOnline) {
+        std::string role = GameState::getInstance().get("role");
+        if (role != "fireboy") {
+            // Non-authoritative client - don't create bat locally, wait for SpawnEvent
+            return;
+        }
+    }
 
     std::string sceneName = getName();
     LevelGrid* grid = GridManager::getGrid(sceneName);
@@ -261,20 +270,32 @@ void LevelScene::createBat() {
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
 
-    int batId = ObjectRegistry::getInstance().registerObject(bat.get());
+    _batCount++;
+    int batId = _batCount;
+
+    ObjectRegistry::getInstance().insert(bat.get(), batId);
 
     auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
     bat->addComponent(std::move(batAnimator));
 
     bool isNetworked = (_network != nullptr);
-    bool isAuthoritative = true;
+    bool isAuthoritative = false;
+    if (_isOnline) {
+        std::string role = GameState::getInstance().get("role");
+        isAuthoritative = (role == "fireboy");
+    } else {
+        isAuthoritative = true;
+    }
+    
+    float batX = static_cast<float>(bat->getTransform()->getPosition()->getX());
+    float batY = static_cast<float>(bat->getTransform()->getPosition()->getY());
+    
     auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId, isAuthoritative);
     bat->addComponent(std::move(batAI));
 
     addObject(std::move(bat));
-    _batCreated = true;
 
     if (_network && _eventManager) {
-        _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(batId, "bat"));
+        _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(batId, "bat", batX, batY));
     }
 }
