@@ -3,13 +3,7 @@
 
 enum class CellType {
     Empty,
-    Ground,
-    Water,
-    Lava,
-    RedDoor,
-    BlueDoor,
-    RedDiamond,
-    BlueDiamond
+    Ground
 };
 
 #endif //VALIDATIEAPP_GRIDCELL_H

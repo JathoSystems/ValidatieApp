@@ -9,8 +9,6 @@
 #include "server/packet/JoinLobbyPacket.hpp"
 #include <iostream>
 
-#include "Network/GameState.hpp"
-
 RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, int levelNumber)
     : Scene("room_selection_level_" + std::to_string(levelNumber)),
       _network(network),
@@ -141,6 +139,5 @@ void RoomSelectionScene::updateLobbyIdDisplay() {
     // Update the display text using stored pointer
     if (_displayTextPtr) {
         _displayTextPtr->setText(std::to_string(_currentLobbyIdInput));
-        GameState::getInstance().set("lobby", std::to_string(_currentLobbyIdInput));
     }
 }

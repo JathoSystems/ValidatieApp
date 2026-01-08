@@ -49,8 +49,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         includes/scenes/LevelScene.hpp
         src/scenes/LevelScene.cpp
-        src/LevelGrid.cpp
-        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -59,24 +57,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
-        src/scenes/RestartScene.cpp
-        includes/scenes/RestartScene.hpp
-        src/cell/Liquid.cpp
-        includes/cell/Liquid.hpp
-        src/cell/Water.cpp
-        includes/cell/Lava.hpp
-        src/cell/Lava.cpp
-        includes/server/packet/handler/RestartLevelPacketHandler.hpp
-        includes/server/packet/handler/QuitLevelPacketHandler.hpp
-        includes/server/packet/QuitPacket.hpp
-        includes/server/packet/RestartPacket.hpp
-        includes/diamond/RedDiamond.hpp
-        src/diamond/RedDiamond.cpp
-        includes/diamond/BlueDiamond.hpp
-        src/diamond/BlueDiamond.cpp
-        includes/server/packet/handler/NextLevelHandler.hpp
-        includes/LevelSwitcher.hpp
-        src/LevelSwitcher.cpp
         includes/grid/LevelGrid.h
         src/grid/LevelGrid.cpp
         includes/grid/GridCell.h
@@ -133,13 +113,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
         includes/LevelSelector.h
-        src/LevelGrid.cpp
-        src/LevelGrid.h
-        src/GridCell.h
-        src/GridRenderer.cpp
-        src/GridRenderer.h
-        src/GridManager.cpp
-        src/GridManager.h
         includes/scenes/MainMenu.hpp
         src/scenes/MainMenu.cpp
         includes/scenes/LevelScene.hpp
@@ -161,26 +134,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/bat/events/BatMoveEvent.cpp
         includes/SpawnEvent.hpp
         src/SpawnEvent.cpp
-        src/scenes/RestartScene.cpp
-        includes/scenes/RestartScene.hpp
-        src/cell/Liquid.cpp
-        includes/cell/Liquid.hpp
-        src/cell/Water.cpp
-        includes/cell/Lava.hpp
-        src/cell/Lava.cpp
-        includes/server/packet/handler/RestartLevelPacketHandler.hpp
-        includes/server/packet/handler/QuitLevelPacketHandler.hpp
-        includes/server/packet/QuitPacket.hpp
-        includes/server/packet/RestartPacket.hpp
-        includes/diamond/RedDiamond.hpp
-        src/diamond/RedDiamond.cpp
-        includes/diamond/BlueDiamond.hpp
-        src/diamond/BlueDiamond.cpp
-        includes/door/Door.hpp
-        includes/server/packet/NextLevelPacket.hpp
-        includes/server/packet/handler/NextLevelHandler.hpp
-        includes/LevelSwitcher.hpp
-        src/LevelSwitcher.cpp
 )
 
 include_directories("includes")

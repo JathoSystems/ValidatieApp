@@ -40,8 +40,6 @@ private:
     std::string falling;
     float _physicsAccumulator = 0.0f;
     std::unique_ptr<BaseCharacterController> _controller;
-    int _diamonds = 0;
-
 
     Animation _currentAnimation = Animation::IDLE;
     PendingNetworkUpdate _pendingUpdate;
@@ -81,11 +79,6 @@ public:
     void setPendingJump(bool shouldJump);
 
     void updateAnimation();
-
-    void addDiamond() { _diamonds++; }
-    int getDiamonds() {return _diamonds;}
-
-
 
     BaseCharacterController* getController() { return _controller.get(); }
 
