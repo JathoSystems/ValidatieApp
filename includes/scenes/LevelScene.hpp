@@ -10,6 +10,8 @@
 #include "UI/Text.h"
 #include <vector>
 
+#include "SpawnEvent.hpp"
+
 class LevelGrid;
 class Fireboy;
 class Watergirl;

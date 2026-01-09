@@ -17,7 +17,7 @@
 
 BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed, bool isNetworked, EventManager* eventManager, int objectId, bool isAuthoritative)
     : _grid(grid), _scene(scene), _cellSize(cellSize), _speed(speed),
-      _pathfinder(std::make_unique<AStarPathfinder>(grid)),
+      _pathfinder(nullptr), // Initialize to nullptr first
       _currentPathIndex(0),
       _targetChangeTimer(0.0f),
       _targetChangeInterval(5.0f),
@@ -38,9 +38,19 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _lastNetworkX(0.0f),
       _lastNetworkY(0.0f),
       _hasNetworkUpdate(false),
+      _needsInitialPath(true),
       _previousX(0.0f),
       _previousY(0.0f) {
-    
+
+    // Check for null grid before doing anything else
+    if (!grid) {
+        std::cerr << "[BatAI] ERROR: Grid is nullptr in constructor!" << std::endl;
+        return;
+    }
+
+    // Create pathfinder safely now that we know grid exists
+    _pathfinder = std::make_unique<AStarPathfinder>(grid);
+
     if (_parent && !_isAuthoritative) {
         Transform* transform = _parent->getTransform();
         if (transform && transform->getPosition()) {
@@ -58,21 +68,26 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
         maxWorldX += _cellSize;
         maxWorldY += _cellSize;
 
-        chooseNewTarget();
+        // chooseNewTarget();
     }
 }
 
 void BatAI::update(float deltaTime) {
-    if (!_parent || !_grid || !_pathfinder) return;
+    if (!_parent || !_grid || !_pathfinder || !_scene) return;
+
+    if (_needsInitialPath && _isAuthoritative) {
+        chooseNewTarget();
+        _needsInitialPath = false;
+    }
 
     if (!_isAuthoritative && _isNetworked) {
         applyNetworkPosition();
     }
-    
+
     if (_isAuthoritative) {
         updatePathfinding(deltaTime);
     }
-    
+
     updateMovement(deltaTime);
 }
 
@@ -83,17 +98,17 @@ void BatAI::updatePathfinding(float deltaTime) {
     // Check for nearby players
     float distanceToPlayer = 0.0f;
     GameObject* nearestPlayer = findNearestPlayer(distanceToPlayer);
-    
+
     if (nearestPlayer && distanceToPlayer < _fleeDistance) {
         // Player is too close, flee!
         bool wasFleeing = _isFleeing;
         _isFleeing = true;
-        
+
         Transform* playerTransform = nearestPlayer->getTransform();
         if (playerTransform && playerTransform->getPosition()) {
             float playerX = static_cast<float>(playerTransform->getPosition()->getX());
             float playerY = static_cast<float>(playerTransform->getPosition()->getY());
-            
+
             // Always choose a new flee target when player is close, or if we don't have a path
             if (!wasFleeing || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
                 chooseFleeTarget(playerX, playerY);
@@ -109,7 +124,7 @@ void BatAI::updatePathfinding(float deltaTime) {
             _targetChangeInterval = _timerDist(_rng);
         } else {
             _targetChangeTimer += deltaTime;
-            
+
             // Check if we need a new target
             if (_targetChangeTimer >= _targetChangeInterval || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
                 chooseNewTarget();
@@ -122,36 +137,36 @@ void BatAI::updatePathfinding(float deltaTime) {
 
 void BatAI::updateMovement(float deltaTime) {
     if (!_parent || !_grid) return;
-    
+
     if (!_isAuthoritative) {
         return;
     }
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return;
-    
+
     float currentX = static_cast<float>(pos->getX());
     float currentY = static_cast<float>(pos->getY());
-    
+
     // Follow path if we have one
     if (!_currentPath.empty() && _currentPathIndex < _currentPath.size()) {
         float targetX = _currentPath[_currentPathIndex].first;
         float targetY = _currentPath[_currentPathIndex].second;
-        
+
         float dx = targetX - currentX;
         float dy = targetY - currentY;
         float distance = std::sqrt(dx * dx + dy * dy);
-        
+
         const float waypointReachDistance = static_cast<float>(_cellSize) * 0.3f; // Smaller threshold
 
         static float lastMoveTime = 0.0f;
         static float lastX = 0.0f;
         static float lastY = 0.0f;
         bool hasMoved = (std::abs(currentX - lastX) > 0.1f || std::abs(currentY - lastY) > 0.1f);
-        
+
         if (distance < waypointReachDistance && (hasMoved || lastMoveTime > 0.1f)) {
             _currentPathIndex++;
             lastMoveTime = 0.0f;
@@ -167,22 +182,22 @@ void BatAI::updateMovement(float deltaTime) {
                 return;
             }
         }
-        
+
         lastMoveTime += deltaTime;
         lastX = currentX;
         lastY = currentY;
-        
+
         // Move towards target
         if (distance > 0.0f) {
             float directionX = dx / distance;
             float directionY = dy / distance;
-            
+
             // Flip sprite based on direction (negative width flips horizontally)
             Size* size = transform->getSize();
             if (size) {
                 float currentWidth = size->getWidth();
                 float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
-                
+
                 if (directionX < 0.0f) {
                     // Facing left - flip by using negative width
                     size->setWidth(-absWidth);
@@ -191,23 +206,23 @@ void BatAI::updateMovement(float deltaTime) {
                     size->setWidth(absWidth);
                 }
             }
-            
+
             // Use consistent movement - clamp deltaTime to prevent huge jumps
             float clampedDelta = std::min(deltaTime, 0.016f); // Max 60 FPS equivalent
             float currentSpeed = _isFleeing ? _speed * _fleeSpeedMultiplier : _speed;
             float moveDistance = currentSpeed * clampedDelta;
             float moveX = directionX * moveDistance;
             float moveY = directionY * moveDistance;
-            
+
             // Don't overshoot the target
             if (moveDistance > distance) {
                 moveX = dx;
                 moveY = dy;
             }
-            
+
             float newX = currentX + moveX;
             float newY = currentY + moveY;
-            
+
             // Check if the path to the new position is walkable
             // Sample multiple points along the movement to ensure we don't go through blocks
             bool canMove = true;
@@ -216,7 +231,7 @@ void BatAI::updateMovement(float deltaTime) {
                 float t = static_cast<float>(i) / static_cast<float>(samples);
                 float checkX = currentX + moveX * t;
                 float checkY = currentY + moveY * t;
-                
+
                 // Check multiple points around the bat's position to account for its size
                 float batHalfSize = static_cast<float>(_cellSize) * 0.5f;
                 std::vector<std::pair<float, float>> checkPoints = {
@@ -226,17 +241,17 @@ void BatAI::updateMovement(float deltaTime) {
                     {checkX, checkY - batHalfSize}, // Top
                     {checkX, checkY + batHalfSize}  // Bottom
                 };
-                
+
                 for (const auto& point : checkPoints) {
                     if (!isPositionWalkable(point.first, point.second)) {
                         canMove = false;
                         break;
                     }
                 }
-                
+
                 if (!canMove) break;
             }
-            
+
             // Also check the final position
             if (canMove) {
                 float batHalfSize = static_cast<float>(_cellSize) * 0.5f;
@@ -247,7 +262,7 @@ void BatAI::updateMovement(float deltaTime) {
                     {newX, newY - batHalfSize},
                     {newX, newY + batHalfSize}
                 };
-                
+
                 for (const auto& point : finalCheckPoints) {
                     if (!isPositionWalkable(point.first, point.second)) {
                         canMove = false;
@@ -255,7 +270,7 @@ void BatAI::updateMovement(float deltaTime) {
                     }
                 }
             }
-            
+
             // Debug logging for movement attempts
             static int moveAttemptCount = 0;
             moveAttemptCount++;
@@ -265,7 +280,7 @@ void BatAI::updateMovement(float deltaTime) {
                     _grid->worldToGrid(newX, newY, gridX, gridY);
                 }
             }
-            
+
             // If we can't move directly, try to move closer to the waypoint in smaller steps
             if (!canMove) {
                 // Try moving in smaller increments along the path
@@ -275,7 +290,7 @@ void BatAI::updateMovement(float deltaTime) {
                     float stepY = directionY * stepSize * static_cast<float>(step);
                     float testX = currentX + stepX;
                     float testY = currentY + stepY;
-                    
+
                     // Check if this step is walkable
                     bool stepWalkable = true;
                     for (int i = 1; i <= 3; i++) {
@@ -287,7 +302,7 @@ void BatAI::updateMovement(float deltaTime) {
                             break;
                         }
                     }
-                    
+
                     if (stepWalkable && isPositionWalkable(testX, testY)) {
                         canMove = true;
                         newX = testX;
@@ -298,28 +313,28 @@ void BatAI::updateMovement(float deltaTime) {
                     }
                 }
             }
-            
+
             if (canMove) {
                 // Accumulate movement for sub-pixel precision
                 _accumulatedX += moveX;
                 _accumulatedY += moveY;
-                
+
                 // Only update position when we've accumulated at least 1 pixel
                 int pixelMoveX = static_cast<int>(_accumulatedX);
                 int pixelMoveY = static_cast<int>(_accumulatedY);
-                
+
                 if (pixelMoveX != 0 || pixelMoveY != 0) {
                     int oldX = pos->getX();
                     int oldY = pos->getY();
                     pos->setX(oldX + pixelMoveX);
                     pos->setY(oldY + pixelMoveY);
-                    
+
                     // Keep the fractional part
                     _accumulatedX -= static_cast<float>(pixelMoveX);
                     _accumulatedY -= static_cast<float>(pixelMoveY);
-                    
+
                     _stuckTimer = 0.0f; // Reset stuck timer when moving successfully
-                    
+
                     // Log actual position update
                     static int updateCount = 0;
                     updateCount++;
@@ -327,7 +342,7 @@ void BatAI::updateMovement(float deltaTime) {
                     // No pixel movement yet, but we're accumulating
                     _stuckTimer = 0.0f;
                 }
-                
+
                 if (_isNetworked) {
                     _networkSyncTimer += deltaTime;
                     if (_networkSyncTimer >= _networkSyncInterval) {
@@ -340,7 +355,7 @@ void BatAI::updateMovement(float deltaTime) {
                 _stuckTimer += deltaTime;
                 if (_stuckTimer > 0.5f) { // If stuck for more than 0.5 seconds
                    _stuckTimer = 0.0f;
-                    
+
                     // Skip to next waypoint
                     _currentPathIndex++;
                     if (_currentPathIndex >= _currentPath.size()) {
@@ -365,20 +380,20 @@ void BatAI::updateMovement(float deltaTime) {
 
 void BatAI::chooseNewTarget() {
     if (!_parent || !_grid || !_pathfinder) return;
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return;
-    
+
     float currentX = static_cast<float>(pos->getX());
     float currentY = static_cast<float>(pos->getY());
-    
+
     // Get current grid position
     int currentGridX, currentGridY;
     _grid->worldToGrid(currentX, currentY, currentGridX, currentGridY);
-    
+
     // Check if current position is walkable
     bool currentWalkable = _grid->isWalkable(currentGridX, currentGridY);
     if (!currentWalkable) {
@@ -406,7 +421,7 @@ void BatAI::chooseNewTarget() {
             }
         }
     }
-    
+
     // Get a random walkable position
     auto targetGrid = _pathfinder->getRandomWalkablePosition();
     float targetX, targetY;
@@ -414,11 +429,11 @@ void BatAI::chooseNewTarget() {
     // Center in cell
     targetX += _cellSize / 2.0f;
     targetY += _cellSize / 2.0f;
-    
+
    // Find path to target
     _currentPath = _pathfinder->findPath(currentX, currentY, targetX, targetY);
     _currentPathIndex = 0;
-    
+
     // If path is empty or too short, try again
     if (_currentPath.empty() || _currentPath.size() < 2) {
         // Try a different target
@@ -427,14 +442,14 @@ void BatAI::chooseNewTarget() {
             _grid->gridToWorld(targetGrid.first, targetGrid.second, targetX, targetY);
             targetX += _cellSize / 2.0f;
             targetY += _cellSize / 2.0f;
-            
+
             _currentPath = _pathfinder->findPath(currentX, currentY, targetX, targetY);
             if (!_currentPath.empty() && _currentPath.size() >= 2) {
                 break;
             }
         }
     }
-    
+
     if (_currentPath.empty()) {
         std::cout << "  WARNING: No path found to target!" << std::endl;
     }
@@ -442,15 +457,15 @@ void BatAI::chooseNewTarget() {
 
 bool BatAI::canMoveTo(float worldX, float worldY) const {
     if (!_grid) return false;
-    
+
     int gridX, gridY;
     _grid->worldToGrid(worldX, worldY, gridX, gridY);
-    
-    if (gridX < 0 || gridX >= _grid->getWidth() || 
+
+    if (gridX < 0 || gridX >= _grid->getWidth() ||
         gridY < 0 || gridY >= _grid->getHeight()) {
         return false;
     }
-    
+
     return _grid->isWalkable(gridX, gridY);
 }
 
@@ -460,112 +475,112 @@ bool BatAI::isPositionWalkable(float worldX, float worldY) const {
 
 bool BatAI::collidesWithDynamicObjects(float worldX, float worldY, float batWidth, float batHeight) const {
     if (!_scene || !_parent) return false;
-    
+
     float batLeft = worldX - batWidth / 2.0f;
     float batTop = worldY - batHeight / 2.0f;
     float batRight = worldX + batWidth / 2.0f;
     float batBottom = worldY + batHeight / 2.0f;
-    
+
     const auto& objects = _scene->getObjects();
     for (const auto& obj : objects) {
         if (obj.get() == _parent) continue;
-        
+
         PhysicsComponent* physics = obj->getComponent<PhysicsComponent>();
         if (!physics) continue;
-        
+
         Transform* objTransform = obj->getTransform();
         if (!objTransform) continue;
-        
+
         Position* objPos = objTransform->getPosition();
         Size* objSize = objTransform->getSize();
         if (!objPos || !objSize) continue;
-        
+
         float objCenterX = static_cast<float>(objPos->getX());
         float objCenterY = static_cast<float>(objPos->getY());
         float objWidth = static_cast<float>(objSize->getWidth());
         float objHeight = static_cast<float>(objSize->getHeight());
-        
+
         float objLeft = objCenterX - objWidth / 2.0f;
         float objTop = objCenterY - objHeight / 2.0f;
         float objRight = objCenterX + objWidth / 2.0f;
         float objBottom = objCenterY + objHeight / 2.0f;
-        
+
         if (batRight > objLeft && batLeft < objRight &&
             batBottom > objTop && batTop < objBottom) {
             return true;
         }
     }
-    
+
     return false;
 }
 
 GameObject* BatAI::findNearestPlayer(float& distance) const {
     if (!_scene || !_parent) return nullptr;
-    
+
     Transform* batTransform = _parent->getTransform();
     if (!batTransform) return nullptr;
-    
+
     Position* batPos = batTransform->getPosition();
     if (!batPos) return nullptr;
-    
+
     float batX = static_cast<float>(batPos->getX());
     float batY = static_cast<float>(batPos->getY());
-    
+
     GameObject* nearestPlayer = nullptr;
     float nearestDistance = std::numeric_limits<float>::max();
-    
+
     const auto& objects = _scene->getObjects();
     for (const auto& obj : objects) {
         if (obj.get() == _parent) continue;
-        
+
         // Check if this is a player (BaseCharacter)
         BaseCharacter* character = dynamic_cast<BaseCharacter*>(obj.get());
         if (!character) continue;
-        
+
         Transform* playerTransform = obj->getTransform();
         if (!playerTransform) continue;
-        
+
         Position* playerPos = playerTransform->getPosition();
         if (!playerPos) continue;
-        
+
         float playerX = static_cast<float>(playerPos->getX());
         float playerY = static_cast<float>(playerPos->getY());
-        
+
         float dx = playerX - batX;
         float dy = playerY - batY;
         float dist = std::sqrt(dx * dx + dy * dy);
-        
+
         if (dist < nearestDistance) {
             nearestDistance = dist;
             nearestPlayer = obj.get();
         }
     }
-    
+
     distance = nearestDistance;
     return nearestPlayer;
 }
 
 void BatAI::chooseFleeTarget(float playerX, float playerY) {
     if (!_parent || !_grid || !_pathfinder) return;
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return;
-    
+
     float currentX = static_cast<float>(pos->getX());
     float currentY = static_cast<float>(pos->getY());
-    
+
     // Get current grid position
     int currentGridX, currentGridY;
     _grid->worldToGrid(currentX, currentY, currentGridX, currentGridY);
-    
+
     // Calculate direction away from player
     float dx = currentX - playerX;
     float dy = currentY - playerY;
     float distance = std::sqrt(dx * dx + dy * dy);
-    
+
     if (distance < 0.001f) {
         // Too close, pick a random direction
         std::uniform_int_distribution<int> dirDist(0, 1);
@@ -573,11 +588,11 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
         dy = (dirDist(_rng) == 0) ? 1.0f : -1.0f;
         distance = std::sqrt(dx * dx + dy * dy);
     }
-    
+
     // Normalize direction
     dx /= distance;
     dy /= distance;
-    
+
     // Try multiple directions away from player to find a good flee target
     // Try the direct opposite direction first, then try angles
     std::vector<std::pair<float, float>> directions = {
@@ -587,22 +602,22 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
         {dx * 0.707f - dy * 0.707f, dx * 0.707f + dy * 0.707f}, // 45 degrees
         {dx * 0.707f + dy * 0.707f, -dx * 0.707f + dy * 0.707f} // -45 degrees
     };
-    
+
     bool foundPath = false;
     float fleeDistance = _fleeDistance * 2.0f;
-    
+
     for (const auto& dir : directions) {
         float targetX = currentX + dir.first * fleeDistance;
         float targetY = currentY + dir.second * fleeDistance;
-        
+
         // Clamp to grid bounds
         int targetGridX, targetGridY;
         _grid->worldToGrid(targetX, targetY, targetGridX, targetGridY);
-        
+
         // Make sure target is within grid bounds
         targetGridX = std::max(0, std::min(targetGridX, _grid->getWidth() - 1));
         targetGridY = std::max(0, std::min(targetGridY, _grid->getHeight() - 1));
-        
+
         // If target is not walkable, try nearby positions
         if (!_grid->isWalkable(targetGridX, targetGridY)) {
             bool foundWalkable = false;
@@ -621,27 +636,27 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
                     }
                 }
             }
-            
+
             if (!foundWalkable) {
                 continue; // Try next direction
             }
         }
-        
+
         // Convert back to world coordinates
         _grid->gridToWorld(targetGridX, targetGridY, targetX, targetY);
         targetX += _cellSize / 2.0f;
         targetY += _cellSize / 2.0f;
-        
+
         // Find path to flee target
         _currentPath = _pathfinder->findPath(currentX, currentY, targetX, targetY);
         _currentPathIndex = 0;
-        
+
         if (!_currentPath.empty() && _currentPath.size() >= 2) {
             foundPath = true;
             break; // Found a good path, use it
         }
     }
-    
+
     // If no path found in any direction, try a random walkable position far from player
     if (!foundPath) {
         // Try to find a walkable position that's far from the player
@@ -651,9 +666,9 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
             _grid->gridToWorld(randomPos.first, randomPos.second, targetX, targetY);
             targetX += _cellSize / 2.0f;
             targetY += _cellSize / 2.0f;
-            
+
             // Check if this position is far enough from player
-            float distToPlayer = std::sqrt((targetX - playerX) * (targetX - playerX) + 
+            float distToPlayer = std::sqrt((targetX - playerX) * (targetX - playerX) +
                                           (targetY - playerY) * (targetY - playerY));
             if (distToPlayer > _fleeDistance) {
                 _currentPath = _pathfinder->findPath(currentX, currentY, targetX, targetY);
@@ -665,7 +680,7 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
             }
         }
     }
-    
+
     // Last resort: just get any random walkable position
     if (!foundPath) {
         chooseNewTarget();
@@ -675,17 +690,17 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
 void BatAI::syncToNetwork() {
     if (!_parent || !_eventManager) return;
     if (_objectId == -1) return;
-    
+
     // Send current position instead of direction
     Transform* transform = _parent->getTransform();
     if (!transform) return;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return;
-    
+
     float x = static_cast<float>(pos->getX());
     float y = static_cast<float>(pos->getY());
-    
+
     auto event = std::make_shared<BatMoveEvent>(_objectId, x, y);
     _eventManager->broadcast(_objectId, event);
 }
@@ -703,35 +718,35 @@ void BatAI::setNetworkPosition(float x, float y) {
 
 void BatAI::applyNetworkPosition() {
     if (!_parent) return;
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return;
-    
+
     float currentX = static_cast<float>(pos->getX());
     float currentY = static_cast<float>(pos->getY());
-    
+
     if (!_hasNetworkUpdate && _lastNetworkX == 0.0f && _lastNetworkY == 0.0f) {
         _lastNetworkX = currentX;
         _lastNetworkY = currentY;
         _previousX = currentX;
         _previousY = currentY;
     }
-    
+
     float errorX = _lastNetworkX - currentX;
     float errorY = _lastNetworkY - currentY;
     float errorDistance = std::sqrt(errorX * errorX + errorY * errorY);
-    
+
     float movementX = currentX - _previousX;
-    
+
     if (std::abs(movementX) > 0.1f) { // Only update if there's significant horizontal movement
         Size* size = transform->getSize();
         if (size) {
             float currentWidth = size->getWidth();
             float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
-            
+
             if (movementX < 0.0f) {
                 // Moving left - flip by using negative width
                 size->setWidth(-absWidth);
@@ -741,7 +756,7 @@ void BatAI::applyNetworkPosition() {
             }
         }
     }
-    
+
     if (errorDistance > 50.0f) {
         // Large error - snap to network position immediately
         pos->setX(static_cast<int>(_lastNetworkX));
@@ -758,11 +773,11 @@ void BatAI::applyNetworkPosition() {
         pos->setX(static_cast<int>(_lastNetworkX));
         pos->setY(static_cast<int>(_lastNetworkY));
     }
-    
+
     if (_hasNetworkUpdate) {
         _hasNetworkUpdate = false;
     }
-    
+
     _previousX = currentX;
     _previousY = currentY;
 }
@@ -771,17 +786,17 @@ float BatAI::getDirectionX() const {
     if (!_parent || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
         return 0.0f;
     }
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return 0.0f;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return 0.0f;
-    
+
     float currentX = static_cast<float>(pos->getX());
     float targetX = _currentPath[_currentPathIndex].first;
     float dx = targetX - currentX;
-    
+
     if (std::abs(dx) < 0.001f) return 0.0f;
     return dx > 0.0f ? 1.0f : -1.0f;
 }
@@ -790,17 +805,17 @@ float BatAI::getDirectionY() const {
     if (!_parent || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
         return 0.0f;
     }
-    
+
     Transform* transform = _parent->getTransform();
     if (!transform) return 0.0f;
-    
+
     Position* pos = transform->getPosition();
     if (!pos) return 0.0f;
-    
+
     float currentY = static_cast<float>(pos->getY());
     float targetY = _currentPath[_currentPathIndex].second;
     float dy = targetY - currentY;
-    
+
     if (std::abs(dy) < 0.001f) return 0.0f;
     return dy > 0.0f ? 1.0f : -1.0f;
 }

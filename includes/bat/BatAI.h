@@ -72,7 +72,10 @@ public:
     float getDirectionX() const;
     float getDirectionY() const;
 
+    void setScene(Scene* scene) { _scene = scene; }
+
 private:
+    bool _needsInitialPath;
     void updateMovement(float deltaTime);
     void chooseNewTarget();
     void chooseFleeTarget(float playerX, float playerY);
