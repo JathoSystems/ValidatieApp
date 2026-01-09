@@ -4,7 +4,7 @@
 
 #include "cell/Liquid.hpp"
 
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include <memory>

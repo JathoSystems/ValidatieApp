@@ -15,19 +15,8 @@ class RestartLevelPacketHandler : public IPacketHandler {
             std::string sceneName = p->getLevel();
             GameEngine *engine = &GameEngine::getInstance();
             SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
-            Scene *scene = sceneSystem->getScene(sceneName);
-
-            // Cast naar LevelScene en reset pointers
-            if (LevelScene *levelScene = dynamic_cast<LevelScene *>(scene)) {
-                levelScene->resetCharacterPointers();
-            }
-
-            // Remove old fireboy and watergirl
-            for (std::unique_ptr<GameObject> &game_object: scene->getObjects()) {
-                if (BaseCharacter *base = dynamic_cast<BaseCharacter *>(game_object.get()))
-                    base->destroy();
-            }
-
+            
+            // Switch to the level scene - it will reinitialize itself
             sceneSystem->setScene(sceneName);
         }
     }

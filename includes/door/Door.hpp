@@ -30,37 +30,55 @@ public:
 
 
         std::string sprite = color == "red" ?
-            "resources\\doors\\door_red.png" :
-            "resources\\doors\\door_blue.png";
+            "resources/doors/door_red.png" :
+            "resources/doors/door_blue.png";
 
         std::cout << "Loading door sprite: " << sprite << std::endl;
         auto spriteRenderer = std::make_unique<SpriteRenderer>(sprite);
         addComponent(std::move(spriteRenderer));
     }
 
-    void checkCollisionWith(BaseCharacter* character) {
+    // Separate methods to avoid dynamic_cast (which was causing crashes due to vtable corruption)
+    void checkCollisionWithFireboy(Fireboy* fireboy) {
+        if (!fireboy || _color != "red") return;
+        checkCollisionInternal(fireboy);
+    }
+    
+    void checkCollisionWithWatergirl(Watergirl* watergirl) {
+        if (!watergirl || _color != "blue") return;
+        checkCollisionInternal(watergirl);
+    }
+    
+    bool isOccupied() const { return _isOccupied; }
+    std::string getColor() const { return _color; }
+    
+private:
+    void checkCollisionInternal(BaseCharacter* character) {
         if (!character) return;
+        
+        auto* doorTransform = getTransform();
+        if (!doorTransform) return;
+        
+        auto* doorPos = doorTransform->getPosition();
+        auto* doorSize = doorTransform->getSize();
+        if (!doorPos || !doorSize) return;
+        
+        auto* charTransform = character->getTransform();
+        if (!charTransform) return;
+        
+        auto* charPos = charTransform->getPosition();
+        auto* charSize = charTransform->getSize();
+        if (!charPos || !charSize) return;
 
-        // Check of het de juiste character is voor deze deur
-        bool isCorrectCharacter = false;
-        if (_color == "red" && dynamic_cast<Fireboy*>(character)) {
-            isCorrectCharacter = true;
-        } else if (_color == "blue" && dynamic_cast<Watergirl*>(character)) {
-            isCorrectCharacter = true;
-        }
+        float x1 = doorPos->getX();
+        float y1 = doorPos->getY();
+        float w1 = doorSize->getWidth();
+        float h1 = doorSize->getHeight();
 
-        if (!isCorrectCharacter) return;
-
-        // AABB collision check
-        float x1 = getTransform()->getPosition()->getX();
-        float y1 = getTransform()->getPosition()->getY();
-        float w1 = getTransform()->getSize()->getWidth();
-        float h1 = getTransform()->getSize()->getHeight();
-
-        float x2 = character->getTransform()->getPosition()->getX();
-        float y2 = character->getTransform()->getPosition()->getY();
-        float w2 = character->getTransform()->getSize()->getWidth();
-        float h2 = character->getTransform()->getSize()->getHeight();
+        float x2 = charPos->getX();
+        float y2 = charPos->getY();
+        float w2 = charSize->getWidth();
+        float h2 = charSize->getHeight();
 
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
@@ -71,9 +89,6 @@ public:
             std::cout << _color << " character reached door!" << std::endl;
         }
     }
-
-    bool isOccupied() const { return _isOccupied; }
-    std::string getColor() const { return _color; }
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_DOOR_HPP

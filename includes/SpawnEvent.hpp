@@ -6,15 +6,18 @@
 #define VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
 #include <iostream>
 #include <cstring>
+#include <unordered_map>
 
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
 #include "Events/IEvent.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "Scenes/SceneSystem.h"
+#include "bat/BatAI.h"
 
 class SpawnEvent : public IEvent {
 private:
+    static std::unordered_map<int, int> idMapping;
     int registryId = 0;
     std::string objectName = "fireboy";
     float spawnX = 0.0f;
@@ -31,7 +34,11 @@ public:
 
     Package serialize() const override {
         Package p;
-        p.push_back(registryId);
+        
+        const uint8_t* idBytes = reinterpret_cast<const uint8_t*>(&registryId);
+        for (int i = 0; i < sizeof(int); ++i) {
+            p.push_back(idBytes[i]);
+        }
 
         // Serialize X position (4 bytes)
         uint8_t* xBytes = (uint8_t*)&spawnX;
@@ -57,28 +64,30 @@ public:
         return p;
     }
 
-    Data deserialize(const Package &package) override {
+        Data deserialize(const Package &package) override {
         Data data;
 
-        // Packet structure: 1 (id) + 4 (x) + 4 (y) + 1 (name min)
-        if (package.size() >= 10) {
-            registryId = package[0];
+        // Packet structure: 4 (id as int) + 4 (x) + 4 (y) + 1 (name min) = 13 bytes minimum
+        if (package.size() >= 13) {
+            std::memcpy(&registryId, &package[0], sizeof(int));
 
             // Deserialize X position
-            memcpy(&spawnX, &package[1], 4);
+            memcpy(&spawnX, &package[4], 4);
 
             // Deserialize Y position
-            memcpy(&spawnY, &package[5], 4);
+            memcpy(&spawnY, &package[8], 4);
 
             // Deserialize object name
             std::string name;
-            for (size_t i = 9; i < package.size(); ++i) {
+            for (size_t i = 12; i < package.size(); ++i) {
                 if (package[i] == 0) break;
                 name += static_cast<char>(package[i]);
             }
             objectName = name;
 
-            data.push_back(registryId);
+            for (size_t i = 0; i < package.size(); ++i) {
+                data.push_back(package[i]);
+            }
         }
 
         return data;
@@ -89,8 +98,6 @@ public:
     }
 
     void spawn() {
-        std::cout << "SPAWNING " << objectName << " WITH ID " << registryId << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
-
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             existingObj->getTransform()->getPosition()->setX(spawnX);
@@ -100,25 +107,32 @@ public:
 
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
         if (!system) {
-            std::cout << "[SpawnEvent] SceneSystem is null!" << std::endl;
             return;
         }
 
         Scene *scene = system->getActiveSceneObj();
         if (!scene) {
-            std::cout << "[SpawnEvent] Active scene is null!" << std::endl;
             return;
         }
 
         std::unique_ptr<GameObject> object;
         object = GameObjectFactory::getInstance().create(registryId, objectName);
         if (!object) {
-            std::cout << "Factory returned nullptr" << std::endl;
             return;
         }
 
         object->getTransform()->getPosition()->setX(spawnX);
         object->getTransform()->getPosition()->setY(spawnY);
+
+        GameObject* objectPtr = object.get();
+        ObjectRegistry::getInstance().insert(objectPtr, registryId);
+        
+        if (objectName == "bat") {
+            BatAI* batAI = objectPtr->getComponent<BatAI>();
+            if (batAI) {
+                batAI->setNetworkPosition(spawnX, spawnY);
+            }
+        }
 
         try {
             scene->addObject(std::move(object));
@@ -129,6 +143,8 @@ public:
 
     float getSpawnX() const { return spawnX; }
     float getSpawnY() const { return spawnY; }
+    
+    static int getMappedId(int originalId);
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP

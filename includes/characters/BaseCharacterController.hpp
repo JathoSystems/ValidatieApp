@@ -47,6 +47,9 @@ public:
     bool isGrounded() const;
 
     void setGrounded(bool grounded);
+    
+    void setParentId(int parentId) { _parentId = parentId; }
+    int getParentId() const { return _parentId; }
 
     Direction getMovementDirection() const { return _movementDirection; }
     void setMovementDirection(Direction direction) { _movementDirection = direction; }

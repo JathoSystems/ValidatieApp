@@ -4,20 +4,24 @@
 #include "Events/EventManager.h"
 #include "Network/NetworkSystem.h"
 #include "Scenes/Scene.h"
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
 #include "LevelSwitcher.hpp"
 #include "server/packet/NextLevelPacket.hpp"
 #include "UI/Text.h"
+#include <vector>
 
 class LevelGrid;
 class Fireboy;
 class Watergirl;
+class Door;
 
 class LevelScene : public Scene {
 public:
     explicit LevelScene(int levelNumber, bool isOnline = false,
                         std::shared_ptr<NetworkSystem> network = nullptr,
                         EventManager *eventManager = nullptr);
+
+    ~LevelScene();
 
     void onInitialRender() override;
 
@@ -72,22 +76,24 @@ private:
 
     void updateDiamondCounters();
 
+    void createBat();
+
     int _levelNumber;
     bool _isOnline;
     std::shared_ptr<NetworkSystem> _network;
     EventManager *_eventManager;
-    std::unique_ptr<LevelGrid> _levelGrid;
     bool _isInitialized;
+    bool _batCreated;
+    int _batCount;
 
-    // Pointers naar characters voor diamond counting
     Fireboy *_fireboy = nullptr;
     Watergirl *_watergirl = nullptr;
 
-    // Pointers naar diamond counter text elements
     Text *_fireboyDiamondText = nullptr;
     Text *_watergirlDiamondText = nullptr;
 
     int _peopleAtDoor = 0;
+    std::vector<Door*> _doors;
 };
 
 #endif

@@ -49,8 +49,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         includes/scenes/LevelScene.hpp
         src/scenes/LevelScene.cpp
-        src/LevelGrid.cpp
-        src/LevelGrid.h
         includes/scenes/Lobby.hpp
         src/scenes/Lobby.cpp
         includes/scenes/Game.hpp
@@ -77,6 +75,23 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/NextLevelHandler.hpp
         includes/LevelSwitcher.hpp
         src/LevelSwitcher.cpp
+        includes/grid/LevelGrid.h
+        src/grid/LevelGrid.cpp
+        includes/grid/GridCell.h
+        includes/grid/GridRenderer.h
+        src/grid/GridRenderer.cpp
+        includes/grid/GridManager.h
+        src/grid/GridManager.cpp
+        includes/grid/AStarPathfinder.h
+        src/grid/AStarPathfinder.cpp
+        includes/bat/Bat.h
+        src/bat/Bat.cpp
+        includes/bat/BatAI.h
+        src/bat/BatAI.cpp
+        includes/bat/events/BatMoveEvent.hpp
+        src/bat/events/BatMoveEvent.cpp
+        includes/SpawnEvent.hpp
+        src/SpawnEvent.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -116,17 +131,27 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
         includes/LevelSelector.h
-        src/LevelGrid.cpp
-        src/LevelGrid.h
-        src/GridCell.h
-        src/GridRenderer.cpp
-        src/GridRenderer.h
-        src/GridManager.cpp
-        src/GridManager.h
         includes/scenes/MainMenu.hpp
         src/scenes/MainMenu.cpp
         includes/scenes/LevelScene.hpp
         src/scenes/LevelScene.cpp
+        includes/grid/LevelGrid.h
+        src/grid/LevelGrid.cpp
+        includes/grid/GridCell.h
+        includes/grid/GridRenderer.h
+        src/grid/GridRenderer.cpp
+        includes/grid/GridManager.h
+        src/grid/GridManager.cpp
+        includes/grid/AStarPathfinder.h
+        src/grid/AStarPathfinder.cpp
+        includes/bat/Bat.h
+        src/bat/Bat.cpp
+        includes/bat/BatAI.h
+        src/bat/BatAI.cpp
+        includes/bat/events/BatMoveEvent.hpp
+        src/bat/events/BatMoveEvent.cpp
+        includes/SpawnEvent.hpp
+        src/SpawnEvent.cpp
         src/scenes/RestartScene.cpp
         includes/scenes/RestartScene.hpp
         src/cell/Liquid.cpp
@@ -174,7 +199,6 @@ add_custom_command(TARGET Vuurjongen_Watermeisje_Game POST_BUILD
         $<TARGET_FILE:Engine>
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE:SDL3_image::SDL3_image>
-        $<TARGET_FILE:box2d>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
         $<TARGET_FILE:box2d>
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje_Game>

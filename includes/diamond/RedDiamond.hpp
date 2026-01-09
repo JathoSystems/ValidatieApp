@@ -4,7 +4,7 @@
 
 #ifndef VUURJONGEN_WATERMEISJE_GAME_REDDIAMOND_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_REDDIAMOND_HPP
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
 #include "characters/Fireboy.hpp"
 #include "GameObjects/GameObject.h"
 
@@ -13,6 +13,7 @@ private:
     LevelGrid* _grid;
     int _x;
     int _y;
+    bool _collected;
 
 public:
     RedDiamond(LevelGrid* grid, int x, int y);

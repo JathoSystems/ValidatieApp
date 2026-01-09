@@ -4,7 +4,7 @@
 
 #include "cell/Lava.hpp"
 
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/Component/AudioComponent.h"
@@ -37,6 +37,7 @@ Lava::Lava(LevelGrid *grid, int x, int y)
 }
 
 void Lava::onCollisionEnter(const CollisionData &collision) {
+    // Lava kills Watergirl, not Fireboy
     if (dynamic_cast<Watergirl *>(collision.other)) {
         AudioSystem *audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
         audioSystem->initialize();

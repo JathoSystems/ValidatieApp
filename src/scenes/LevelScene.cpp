@@ -1,8 +1,9 @@
 #include "scenes/LevelScene.hpp"
-#include "LevelGrid.h"
+#include "grid/LevelGrid.h"
+#include "grid/GridManager.h"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
-#include "GridRenderer.h"
+#include "grid/GridRenderer.h"
 #include "cell/Lava.hpp"
 #include "cell/Water.hpp"
 #include "diamond/RedDiamond.hpp"
@@ -20,6 +21,11 @@
 #include "UI/Text.h"
 #include "UI/FPSCounter.h"
 #include "Network/GameState.hpp"
+#include "bat/Bat.h"
+#include "bat/BatAI.h"
+#include "GameObjects/Spritesheet/Animator.h"
+#include "GameObjects/ObjectRegistry.hpp"
+#include "SpawnEvent.hpp"
 
 LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
                        EventManager *eventManager)
@@ -28,23 +34,45 @@ LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSy
       _isOnline(isOnline),
       _network(network),
       _eventManager(eventManager),
-      _fireboyDiamondText(nullptr),
-      _watergirlDiamondText(nullptr),
+      _isInitialized(false),
+      _batCreated(false),
+      _batCount(0),
       _fireboy(nullptr),
       _watergirl(nullptr),
-      _isInitialized(false) {
+      _fireboyDiamondText(nullptr),
+      _watergirlDiamondText(nullptr),
+      _peopleAtDoor(0) {
+}
+
+LevelScene::~LevelScene() {
+    cleanup();
 }
 
 void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
 
-    // If this is a reinitialization, perform cleanup first
+    GameEngine *gameEngine = &GameEngine::getInstance();
+    SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
+    
+    if (sceneSystem) {
+        Scene *activeScene = sceneSystem->getActiveSceneObj();
+        std::cout << "[LevelScene] Active scene: " << (activeScene ? activeScene->getName() : "nullptr") 
+                  << ", This scene: " << getName() << std::endl;
+        
+        if (!activeScene || activeScene->getName() != getName()) {
+            std::cout << "[LevelScene] Scene is not active, skipping initialization" << std::endl;
+            _isInitialized = false;
+            return;
+        }
+        
+        std::cout << "[LevelScene] Scene is active, proceeding with initialization" << std::endl;
+    }
+
     if (_isInitialized) {
         std::cout << "[LevelScene] Performing cleanup before reinitialization..." << std::endl;
         cleanup();
     }
 
-    // Mark pointers as invalid during initialization
     _fireboyDiamondText = nullptr;
     _watergirlDiamondText = nullptr;
     _fireboy = nullptr;
@@ -59,6 +87,10 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Setting up characters..." << std::endl;
     setupCharacters();
 
+    std::cout << "[LevelScene] Creating bat..." << std::endl;
+    createBat();
+
+
     std::cout << "[LevelScene] Setting up HUD..." << std::endl;
     setupHUD();
 
@@ -69,14 +101,14 @@ void LevelScene::onInitialRender() {
 void LevelScene::cleanup() {
     std::cout << "[LevelScene] Cleanup: Clearing all references..." << std::endl;
 
-    // Clear all raw pointers
     _fireboyDiamondText = nullptr;
     _watergirlDiamondText = nullptr;
     _fireboy = nullptr;
     _watergirl = nullptr;
+    _doors.clear();
 
-    // Clear the level grid
-    _levelGrid.reset();
+    std::string sceneName = getName();
+    GridManager::unregisterGrid(sceneName);
 
     std::cout << "[LevelScene] Cleanup: Complete" << std::endl;
 }
@@ -91,12 +123,11 @@ void LevelScene::setupHUD() {
     fpsCounter->setFontSize(20);
     hud->setFPSCounter(std::move(fpsCounter));
 
-    // Fireboy Diamond Counter
     auto fireboyDiamondText = std::make_unique<Text>("Fireboy: 0");
-    fireboyDiamondText->setColor(std::make_unique<Color>(255, 100, 100)); // Rood
+    fireboyDiamondText->setColor(std::make_unique<Color>(255, 100, 100));
     fireboyDiamondText->setFontSize(24);
     auto fireboyDiamondObj = std::make_unique<GameObject>();
-    _fireboyDiamondText = fireboyDiamondText.get(); // Bewaar pointer voor updates
+    _fireboyDiamondText = fireboyDiamondText.get();
     fireboyDiamondObj->addComponent(std::move(fireboyDiamondText));
     fireboyDiamondObj->getTransform()->getPosition()->setX(1050);
     fireboyDiamondObj->getTransform()->getPosition()->setY(20);
@@ -104,12 +135,11 @@ void LevelScene::setupHUD() {
     fireboyDiamondObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(fireboyDiamondObj));
 
-    // Watergirl Diamond Counter
     auto watergirlDiamondText = std::make_unique<Text>("Watergirl: 0");
-    watergirlDiamondText->setColor(std::make_unique<Color>(100, 100, 255)); // Blauw
+    watergirlDiamondText->setColor(std::make_unique<Color>(100, 100, 255));
     watergirlDiamondText->setFontSize(24);
     auto watergirlDiamondObj = std::make_unique<GameObject>();
-    _watergirlDiamondText = watergirlDiamondText.get(); // Bewaar pointer voor updates
+    _watergirlDiamondText = watergirlDiamondText.get();
     watergirlDiamondObj->addComponent(std::move(watergirlDiamondText));
     watergirlDiamondObj->getTransform()->getPosition()->setX(1050);
     watergirlDiamondObj->getTransform()->getPosition()->setY(60);
@@ -121,7 +151,6 @@ void LevelScene::setupHUD() {
 }
 
 void LevelScene::onUpdate(float deltaTime) {
-    // Only update if fully initialized
     if (!_isInitialized) {
         return;
     }
@@ -134,7 +163,14 @@ void LevelScene::onUpdate(float deltaTime) {
 Fireboy *getFireboy(Scene *scene) {
     auto &objects = scene->getObjects();
     for (auto &obj: objects) {
-        if (Fireboy *fireboy = dynamic_cast<Fireboy *>(obj.get())) {
+        if (!obj) {
+            continue;
+        }
+        GameObject* objPtr = obj.get();
+        if (!objPtr) {
+            continue;
+        }
+        if (Fireboy *fireboy = dynamic_cast<Fireboy *>(objPtr)) {
             return fireboy;
         }
     }
@@ -144,7 +180,14 @@ Fireboy *getFireboy(Scene *scene) {
 Watergirl *getWatergirl(Scene *scene) {
     auto &objects = scene->getObjects();
     for (auto &obj: objects) {
-        if (Watergirl *watergirl = dynamic_cast<Watergirl *>(obj.get())) {
+        if (!obj) {
+            continue;
+        }
+        GameObject* objPtr = obj.get();
+        if (!objPtr) {
+            continue;
+        }
+        if (Watergirl *watergirl = dynamic_cast<Watergirl *>(objPtr)) {
             return watergirl;
         }
     }
@@ -152,19 +195,25 @@ Watergirl *getWatergirl(Scene *scene) {
 }
 
 void LevelScene::checkDiamondCollisions() {
-    // Null-check before dereferencing to prevent crashes during reinitialization
     if (!_fireboy && !_watergirl) {
-        return; // Characters not yet initialized
+        return;
     }
 
-    // Get all game objects from scene
     auto &objects = getObjects();
 
     for (auto &obj: objects) {
-        // Check if object is a diamond
-        if (RedDiamond *redDiamond = dynamic_cast<RedDiamond *>(obj.get())) {
+        if (!obj) {
+            continue;
+        }
+        
+        GameObject* objPtr = obj.get();
+        if (!objPtr) {
+            continue;
+        }
+        
+        if (RedDiamond *redDiamond = dynamic_cast<RedDiamond *>(objPtr)) {
             redDiamond->checkCollisionWith(getFireboy(this));
-        } else if (BlueDiamond *blueDiamond = dynamic_cast<BlueDiamond *>(obj.get())) {
+        } else if (BlueDiamond *blueDiamond = dynamic_cast<BlueDiamond *>(objPtr)) {
             blueDiamond->checkCollisionWith(getWatergirl(this));
         }
     }
@@ -188,46 +237,72 @@ void LevelScene::updateDiamondCounters() {
 }
 
 void LevelScene::createBasicLevelGrid() {
-    _levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
+    auto levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
     
     for (int x = 0; x < 32; x++) {
-        _levelGrid->setCellType(x, 17, CellType::Ground);
+        levelGrid->setCellType(x, 17, CellType::Ground);
     }
-    _levelGrid->setCellType(15, 16, CellType::RedDiamond);
-    _levelGrid->setCellType(18, 16, CellType::BlueDiamond);
-    _levelGrid->setCellType(3, 15, CellType::RedDoor);
-    _levelGrid->setCellType(22, 15, CellType::BlueDoor);
+    levelGrid->setCellType(15, 16, CellType::RedDiamond);
+    levelGrid->setCellType(18, 16, CellType::BlueDiamond);
+    levelGrid->setCellType(3, 15, CellType::RedDoor);
+    levelGrid->setCellType(22, 15, CellType::BlueDoor);
 
     for (int y = 0; y < 18; y++) {
-        _levelGrid->setCellType(0, y, CellType::Ground);
-        _levelGrid->setCellType(31, y, CellType::Ground);
+        levelGrid->setCellType(0, y, CellType::Ground);
+        levelGrid->setCellType(31, y, CellType::Ground);
     }
 
     for (int x = 5; x < 12; x++) {
-        _levelGrid->setCellType(x, 12, CellType::Ground);
+        levelGrid->setCellType(x, 12, CellType::Ground);
     }
 
     for (int x = 20; x < 27; x++) {
-        _levelGrid->setCellType(x, 12, CellType::Lava);
+        levelGrid->setCellType(x, 12, CellType::Ground);
+        levelGrid->setCellType(x, 12, CellType::Lava);
     }
 
     for (int x = 12; x < 20; x++) {
-        _levelGrid->setCellType(x, 8, CellType::Ground);
+        levelGrid->setCellType(x, 8, CellType::Ground);
     }
+
+    std::string sceneName = getName();
+    GridManager::registerGrid(sceneName, std::move(levelGrid));
 }
 
 void LevelScene::checkDoorCollisions() {
-    Fireboy* fire = _fireboy ? _fireboy : getFireboy(this);
-    Watergirl* water = _watergirl ? _watergirl : getWatergirl(this);
+    if (!_isInitialized) {
+        return;
+    }
+    
+    Fireboy* fire = getFireboy(this);
+    Watergirl* water = getWatergirl(this);
+    
+    if (fire) _fireboy = fire;
+    if (water) _watergirl = water;
+    
+    if (_fireboy && _fireboy != fire) _fireboy = nullptr;
+    if (_watergirl && _watergirl != water) _watergirl = nullptr;
+    
     if (!fire && !water)
         return;
 
-    auto &objects = getObjects();
-
-    for (auto &obj : objects) {
-        if (Door* door = dynamic_cast<Door*>(obj.get())) {
-            if (fire) door->checkCollisionWith(fire);
-            if (water) door->checkCollisionWith(water);
+    for (Door* door : _doors) {
+        if (!door) {
+            continue;
+        }
+        
+        if (fire && door->getColor() == "red") {
+            Fireboy* currentFire = getFireboy(this);
+            if (currentFire == fire) {
+                door->checkCollisionWithFireboy(fire);
+            }
+        }
+        
+        if (water && door->getColor() == "blue") {
+            Watergirl* currentWater = getWatergirl(this);
+            if (currentWater == water) {
+                door->checkCollisionWithWatergirl(water);
+            }
         }
     }
 }
@@ -264,16 +339,20 @@ void LevelScene::setupLevel() {
     backButtonObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(backButtonObj));
 
-    int cellSize = _levelGrid->getCellSize();
+    std::string sceneName = getName();
+    LevelGrid* grid = GridManager::getGrid(sceneName);
+    if (!grid) {
+        std::cout << "[LevelScene] Grid not found for scene: " << sceneName << std::endl;
+        return;
+    }
 
-    // Create individual blocks for each ground cell
-    int blockCount = 0;
-    for (int x = 0; x < _levelGrid->getWidth(); ++x) {
-        for (int y = 0; y < _levelGrid->getHeight(); ++y) {
-            CellType type = _levelGrid->getCellType(x, y);
+    int cellSize = grid->getCellSize();
+
+    for (int x = 0; x < grid->getWidth(); ++x) {
+        for (int y = 0; y < grid->getHeight(); ++y) {
+            CellType type = grid->getCellType(x, y);
+            
             if (type == CellType::Ground) {
-                blockCount++;
-
                 auto block = std::make_unique<GameObject>();
                 block->getTransform()->getPosition()->setX(x * cellSize + cellSize / 2.0f);
                 block->getTransform()->getPosition()->setY(y * cellSize + cellSize / 2.0f);
@@ -297,24 +376,34 @@ void LevelScene::setupLevel() {
             }
 
             if (type == CellType::Water) {
-                blockCount++;
-                addObject(std::make_unique<Water>(_levelGrid.get(), x, y));
+                addObject(std::make_unique<Water>(grid, x, y));
             }
 
-            if (type == CellType::Lava)
-                addObject(std::make_unique<Lava>(_levelGrid.get(), x, y));
+            if (type == CellType::Lava) {
+                addObject(std::make_unique<Lava>(grid, x, y));
+            }
 
-            if (type == CellType::RedDiamond)
-                addObject(std::make_unique<RedDiamond>(_levelGrid.get(), x, y));
+            if (type == CellType::RedDiamond) {
+                addObject(std::make_unique<RedDiamond>(grid, x, y));
+            }
 
-            if (type == CellType::BlueDiamond)
-                addObject(std::make_unique<BlueDiamond>(_levelGrid.get(), x, y));
+            if (type == CellType::BlueDiamond) {
+                addObject(std::make_unique<BlueDiamond>(grid, x, y));
+            }
 
-            if (type == CellType::RedDoor)
-                addObject(std::make_unique<Door>(this, _levelGrid->getCellSize(), x, y));
+            if (type == CellType::RedDoor) {
+                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y);
+                Door* doorPtr = door.get();
+                _doors.push_back(doorPtr);
+                addObject(std::move(door));
+            }
 
-            if (type == CellType::BlueDoor)
-                addObject(std::make_unique<Door>(this, _levelGrid->getCellSize(), x, y, "blue"));
+            if (type == CellType::BlueDoor) {
+                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y, "blue");
+                Door* doorPtr = door.get();
+                _doors.push_back(doorPtr);
+                addObject(std::move(door));
+            }
         }
     }
 }
@@ -322,7 +411,6 @@ void LevelScene::setupLevel() {
 void LevelScene::setupCharacters() {
     GameEngine *gameEngine = &GameEngine::getInstance();
 
-    // Define Fixed IDs so both clients agree
     const int FIREBOY_ID = 99;
     const int WATERGIRL_ID = 100;
 
@@ -330,38 +418,126 @@ void LevelScene::setupCharacters() {
         std::string role = GameState::getInstance().get("role");
 
         if (role == "fireboy") {
-            auto fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
-            _fireboy = fireboy.get(); // Bewaar pointer
-            auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
-            addObject(std::move(fire));
+            auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
+            _fireboy = fireboy.get();
+            addObject(std::move(fireboy));
 
             auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
-            // Optional: Set initial off-screen position until sync packet arrives
             water->getTransform()->getPosition()->setX(600);
             water->getTransform()->getPosition()->setY(500);
             addObject(std::move(water));
         } else {
-            auto watergirl = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
-            _watergirl = watergirl.get(); // Bewaar pointer
+            auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
+            _watergirl = watergirl.get();
+            addObject(std::move(watergirl));
+            
             auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
             fire->getTransform()->getPosition()->setX(200);
             fire->getTransform()->getPosition()->setY(500);
             addObject(std::move(fire));
-
-            auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
-            addObject(std::move(water));
         }
     } else {
         auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);
         fireboy->getTransform()->getPosition()->setX(200);
         fireboy->getTransform()->getPosition()->setY(500);
-        _fireboy = fireboy.get(); // Bewaar pointer
+        _fireboy = fireboy.get();
         addObject(std::move(fireboy));
 
         auto watergirl = std::make_unique<Watergirl>(nullptr, _eventManager, gameEngine, true);
         watergirl->getTransform()->getPosition()->setX(400);
         watergirl->getTransform()->getPosition()->setY(500);
-        _watergirl = watergirl.get(); // Bewaar pointer
+        _watergirl = watergirl.get();
         addObject(std::move(watergirl));
+    }
+}
+
+void LevelScene::createBat() {
+    if (_isOnline) {
+        std::string role = GameState::getInstance().get("role");
+        if (role != "fireboy") {
+            return;
+        }
+    }
+
+    std::string sceneName = getName();
+    LevelGrid* grid = GridManager::getGrid(sceneName);
+    if (!grid) {
+        std::cout << "[LevelScene] Grid not found for scene: " << sceneName << std::endl;
+        return;
+    }
+
+    const int CELL_SIZE = grid->getCellSize();
+    const int GRID_WIDTH = grid->getWidth();
+    const int GRID_HEIGHT = grid->getHeight();
+
+    int startGridX = GRID_WIDTH / 2;
+    int startGridY = GRID_HEIGHT / 2;
+    bool foundStart = false;
+
+    for (int radius = 0; radius < std::min(GRID_WIDTH, GRID_HEIGHT) / 2 && !foundStart; ++radius) {
+        for (int y = startGridY - radius; y <= startGridY + radius && !foundStart; ++y) {
+            for (int x = startGridX - radius; x <= startGridX + radius && !foundStart; ++x) {
+                if (x > startGridX - radius && x < startGridX + radius &&
+                    y > startGridY - radius && y < startGridY + radius) {
+                    continue;
+                }
+
+                if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+                    if (grid->isWalkable(x, y)) {
+                        startGridX = x;
+                        startGridY = y;
+                        foundStart = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!foundStart) {
+        std::cout << "[LevelScene] Could not find walkable position for bat" << std::endl;
+        return;
+    }
+
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+
+    float worldX, worldY;
+    grid->gridToWorld(startGridX, startGridY, worldX, worldY);
+    worldX += CELL_SIZE / 2.0f;
+    worldY += CELL_SIZE / 2.0f;
+
+    bat->getTransform()->getPosition()->setX(static_cast<int>(worldX));
+    bat->getTransform()->getPosition()->setY(static_cast<int>(worldY));
+
+    const int BAT_SIZE = CELL_SIZE;
+    bat->getTransform()->getSize()->setWidth(BAT_SIZE);
+    bat->getTransform()->getSize()->setHeight(BAT_SIZE);
+
+    _batCount++;
+    int batId = _batCount;
+
+    ObjectRegistry::getInstance().insert(bat.get(), batId);
+
+    auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
+    bat->addComponent(std::move(batAnimator));
+
+    bool isNetworked = (_network != nullptr);
+    bool isAuthoritative = false;
+    if (_isOnline) {
+        std::string role = GameState::getInstance().get("role");
+        isAuthoritative = (role == "fireboy");
+    } else {
+        isAuthoritative = true;
+    }
+
+    float batX = static_cast<float>(bat->getTransform()->getPosition()->getX());
+    float batY = static_cast<float>(bat->getTransform()->getPosition()->getY());
+
+    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId, isAuthoritative);
+    bat->addComponent(std::move(batAI));
+
+    addObject(std::move(bat));
+
+    if (_network && _eventManager) {
+        _network->getMiddleware()->sendEvent(std::make_shared<SpawnEvent>(batId, "bat", batX, batY));
     }
 }
