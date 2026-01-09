@@ -10,9 +10,9 @@ class QuitPacket : public Packet {
 private:
     int _lobby;
 public:
-    QuitPacket() {
+    QuitPacket(int lobby = 0) {
         packetId = 120;
-        _lobby = std::stoi(GameState::getInstance().get("lobby"));
+        _lobby = lobby;
     }
 
     void serialize() override {

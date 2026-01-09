@@ -4,8 +4,10 @@
 
 #ifndef VUURJONGEN_WATERMEISJE_GAME_RESTARTLEVELPACKETHANDLER_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_RESTARTLEVELPACKETHANDLER_HPP
+#include "characters/BaseCharacter.hpp"
+#include "Engine/GameEngine.h"
 #include "Network/Packet/Handler/IPacketHandler.hpp"
-#include "scenes/LevelScene.hpp"
+#include "Scenes/SceneSystem.h"
 #include "server/packet/RestartPacket.hpp"
 
 class RestartLevelPacketHandler : public IPacketHandler {
@@ -17,12 +19,6 @@ class RestartLevelPacketHandler : public IPacketHandler {
             SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
             Scene *scene = sceneSystem->getScene(sceneName);
 
-            // Cast naar LevelScene en reset pointers
-            if (LevelScene *levelScene = dynamic_cast<LevelScene *>(scene)) {
-                levelScene->resetCharacterPointers();
-            }
-
-            // Remove old fireboy and watergirl
             for (std::unique_ptr<GameObject> &game_object: scene->getObjects()) {
                 if (BaseCharacter *base = dynamic_cast<BaseCharacter *>(game_object.get()))
                     base->destroy();

@@ -24,13 +24,19 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
 void BaseCharacterController::getCurrentPhysicsState(float &x, float &y, float &vx, float &vy) {
     x = 0; y = 0; vx = 0; vy = 0;
     GameObject* obj = ObjectRegistry::getInstance().getObject(_parentId);
-    if (obj) {
-        x = obj->getTransform()->getPosition()->getX();
-        y = obj->getTransform()->getPosition()->getY();
+    if (!obj) return;
+    
+    Transform* transform = obj->getTransform();
+    if (!transform) return;
+    
+    Position* pos = transform->getPosition();
+    if (pos) {
+        x = pos->getX();
+        y = pos->getY();
+    }
 
-        if (auto* physics = obj->getComponent<PhysicsComponent>()) {
-            physics->getVelocity(vx, vy);
-        }
+    if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+        physics->getVelocity(vx, vy);
     }
 }
 

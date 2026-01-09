@@ -12,7 +12,9 @@ class QuitLevelPacketHandler : public IPacketHandler {
 public:
     void handle(const Packet &packet) override {
         std::cout << "QUIT PACKET RECEIVED" << std::endl;
+        auto prevName = GameEngine::getInstance().getSystem<SceneSystem>()->getActiveSceneObj()->getName();
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
+        GameEngine::getInstance().getSystem<SceneSystem>()->removeScene(prevName);
     }
 };
 

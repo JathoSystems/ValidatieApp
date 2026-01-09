@@ -117,9 +117,10 @@ void BaseCharacter::update(float delta) {
     if (_controller && !_controller->isActive()) {
         PhysicsComponent* physics = getComponent<PhysicsComponent>();
 
-        if (_lastRemoteX != 0 && _lastRemoteY != 0 && physics) {
-            float currentX = getTransform()->getPosition()->getX();
-            float currentY = getTransform()->getPosition()->getY();
+        Transform* transform = getTransform();
+        if (_lastRemoteX != 0 && _lastRemoteY != 0 && physics && transform && transform->getPosition()) {
+            float currentX = transform->getPosition()->getX();
+            float currentY = transform->getPosition()->getY();
 
             float errorX = _lastRemoteX - currentX;
             float errorY = _lastRemoteY - currentY;
@@ -210,7 +211,9 @@ void BaseCharacter::updateAnimator(Animation newAnimation) {
 }
 
 void BaseCharacter::setMovementDirection(Direction direction) {
-    _controller->setMovementDirection(direction);
+    if (_controller) {
+        _controller->setMovementDirection(direction);
+    }
 }
 
 void BaseCharacter::updateAnimation() {

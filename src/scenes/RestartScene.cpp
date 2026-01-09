@@ -7,7 +7,6 @@
 #include "characters/BaseCharacter.hpp"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
-#include "scenes/LevelScene.hpp"
 #include "Scenes/SceneSystem.h"
 #include "server/packet/QuitPacket.hpp"
 #include "server/packet/RestartPacket.hpp"
@@ -32,12 +31,6 @@ void RestartScene::onInitialRender() {
             SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
             Scene *scene = sceneSystem->getScene(_previousLevel);
 
-            // Cast naar LevelScene en reset pointers
-            if (LevelScene *levelScene = dynamic_cast<LevelScene *>(scene)) {
-                levelScene->resetCharacterPointers();
-            }
-
-            // Remove old fireboy and watergirl
             for (std::unique_ptr<GameObject> &game_object: scene->getObjects()) {
                 if (BaseCharacter *base = dynamic_cast<BaseCharacter *>(game_object.get()))
                     base->destroy();

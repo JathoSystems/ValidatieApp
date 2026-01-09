@@ -93,8 +93,11 @@ public:
 
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
-            existingObj->getTransform()->getPosition()->setX(spawnX);
-            existingObj->getTransform()->getPosition()->setY(spawnY);
+            Transform* transform = existingObj->getTransform();
+            if (transform && transform->getPosition()) {
+                transform->getPosition()->setX(spawnX);
+                transform->getPosition()->setY(spawnY);
+            }
             return;
         }
 
@@ -117,8 +120,11 @@ public:
             return;
         }
 
-        object->getTransform()->getPosition()->setX(spawnX);
-        object->getTransform()->getPosition()->setY(spawnY);
+        Transform* transform = object->getTransform();
+        if (transform && transform->getPosition()) {
+            transform->getPosition()->setX(spawnX);
+            transform->getPosition()->setY(spawnY);
+        }
 
         try {
             scene->addObject(std::move(object));

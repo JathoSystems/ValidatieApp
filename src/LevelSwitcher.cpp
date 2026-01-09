@@ -28,7 +28,10 @@ void LevelSwitcher::openLevel(int level, bool online) {
     );
 
     sceneSystem->addScene(std::move(newLevelScene));
+    auto prevName = sceneSystem->getActiveSceneObj()->getName();
     sceneSystem->setScene(levelSceneName);
+    sceneSystem->removeScene(prevName);
+
 
     std::cout << "Switched to level scene: " << levelSceneName << "\n";
 }
