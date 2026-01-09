@@ -3,12 +3,7 @@
 //
 
 #include "diamond/BlueDiamond.hpp"
-
 #include "characters/Watergirl.hpp"
-#include "GameObjects/Component/SpriteRenderer.h"
-#include "Physics/PhysicsSystem.h"
-#include "Engine/GameEngine.h"
-#include "diamond/BlueDiamond.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Engine/GameEngine.h"
 
@@ -32,7 +27,6 @@ BlueDiamond::BlueDiamond(LevelGrid* grid, int x, int y) {
 }
 
 void BlueDiamond::checkCollisionWith(GameObject* other) {
-    // Don't process collisions if already collected
     if (_collected) {
         return;
     }
@@ -48,13 +42,11 @@ void BlueDiamond::checkCollisionWith(GameObject* other) {
         float w2 = watergirl->getTransform()->getSize()->getWidth();
         float h2 = watergirl->getTransform()->getSize()->getHeight();
 
-        // AABB collision check
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
 
         if (collision) {
             watergirl->addDiamond();
-            // Mark as collected and hide the diamond
             _collected = true;
             removeComponent<SpriteRenderer>(false);
             setLayer(-1);
@@ -63,14 +55,12 @@ void BlueDiamond::checkCollisionWith(GameObject* other) {
 }
 
 void BlueDiamond::onCollisionEnter(const CollisionData& collision) {
-    // Don't process collisions if already collected
     if (_collected) {
         return;
     }
     
     if (Watergirl* watergirl = dynamic_cast<Watergirl*>(collision.other)) {
         watergirl->addDiamond();
-        // Mark as collected and hide the diamond
         _collected = true;
         removeComponent<SpriteRenderer>(false);
         setLayer(-1);

@@ -22,13 +22,11 @@ RedDiamond::RedDiamond(LevelGrid* grid, int x, int y) {
 }
 
 void RedDiamond::checkCollisionWith(GameObject* other) {
-    // Don't process collisions if already collected
     if (_collected) {
         return;
     }
     
     if (Fireboy* fireboy = dynamic_cast<Fireboy*>(other)) {
-        // Check overlap via AABB (Axis-Aligned Bounding Box)
         float x1 = getTransform()->getPosition()->getX();
         float y1 = getTransform()->getPosition()->getY();
         float w1 = getTransform()->getSize()->getWidth();
@@ -39,13 +37,11 @@ void RedDiamond::checkCollisionWith(GameObject* other) {
         float w2 = fireboy->getTransform()->getSize()->getWidth();
         float h2 = fireboy->getTransform()->getSize()->getHeight();
         
-        // AABB collision check
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
         
         if (collision) {
             fireboy->addDiamond();
-            // Mark as collected and hide the diamond
             _collected = true;
             removeComponent<SpriteRenderer>(false);
             setLayer(-1);
@@ -54,14 +50,12 @@ void RedDiamond::checkCollisionWith(GameObject* other) {
 }
 
 void RedDiamond::onCollisionEnter(const CollisionData& collision) {
-    // Don't process collisions if already collected
     if (_collected) {
         return;
     }
     
     if (Fireboy* fireboy = dynamic_cast<Fireboy*>(collision.other)) {
         fireboy->addDiamond();
-        // Mark as collected and hide the diamond
         _collected = true;
         removeComponent<SpriteRenderer>(false);
         setLayer(-1);

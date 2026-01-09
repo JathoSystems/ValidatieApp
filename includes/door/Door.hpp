@@ -56,7 +56,6 @@ private:
     void checkCollisionInternal(BaseCharacter* character) {
         if (!character) return;
         
-        // Check if transforms are valid before accessing them
         auto* doorTransform = getTransform();
         if (!doorTransform) return;
         
@@ -71,10 +70,6 @@ private:
         auto* charSize = charTransform->getSize();
         if (!charPos || !charSize) return;
 
-        // AABB collision check
-        // Note: We've already validated all pointers are non-null above
-        // If we still crash here, it means the Position/Size objects were destroyed
-        // This can happen if the character object is destroyed while we're checking collisions
         float x1 = doorPos->getX();
         float y1 = doorPos->getY();
         float w1 = doorSize->getWidth();

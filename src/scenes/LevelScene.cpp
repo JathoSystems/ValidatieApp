@@ -54,7 +54,6 @@ void LevelScene::onInitialRender() {
     GameEngine *gameEngine = &GameEngine::getInstance();
     SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
     
-    // Only initialize if this scene is currently active
     if (sceneSystem) {
         Scene *activeScene = sceneSystem->getActiveSceneObj();
         std::cout << "[LevelScene] Active scene: " << (activeScene ? activeScene->getName() : "nullptr") 
@@ -62,7 +61,6 @@ void LevelScene::onInitialRender() {
         
         if (!activeScene || activeScene->getName() != getName()) {
             std::cout << "[LevelScene] Scene is not active, skipping initialization" << std::endl;
-            // Reset _isInitialized so we can initialize when scene becomes active
             _isInitialized = false;
             return;
         }
@@ -70,13 +68,11 @@ void LevelScene::onInitialRender() {
         std::cout << "[LevelScene] Scene is active, proceeding with initialization" << std::endl;
     }
 
-    // If this is a reinitialization, perform cleanup first
     if (_isInitialized) {
         std::cout << "[LevelScene] Performing cleanup before reinitialization..." << std::endl;
         cleanup();
     }
 
-    // Mark pointers as invalid during initialization
     _fireboyDiamondText = nullptr;
     _watergirlDiamondText = nullptr;
     _fireboy = nullptr;
@@ -105,16 +101,12 @@ void LevelScene::onInitialRender() {
 void LevelScene::cleanup() {
     std::cout << "[LevelScene] Cleanup: Clearing all references..." << std::endl;
 
-    // Clear all raw pointers
     _fireboyDiamondText = nullptr;
     _watergirlDiamondText = nullptr;
     _fireboy = nullptr;
     _watergirl = nullptr;
-    
-    // Clear door pointers (doors are owned by the scene's object list)
     _doors.clear();
 
-    // Unregister grid from GridManager
     std::string sceneName = getName();
     GridManager::unregisterGrid(sceneName);
 
@@ -131,12 +123,11 @@ void LevelScene::setupHUD() {
     fpsCounter->setFontSize(20);
     hud->setFPSCounter(std::move(fpsCounter));
 
-    // Fireboy Diamond Counter
     auto fireboyDiamondText = std::make_unique<Text>("Fireboy: 0");
-    fireboyDiamondText->setColor(std::make_unique<Color>(255, 100, 100)); // Rood
+    fireboyDiamondText->setColor(std::make_unique<Color>(255, 100, 100));
     fireboyDiamondText->setFontSize(24);
     auto fireboyDiamondObj = std::make_unique<GameObject>();
-    _fireboyDiamondText = fireboyDiamondText.get(); // Bewaar pointer voor updates
+    _fireboyDiamondText = fireboyDiamondText.get();
     fireboyDiamondObj->addComponent(std::move(fireboyDiamondText));
     fireboyDiamondObj->getTransform()->getPosition()->setX(1050);
     fireboyDiamondObj->getTransform()->getPosition()->setY(20);
@@ -144,12 +135,11 @@ void LevelScene::setupHUD() {
     fireboyDiamondObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(fireboyDiamondObj));
 
-    // Watergirl Diamond Counter
     auto watergirlDiamondText = std::make_unique<Text>("Watergirl: 0");
-    watergirlDiamondText->setColor(std::make_unique<Color>(100, 100, 255)); // Blauw
+    watergirlDiamondText->setColor(std::make_unique<Color>(100, 100, 255));
     watergirlDiamondText->setFontSize(24);
     auto watergirlDiamondObj = std::make_unique<GameObject>();
-    _watergirlDiamondText = watergirlDiamondText.get(); // Bewaar pointer voor updates
+    _watergirlDiamondText = watergirlDiamondText.get();
     watergirlDiamondObj->addComponent(std::move(watergirlDiamondText));
     watergirlDiamondObj->getTransform()->getPosition()->setX(1050);
     watergirlDiamondObj->getTransform()->getPosition()->setY(60);
@@ -161,7 +151,6 @@ void LevelScene::setupHUD() {
 }
 
 void LevelScene::onUpdate(float deltaTime) {
-    // Only update if fully initialized
     if (!_isInitialized) {
         return;
     }
@@ -206,25 +195,22 @@ Watergirl *getWatergirl(Scene *scene) {
 }
 
 void LevelScene::checkDiamondCollisions() {
-    // Null-check before dereferencing to prevent crashes during reinitialization
     if (!_fireboy && !_watergirl) {
-        return; // Characters not yet initialized
+        return;
     }
 
-    // Get all game objects from scene
     auto &objects = getObjects();
 
     for (auto &obj: objects) {
         if (!obj) {
-            continue; // Skip null objects
+            continue;
         }
         
         GameObject* objPtr = obj.get();
         if (!objPtr) {
-            continue; // Skip if get() returns null
+            continue;
         }
         
-        // Check if object is a diamond
         if (RedDiamond *redDiamond = dynamic_cast<RedDiamond *>(objPtr)) {
             redDiamond->checkCollisionWith(getFireboy(this));
         } else if (BlueDiamond *blueDiamond = dynamic_cast<BlueDiamond *>(objPtr)) {
@@ -279,43 +265,33 @@ void LevelScene::createBasicLevelGrid() {
         levelGrid->setCellType(x, 8, CellType::Ground);
     }
 
-    // Register grid in GridManager (it will own the grid)
     std::string sceneName = getName();
     GridManager::registerGrid(sceneName, std::move(levelGrid));
 }
 
 void LevelScene::checkDoorCollisions() {
-    // Only check door collisions if scene is fully initialized
     if (!_isInitialized) {
         return;
     }
     
-    // Re-fetch character pointers each frame to ensure they're still valid
-    // This avoids using stale pointers if characters are destroyed/recreated
     Fireboy* fire = getFireboy(this);
     Watergirl* water = getWatergirl(this);
     
-    // Update cached pointers if we found valid characters
     if (fire) _fireboy = fire;
     if (water) _watergirl = water;
     
-    // If cached pointers don't match, clear them
     if (_fireboy && _fireboy != fire) _fireboy = nullptr;
     if (_watergirl && _watergirl != water) _watergirl = nullptr;
     
     if (!fire && !water)
         return;
 
-    // Use stored Door pointers and call type-specific methods to avoid dynamic_cast crashes
     for (Door* door : _doors) {
         if (!door) {
-            continue; // Skip null pointers
+            continue;
         }
         
-        // Only check collision if we have valid characters
-        // Re-fetch character pointers right before use to ensure they're still valid
         if (fire && door->getColor() == "red") {
-            // Verify fire is still in the scene before using it
             Fireboy* currentFire = getFireboy(this);
             if (currentFire == fire) {
                 door->checkCollisionWithFireboy(fire);
@@ -323,7 +299,6 @@ void LevelScene::checkDoorCollisions() {
         }
         
         if (water && door->getColor() == "blue") {
-            // Verify water is still in the scene before using it
             Watergirl* currentWater = getWatergirl(this);
             if (currentWater == water) {
                 door->checkCollisionWithWatergirl(water);
@@ -373,7 +348,6 @@ void LevelScene::setupLevel() {
 
     int cellSize = grid->getCellSize();
 
-    // Create individual blocks for each cell type
     for (int x = 0; x < grid->getWidth(); ++x) {
         for (int y = 0; y < grid->getHeight(); ++y) {
             CellType type = grid->getCellType(x, y);
@@ -437,7 +411,6 @@ void LevelScene::setupLevel() {
 void LevelScene::setupCharacters() {
     GameEngine *gameEngine = &GameEngine::getInstance();
 
-    // Define Fixed IDs so both clients agree
     const int FIREBOY_ID = 99;
     const int WATERGIRL_ID = 100;
 
@@ -445,24 +418,19 @@ void LevelScene::setupCharacters() {
         std::string role = GameState::getInstance().get("role");
 
         if (role == "fireboy") {
-            // Create the active fireboy with fixed ID (so it syncs on both clients)
             auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
-            _fireboy = fireboy.get(); // Store pointer to the active fireboy
+            _fireboy = fireboy.get();
             addObject(std::move(fireboy));
 
-            // Create the networked watergirl (the one the other client controls)
             auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
-            // Optional: Set initial off-screen position until sync packet arrives
             water->getTransform()->getPosition()->setX(600);
             water->getTransform()->getPosition()->setY(500);
             addObject(std::move(water));
         } else {
-            // Create the active watergirl with fixed ID (so it syncs on both clients)
             auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
-            _watergirl = watergirl.get(); // Store pointer to the active watergirl
+            _watergirl = watergirl.get();
             addObject(std::move(watergirl));
             
-            // Create the networked fireboy (the one the other client controls)
             auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
             fire->getTransform()->getPosition()->setX(200);
             fire->getTransform()->getPosition()->setY(500);
@@ -472,24 +440,21 @@ void LevelScene::setupCharacters() {
         auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);
         fireboy->getTransform()->getPosition()->setX(200);
         fireboy->getTransform()->getPosition()->setY(500);
-        _fireboy = fireboy.get(); // Bewaar pointer
+        _fireboy = fireboy.get();
         addObject(std::move(fireboy));
 
         auto watergirl = std::make_unique<Watergirl>(nullptr, _eventManager, gameEngine, true);
         watergirl->getTransform()->getPosition()->setX(400);
         watergirl->getTransform()->getPosition()->setY(500);
-        _watergirl = watergirl.get(); // Bewaar pointer
+        _watergirl = watergirl.get();
         addObject(std::move(watergirl));
     }
 }
 
 void LevelScene::createBat() {
-    // In multiplayer mode, only the authoritative client (fireboy) creates bats locally
-    // Non-authoritative clients create bats from SpawnEvents
     if (_isOnline) {
         std::string role = GameState::getInstance().get("role");
         if (role != "fireboy") {
-            // Non-authoritative client - don't create bat locally, wait for SpawnEvent
             return;
         }
     }
@@ -509,7 +474,6 @@ void LevelScene::createBat() {
     int startGridY = GRID_HEIGHT / 2;
     bool foundStart = false;
 
-    // Find a walkable position starting from center
     for (int radius = 0; radius < std::min(GRID_WIDTH, GRID_HEIGHT) / 2 && !foundStart; ++radius) {
         for (int y = startGridY - radius; y <= startGridY + radius && !foundStart; ++y) {
             for (int x = startGridX - radius; x <= startGridX + radius && !foundStart; ++x) {
@@ -534,7 +498,7 @@ void LevelScene::createBat() {
         return;
     }
 
-    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f); // Faster speed
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
 
     float worldX, worldY;
     grid->gridToWorld(startGridX, startGridY, worldX, worldY);

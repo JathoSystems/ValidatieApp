@@ -46,14 +46,11 @@ void Game::onInitialRender() {
         return;
     }
     
-    // Only register physics components if this scene is currently active
     Scene *activeScene = sceneSystem->getActiveSceneObj();
     std::cout << "[Game] Active scene: " << (activeScene ? activeScene->getName() : "nullptr") 
               << ", This scene: " << getName() << std::endl;
     
     if (!activeScene || activeScene->getName() != getName()) {
-        // Scene is not active, don't register physics components yet
-        // Reset _isInitialized so we can initialize when scene becomes active
         std::cout << "[Game] Scene is not active, skipping initialization" << std::endl;
         _isInitialized = false;
         return;

@@ -175,17 +175,14 @@ int main() {
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 
-        // Add scenes
         sceneSystem->addScene(std::make_unique<MainMenu>());
         sceneSystem->addScene(std::make_unique<Lobby>());
         sceneSystem->addScene(std::make_unique<Game>(network, &manager));
         sceneSystem->addScene(std::make_unique<RestartScene>(network));
 
-        // Create level selector scene
         LevelSelector levelSelector(sceneSystem, network, &manager);
         levelSelector.createLevelSelectorScene();
 
-        // Set initial scene before starting
         sceneSystem->setScene("MainMenu");
 
         gameEngine->start();

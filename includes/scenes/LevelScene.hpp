@@ -84,19 +84,15 @@ private:
     EventManager *_eventManager;
     bool _isInitialized;
     bool _batCreated;
-    int _batCount;  // Track bat index for fixed IDs (bat 1 = ID 1, bat 2 = ID 2, etc.)
+    int _batCount;
 
-    // Pointers naar characters voor diamond counting
     Fireboy *_fireboy = nullptr;
     Watergirl *_watergirl = nullptr;
 
-    // Pointers naar diamond counter text elements
     Text *_fireboyDiamondText = nullptr;
     Text *_watergirlDiamondText = nullptr;
 
     int _peopleAtDoor = 0;
-    
-    // Store Door pointers separately to avoid dynamic_cast on potentially invalid objects
     std::vector<Door*> _doors;
 };
 
