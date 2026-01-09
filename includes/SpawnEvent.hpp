@@ -1,12 +1,9 @@
-//
-// Created by jusra on 15-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_SPAWNEVENT_HPP
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
+#include <vector>
 
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
@@ -14,7 +11,7 @@
 #include "GameObjects/ObjectRegistry.hpp"
 #include "Scenes/SceneSystem.h"
 #include "bat/BatAI.h"
-#include "grid/GridManager.h" // Include GridManager to check if grid exists
+#include "grid/GridManager.h"
 
 class SpawnEvent : public IEvent {
 private:
@@ -25,12 +22,26 @@ private:
     float spawnY = 0.0f;
 
 public:
+    static std::vector<SpawnEvent> _pendingEvents;
+
     SpawnEvent(int id = 0, const std::string &name = "fireboy", float x = 0.0f, float y = 0.0f)
         : registryId(id), objectName(name), spawnX(x), spawnY(y) {
     }
 
     std::string getName() const override {
         return "spawn";
+    }
+
+    static void processPending() {
+        if (_pendingEvents.empty()) return;
+
+        std::cout << "[SpawnEvent] Processing " << _pendingEvents.size() << " pending spawns..." << std::endl;
+        std::vector<SpawnEvent> events = _pendingEvents;
+        _pendingEvents.clear();
+
+        for (auto& event : events) {
+            event.spawn();
+        }
     }
 
     Package serialize() const override {
@@ -41,19 +52,12 @@ public:
             p.push_back(idBytes[i]);
         }
 
-        // Serialize X position (4 bytes)
         uint8_t* xBytes = (uint8_t*)&spawnX;
-        for (int i = 0; i < 4; i++) {
-            p.push_back(xBytes[i]);
-        }
+        for (int i = 0; i < 4; i++) p.push_back(xBytes[i]);
 
-        // Serialize Y position (4 bytes)
         uint8_t* yBytes = (uint8_t*)&spawnY;
-        for (int i = 0; i < 4; i++) {
-            p.push_back(yBytes[i]);
-        }
+        for (int i = 0; i < 4; i++) p.push_back(yBytes[i]);
 
-        // Serialize object name
         for (char c: objectName) {
             p.push_back(static_cast<int8_t>(c));
         }
@@ -67,41 +71,22 @@ public:
 
     Data deserialize(const Package &package) override {
         Data data;
-
-        std::cout << "[SpawnEvent] Deserializing packet of size: " << package.size() << std::endl;
-
-        // Packet structure: 4 (id as int) + 4 (x) + 4 (y) + 1 (name min) = 13 bytes minimum
-        if (package.size() < 13) {
-            std::cout << "[SpawnEvent] ERROR: Packet too small: " << package.size() << " bytes" << std::endl;
-            return data;
-        }
+        if (package.size() < 13) return data;
 
         std::memcpy(&registryId, &package[0], sizeof(int));
-        std::cout << "[SpawnEvent] Registry ID: " << registryId << std::endl;
-
-        // Deserialize X position
         memcpy(&spawnX, &package[4], 4);
-        std::cout << "[SpawnEvent] X: " << spawnX << std::endl;
-
-        // Deserialize Y position
         memcpy(&spawnY, &package[8], 4);
-        std::cout << "[SpawnEvent] Y: " << spawnY << std::endl;
 
-        // Deserialize object name - ADD BOUNDS CHECK
         std::string name;
         for (size_t i = 12; i < package.size() && i < package.size(); ++i) {
             if (package[i] == 0) break;
             name += static_cast<char>(package[i]);
         }
         objectName = name;
-        std::cout << "[SpawnEvent] Object name: " << objectName << std::endl;
 
-        // Copy data
         for (size_t i = 0; i < package.size(); ++i) {
             data.push_back(package[i]);
         }
-
-        std::cout << "[SpawnEvent] Deserialization complete" << std::endl;
         return data;
     }
 
@@ -113,32 +98,25 @@ public:
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             Transform* transform = existingObj->getTransform();
-            if (!transform || !transform->getPosition()) {
-                std::cout << "[SpawnEvent] ERROR: Existing object has no transform!" << std::endl;
-                return;
+            if (transform && transform->getPosition()) {
+                transform->getPosition()->setX(spawnX);
+                transform->getPosition()->setY(spawnY);
             }
-            transform->getPosition()->setX(spawnX);
-            transform->getPosition()->setY(spawnY);
             return;
         }
 
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
-        if (!system) {
-            std::cout << "[SpawnEvent] ERROR: SceneSystem is null!" << std::endl;
-            return;
-        }
+        if (!system) return;
 
         Scene *scene = system->getActiveSceneObj();
-        if (!scene) {
-            std::cout << "[SpawnEvent] ERROR: Active scene is null!" << std::endl;
-            return;
-        }
+        if (!scene) return;
 
-        // Check if grid exists for this scene before attempting to create bat
-        // This prevents the factory from crashing when it tries to access the grid
-        if (GridManager::getGrid(scene->getName()) == nullptr) {
+        bool gridReady = (GridManager::getGrid(scene->getName()) != nullptr);
+
+        if (!gridReady) {
             std::cout << "[SpawnEvent] Grid not ready for scene: " << scene->getName()
-                      << " - Skipping spawn of " << objectName << std::endl;
+                      << " - BUFFERING spawn of " << objectName << std::endl;
+            _pendingEvents.push_back(*this); // <--- IN DE WACHTRIJ
             return;
         }
 
@@ -149,15 +127,11 @@ public:
             return;
         }
 
-        // Add null check for transform BEFORE using it
         Transform* transform = object->getTransform();
-        if (!transform || !transform->getPosition()) {
-            std::cout << "[SpawnEvent] ERROR: Created object has no transform!" << std::endl;
-            return;
+        if (transform && transform->getPosition()) {
+            transform->getPosition()->setX(spawnX);
+            transform->getPosition()->setY(spawnY);
         }
-
-        transform->getPosition()->setX(spawnX);
-        transform->getPosition()->setY(spawnY);
 
         GameObject* objectPtr = object.get();
         ObjectRegistry::getInstance().insert(objectPtr, registryId);
