@@ -14,6 +14,7 @@ private:
     EventManager *_eventManager;
     bool _characterCreated;
     bool _batCreated;
+    bool _isInitialized;
 
     void setupGrid();
     void createCharacter();

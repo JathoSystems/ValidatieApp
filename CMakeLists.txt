@@ -57,6 +57,24 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
         src/server/packet/handler/GameReadyPacketHandler.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
+        src/scenes/RestartScene.cpp
+        includes/scenes/RestartScene.hpp
+        src/cell/Liquid.cpp
+        includes/cell/Liquid.hpp
+        src/cell/Water.cpp
+        includes/cell/Lava.hpp
+        src/cell/Lava.cpp
+        includes/server/packet/handler/RestartLevelPacketHandler.hpp
+        includes/server/packet/handler/QuitLevelPacketHandler.hpp
+        includes/server/packet/QuitPacket.hpp
+        includes/server/packet/RestartPacket.hpp
+        includes/diamond/RedDiamond.hpp
+        src/diamond/RedDiamond.cpp
+        includes/diamond/BlueDiamond.hpp
+        src/diamond/BlueDiamond.cpp
+        includes/server/packet/handler/NextLevelHandler.hpp
+        includes/LevelSwitcher.hpp
+        src/LevelSwitcher.cpp
         includes/grid/LevelGrid.h
         src/grid/LevelGrid.cpp
         includes/grid/GridCell.h
@@ -134,6 +152,26 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/bat/events/BatMoveEvent.cpp
         includes/SpawnEvent.hpp
         src/SpawnEvent.cpp
+        src/scenes/RestartScene.cpp
+        includes/scenes/RestartScene.hpp
+        src/cell/Liquid.cpp
+        includes/cell/Liquid.hpp
+        src/cell/Water.cpp
+        includes/cell/Lava.hpp
+        src/cell/Lava.cpp
+        includes/server/packet/handler/RestartLevelPacketHandler.hpp
+        includes/server/packet/handler/QuitLevelPacketHandler.hpp
+        includes/server/packet/QuitPacket.hpp
+        includes/server/packet/RestartPacket.hpp
+        includes/diamond/RedDiamond.hpp
+        src/diamond/RedDiamond.cpp
+        includes/diamond/BlueDiamond.hpp
+        src/diamond/BlueDiamond.cpp
+        includes/door/Door.hpp
+        includes/server/packet/NextLevelPacket.hpp
+        includes/server/packet/handler/NextLevelHandler.hpp
+        includes/LevelSwitcher.hpp
+        src/LevelSwitcher.cpp
 )
 
 include_directories("includes")
@@ -161,7 +199,6 @@ add_custom_command(TARGET Vuurjongen_Watermeisje_Game POST_BUILD
         $<TARGET_FILE:Engine>
         $<TARGET_FILE:SDL3::SDL3>
         $<TARGET_FILE:SDL3_image::SDL3_image>
-        $<TARGET_FILE:box2d>
         $<TARGET_FILE:SDL3_ttf::SDL3_ttf>
         $<TARGET_FILE:box2d>
         $<TARGET_FILE_DIR:Vuurjongen_Watermeisje_Game>
