@@ -13,6 +13,7 @@ private:
     LevelGrid* _grid;
     int _x;
     int _y;
+    bool _collected;
 
 public:
     BlueDiamond(LevelGrid* grid, int x, int y);

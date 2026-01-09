@@ -445,33 +445,28 @@ void LevelScene::setupCharacters() {
         std::string role = GameState::getInstance().get("role");
 
         if (role == "fireboy") {
-            // Create the active fireboy (the one this client controls)
-            auto fireboy = std::make_unique<Fireboy>(_network, _eventManager, gameEngine, true);
+            // Create the active fireboy with fixed ID (so it syncs on both clients)
+            auto fireboy = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
             _fireboy = fireboy.get(); // Store pointer to the active fireboy
             addObject(std::move(fireboy));
-            
-            // Create the networked fireboy with fixed ID
-            auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, true);
-            addObject(std::move(fire));
 
+            // Create the networked watergirl (the one the other client controls)
             auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, false);
             // Optional: Set initial off-screen position until sync packet arrives
             water->getTransform()->getPosition()->setX(600);
             water->getTransform()->getPosition()->setY(500);
             addObject(std::move(water));
         } else {
-            // Create the active watergirl (the one this client controls)
-            auto watergirl = std::make_unique<Watergirl>(_network, _eventManager, gameEngine, true);
+            // Create the active watergirl with fixed ID (so it syncs on both clients)
+            auto watergirl = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
             _watergirl = watergirl.get(); // Store pointer to the active watergirl
             addObject(std::move(watergirl));
             
+            // Create the networked fireboy (the one the other client controls)
             auto fire = std::make_unique<Fireboy>(FIREBOY_ID, _network, _eventManager, gameEngine, false);
             fire->getTransform()->getPosition()->setX(200);
             fire->getTransform()->getPosition()->setY(500);
             addObject(std::move(fire));
-
-            auto water = std::make_unique<Watergirl>(WATERGIRL_ID, _network, _eventManager, gameEngine, true);
-            addObject(std::move(water));
         }
     } else {
         auto fireboy = std::make_unique<Fireboy>(nullptr, _eventManager, gameEngine, true);

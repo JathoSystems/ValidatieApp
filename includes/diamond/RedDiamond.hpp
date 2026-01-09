@@ -13,6 +13,7 @@ private:
     LevelGrid* _grid;
     int _x;
     int _y;
+    bool _collected;
 
 public:
     RedDiamond(LevelGrid* grid, int x, int y);
