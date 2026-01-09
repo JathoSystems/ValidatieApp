@@ -42,7 +42,7 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _previousY(0.0f) {
     
     if (_parent && !_isAuthoritative) {
-        Transform* transform = _parent->getTransform();
+        std::shared_ptr<Transform> transform = _parent->getTransform();
         if (transform && transform->getPosition()) {
             _lastNetworkX = static_cast<float>(transform->getPosition()->getX());
             _lastNetworkY = static_cast<float>(transform->getPosition()->getY());
@@ -89,7 +89,7 @@ void BatAI::updatePathfinding(float deltaTime) {
         bool wasFleeing = _isFleeing;
         _isFleeing = true;
         
-        Transform* playerTransform = nearestPlayer->getTransform();
+        std::shared_ptr<Transform> playerTransform = nearestPlayer->getTransform();
         if (playerTransform && playerTransform->getPosition()) {
             float playerX = static_cast<float>(playerTransform->getPosition()->getX());
             float playerY = static_cast<float>(playerTransform->getPosition()->getY());
@@ -127,7 +127,7 @@ void BatAI::updateMovement(float deltaTime) {
         return;
     }
     
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return;
     
     Position* pos = transform->getPosition();
@@ -364,9 +364,12 @@ void BatAI::updateMovement(float deltaTime) {
 }
 
 void BatAI::chooseNewTarget() {
-    if (!_parent || !_grid || !_pathfinder) return;
-    
-    Transform* transform = _parent->getTransform();
+    if (!_parent || !_grid || !_pathfinder) {
+        std::cerr << "Ergens wordt er iets verneukt\n";
+        return;
+    }
+
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return;
     
     Position* pos = transform->getPosition();
@@ -473,7 +476,7 @@ bool BatAI::collidesWithDynamicObjects(float worldX, float worldY, float batWidt
         PhysicsComponent* physics = obj->getComponent<PhysicsComponent>();
         if (!physics) continue;
         
-        Transform* objTransform = obj->getTransform();
+        std::shared_ptr<Transform> objTransform = obj->getTransform();
         if (!objTransform) continue;
         
         Position* objPos = objTransform->getPosition();
@@ -502,7 +505,7 @@ bool BatAI::collidesWithDynamicObjects(float worldX, float worldY, float batWidt
 GameObject* BatAI::findNearestPlayer(float& distance) const {
     if (!_scene || !_parent) return nullptr;
     
-    Transform* batTransform = _parent->getTransform();
+    std::shared_ptr<Transform> batTransform = _parent->getTransform();
     if (!batTransform) return nullptr;
     
     Position* batPos = batTransform->getPosition();
@@ -522,7 +525,7 @@ GameObject* BatAI::findNearestPlayer(float& distance) const {
         BaseCharacter* character = dynamic_cast<BaseCharacter*>(obj.get());
         if (!character) continue;
         
-        Transform* playerTransform = obj->getTransform();
+        std::shared_ptr<Transform> playerTransform = obj->getTransform();
         if (!playerTransform) continue;
         
         Position* playerPos = playerTransform->getPosition();
@@ -548,7 +551,7 @@ GameObject* BatAI::findNearestPlayer(float& distance) const {
 void BatAI::chooseFleeTarget(float playerX, float playerY) {
     if (!_parent || !_grid || !_pathfinder) return;
     
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return;
     
     Position* pos = transform->getPosition();
@@ -677,7 +680,7 @@ void BatAI::syncToNetwork() {
     if (_objectId == -1) return;
     
     // Send current position instead of direction
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return;
     
     Position* pos = transform->getPosition();
@@ -704,7 +707,7 @@ void BatAI::setNetworkPosition(float x, float y) {
 void BatAI::applyNetworkPosition() {
     if (!_parent) return;
     
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return;
     
     Position* pos = transform->getPosition();
@@ -772,7 +775,7 @@ float BatAI::getDirectionX() const {
         return 0.0f;
     }
     
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return 0.0f;
     
     Position* pos = transform->getPosition();
@@ -791,7 +794,7 @@ float BatAI::getDirectionY() const {
         return 0.0f;
     }
     
-    Transform* transform = _parent->getTransform();
+    std::shared_ptr<Transform> transform = _parent->getTransform();
     if (!transform) return 0.0f;
     
     Position* pos = transform->getPosition();

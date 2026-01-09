@@ -56,14 +56,14 @@ private:
     void checkCollisionInternal(BaseCharacter* character) {
         if (!character) return;
         
-        auto* doorTransform = getTransform();
+        std::shared_ptr<Transform> doorTransform = getTransform();
         if (!doorTransform) return;
         
         auto* doorPos = doorTransform->getPosition();
         auto* doorSize = doorTransform->getSize();
         if (!doorPos || !doorSize) return;
         
-        auto* charTransform = character->getTransform();
+        std::shared_ptr<Transform> charTransform = character->getTransform();
         if (!charTransform) return;
         
         auto* charPos = charTransform->getPosition();

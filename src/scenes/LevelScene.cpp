@@ -88,7 +88,7 @@ void LevelScene::onInitialRender() {
     setupCharacters();
 
     std::cout << "[LevelScene] Creating bat..." << std::endl;
-    createBat();
+    // createBat();
 
 
     std::cout << "[LevelScene] Setting up HUD..." << std::endl;
