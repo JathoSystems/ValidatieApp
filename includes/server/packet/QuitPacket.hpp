@@ -12,7 +12,11 @@ private:
 public:
     QuitPacket() {
         packetId = 120;
+        try {
         _lobby = std::stoi(GameState::getInstance().get("lobby"));
+        } catch (...) {
+            std::cerr << "Could notn get current lobby!\n";
+        }
     }
 
     void serialize() override {
