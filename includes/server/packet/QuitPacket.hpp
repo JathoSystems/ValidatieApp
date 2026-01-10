@@ -8,7 +8,7 @@
 
 class QuitPacket : public Packet {
 private:
-    int _lobby;
+    int _lobby = 1;
 public:
     QuitPacket() {
         packetId = 120;

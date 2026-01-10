@@ -44,9 +44,6 @@ public:
 
         if (_peopleAtDoor >= 2) {
             if (_isOnline && _network) {
-                int nextLevel = _levelNumber + 1;
-
-
                 QuitPacket packet;
                 packet.serialize();
                 _network->send(packet);
