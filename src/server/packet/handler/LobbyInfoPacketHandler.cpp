@@ -82,11 +82,14 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
 
         eventQueue.push_back([sceneSystem, levelSceneName, levelId, network, eventManager]() {
             // Check if level scene already exists
-            Scene* existingLevel = sceneSystem->getScene(levelSceneName);
-            if (!existingLevel) {
+                Scene* existingLevel = sceneSystem->getScene(levelSceneName);
+                if (existingLevel) {
+                    std::cout << "[LobbyInfo] Old level found (" << levelSceneName << "), forcing removal." << std::endl;
+                    sceneSystem->removeScene(levelSceneName);
+                }
+
                 auto newLevelScene = std::make_unique<LevelScene>(levelId, true, network, eventManager);
                 sceneSystem->addScene(std::move(newLevelScene));
-            }
         });
     }
 }

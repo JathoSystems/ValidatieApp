@@ -12,6 +12,7 @@
 #include "Scenes/SceneSystem.h"
 #include "bat/BatAI.h"
 #include "grid/GridManager.h"
+#include "server/GlobalFlags.h"
 
 class SpawnEvent : public IEvent {
 private:
@@ -91,10 +92,17 @@ public:
     }
 
     void apply(GameObject * gameObject) override {
+        if (GlobalFlags::isLevelCleaning) {
+            return;
+        }
         spawn();
     }
 
     void spawn() {
+        if (GlobalFlags::isLevelCleaning) {
+            return;
+        }
+
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             Transform* transform = existingObj->getTransform();
