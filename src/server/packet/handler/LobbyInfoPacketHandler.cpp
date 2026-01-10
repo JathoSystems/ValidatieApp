@@ -23,6 +23,8 @@ extern std::vector<std::function<void()>> eventQueue;
 static std::shared_ptr<NetworkSystem> g_network = nullptr;
 static EventManager* g_eventManager = nullptr;
 
+extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+
 void LobbyInfoPacketHandler::setNetworkAndEventManager(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) {
     g_network = network;
     g_eventManager = eventManager;
@@ -69,8 +71,12 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
             auto eventManager = g_eventManager;
             eventQueue.push_back([sceneSystem, levelSceneName, levelId, network, eventManager]() {
                 // addScene handles duplicates, so we can just try to add it
-                auto newLevelScene = std::make_unique<LevelScene>(levelId, true, network, eventManager);
-                sceneSystem->addScene(std::move(newLevelScene));
+                auto scene = g_levels[levelId]();
+
+                if (LevelScene* lvl = dynamic_cast<LevelScene*>(scene.get()))
+                    lvl->toggleOnline(network, eventManager);
+
+                sceneSystem->addScene(std::move(scene));
             });
         }
     }

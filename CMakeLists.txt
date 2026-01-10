@@ -55,8 +55,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/scenes/Game.cpp
         src/server/packet/handler/PlayerAssignPacketHandler.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
-        src/server/packet/handler/GameReadyPacketHandler.cpp
-        includes/server/packet/handler/GameReadyPacketHandler.hpp
         src/scenes/RestartScene.cpp
         includes/scenes/RestartScene.hpp
         src/cell/Liquid.cpp
@@ -92,6 +90,14 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/bat/events/BatMoveEvent.cpp
         includes/SpawnEvent.hpp
         src/SpawnEvent.cpp
+        src/server/packet/handler/GameReadyPacketHandler.cpp
+        includes/server/packet/handler/GameReadyPacketHandler.hpp
+        includes/LevelSwitcher.hpp
+        src/LevelSwitcher.cpp
+        includes/scenes/levels/Level1Scene.hpp
+        src/scenes/levels/Level1Scene.cpp
+        includes/scenes/levels/Level2Scene.hpp
+        src/scenes/levels/Level2Scene.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -125,8 +131,6 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/GameReady.hpp
         src/server/packet/handler/PlayerAssignPacketHandler.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
-        src/server/packet/handler/GameReadyPacketHandler.cpp
-        includes/server/packet/handler/GameReadyPacketHandler.hpp
         src/server/packet/handler/LobbyInfoPacketHandler.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
@@ -168,14 +172,14 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/diamond/BlueDiamond.hpp
         src/diamond/BlueDiamond.cpp
         includes/door/Door.hpp
+        src/server/packet/handler/GameReadyPacketHandler.cpp
+        includes/server/packet/handler/GameReadyPacketHandler.hpp
         includes/server/packet/NextLevelPacket.hpp
         includes/server/packet/handler/NextLevelHandler.hpp
         includes/LevelSwitcher.hpp
         src/LevelSwitcher.cpp
         includes/scenes/levels/Level1Scene.hpp
         src/scenes/levels/Level1Scene.cpp
-        includes/scenes/levels/Level3Scene.hpp
-        src/scenes/levels/Level3Scene.cpp
         includes/scenes/levels/Level2Scene.hpp
         src/scenes/levels/Level2Scene.cpp
 )

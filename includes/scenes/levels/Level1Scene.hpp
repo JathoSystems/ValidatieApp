@@ -7,6 +7,9 @@
 
 #include "scenes/LevelScene.hpp"
 
+class Fireboy;
+class Watergirl;
+
 class Level1Scene : public LevelScene {
 public:
     Level1Scene(bool isOnline = false, std::shared_ptr<NetworkSystem> network = nullptr,

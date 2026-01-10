@@ -4,7 +4,6 @@
 #include "UI/Button.h"
 #include "UI/Text.h"
 #include "Scenes/Camera/FixedCamera.h"
-#include "Engine/GameEngine.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
 #include <asio.hpp>
@@ -12,10 +11,14 @@
 
 #include "scenes/levels/Level1Scene.hpp"
 #include "scenes/levels/Level2Scene.hpp"
-#include "scenes/levels/Level3Scene.hpp"
+
+extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
 
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager)
     : _sceneSystem(sceneSystem), _network(network), _eventManager(eventManager) {
+
+    g_levels[1] = []() { return std::make_unique<Level1Scene>(); };
+    g_levels[2] = []() { return std::make_unique<Level2Scene>(); };
 }
 
 void LevelSelector::createLevelSelectorScene() {
@@ -50,11 +53,12 @@ void LevelSelector::createLevelSelectorScene() {
     float cardHeight = 200;
     float spacing = 70;
 
-    for (int i = 1; i <= 4; i++) {
-        float x = startX + ((i - 1) % 2) * (cardWidth + spacing);
-        float y = startY + ((i - 1) / 2) * (cardHeight + spacing);
+    // Loop alleen over beschikbare levels in g_levels map
+    for (const auto& [levelNum, factory] : g_levels) {
+        float x = startX + ((levelNum - 1) % 2) * (cardWidth + spacing);
+        float y = startY + ((levelNum - 1) / 2) * (cardHeight + spacing);
 
-        auto levelText = std::make_unique<Text>("Level " + std::to_string(i));
+        auto levelText = std::make_unique<Text>("Level " + std::to_string(levelNum));
         levelText->setColor(std::make_unique<Color>(255, 255, 255));
         auto levelTextObj = std::make_unique<GameObject>();
         levelTextObj->addComponent(std::move(levelText));
@@ -64,7 +68,6 @@ void LevelSelector::createLevelSelectorScene() {
         levelTextObj->getTransform()->getSize()->setHeight(40);
         selectorScene->addObject(std::move(levelTextObj));
 
-        int levelNum = i;
         auto playButton = std::make_unique<Button>("Play", std::make_unique<Color>(0, 128, 255));
         playButton->setOnClick([this, levelNum]() {
             onPlayClicked(levelNum);
@@ -98,26 +101,25 @@ void LevelSelector::createLevelSelectorScene() {
 }
 
 void LevelSelector::onPlayClicked(int levelNumber) {
-    std::string sceneName = "level_" + std::to_string(levelNumber);
-    std::cout << levelNumber << std::endl;
-
-    std::unique_ptr<Scene> scene;
-    switch (levelNumber) {
-        case 3: scene = std::make_unique<Level3Scene>(); break;
-        case 2: scene = std::make_unique<Level2Scene>(); break;
-        default: scene = std::make_unique<Level1Scene>(); break;
+    // Check of het level bestaat in g_levels
+    if (g_levels.find(levelNumber) == g_levels.end()) {
+        std::cerr << "Level " << levelNumber << " not found!" << std::endl;
+        return;
     }
 
+    std::string sceneName = "level_" + std::to_string(levelNumber);
+
+    std::unique_ptr<Scene> scene = g_levels[levelNumber]();
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) {
         _sceneSystem->addScene(std::move(scene));
     }
-    
+
     _sceneSystem->setScene(sceneName);
 }
 
 void LevelSelector::setupNetworkCallbacks() {
     if (_networkCallbacksSetup) return;
-    
+
     _network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
         if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
             spawn->spawn();
@@ -139,17 +141,21 @@ void LevelSelector::setupNetworkCallbacks() {
         if (!object) return;
         event->apply(object);
     });
-    
+
     _networkCallbacksSetup = true;
 }
 
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
-    // Navigate to room selection scene for this level
+    // Check of het level bestaat in g_levels
+    if (g_levels.find(levelNumber) == g_levels.end()) {
+        std::cerr << "Level " << levelNumber << " not found!" << std::endl;
+        return;
+    }
+
     std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
-    
-    // Create the room selection scene (addScene handles duplicates or we can track)
-    auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber);
+
+    auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber, g_levels[levelNumber]);
     _sceneSystem->addScene(std::move(roomScene));
-    
+
     _sceneSystem->setScene(sceneName);
 }

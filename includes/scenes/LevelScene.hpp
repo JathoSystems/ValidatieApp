@@ -21,7 +21,14 @@ public:
     LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
                EventManager *eventManager);
 
-    ~LevelScene();
+    virtual ~LevelScene();
+
+    void toggleOnline(std::shared_ptr<NetworkSystem> network,
+               EventManager *eventManager) {
+        _isOnline = true;
+        _network = network;
+        _eventManager = eventManager;
+    }
 
     void onInitialRender() override final;
     void onUpdate(float deltaTime) override final;
@@ -58,11 +65,9 @@ public:
     }
 protected:
     // Abstract methods that each level must implement
-    virtual void createLevelGrid() {};
-    virtual void setupLevelSpecifics() {};
-    virtual std::string getLevelName() const {
-        return "Level";
-    };
+    virtual void createLevelGrid() = 0;
+    virtual void setupLevelSpecifics() = 0;
+    virtual std::string getLevelName() const = 0;
 
     // Helper methods available to all levels
     void createGroundBlock(LevelGrid* grid, int x, int y);

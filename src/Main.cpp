@@ -70,6 +70,7 @@ std::string getLocalIPAddress() {
 
 extern std::mutex eventMutex;
 extern std::vector<std::function<void()>> eventQueue;
+std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
 
 int main() {
     try {

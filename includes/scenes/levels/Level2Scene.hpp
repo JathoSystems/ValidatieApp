@@ -15,7 +15,7 @@ public:
 protected:
     void createLevelGrid() override;
     void setupLevelSpecifics() override;
-    std::string getLevelName() const override { return "Level 3: Lost without you"; }
+    std::string getLevelName() const override { return "Level 2: Lost without you"; }
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_LEVEL2SCENE_HPP

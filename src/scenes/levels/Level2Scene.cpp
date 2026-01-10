@@ -44,9 +44,9 @@ void Level2Scene::createLevelGrid() {
         if (x >= gapStartX) continue; // gat
 
         if (x <= 3) levelGrid->setCellType(x, line1Y, CellType::Ground);
-        else if (x >= 4 && x <=6) levelGrid->setCellType(x, line1Y, CellType::Lava);
-        else if (x >= 7 && x <= 9) levelGrid->setCellType(x, line1Y, CellType::Ground);
-        else if (x >= 10 && x <= 12) levelGrid->setCellType(x, line1Y, CellType::Water);
+        else if (x >= 4 && x <=5) levelGrid->setCellType(x, line1Y, CellType::Lava);
+        else if (x >= 6 && x <= 9) levelGrid->setCellType(x, line1Y, CellType::Ground);
+        else if (x >= 10 && x <= 11) levelGrid->setCellType(x, line1Y, CellType::Water);
         else levelGrid->setCellType(x, line1Y, CellType::Ground);
     }
 
@@ -55,9 +55,9 @@ void Level2Scene::createLevelGrid() {
         if (x >= gapStartX) continue; // gat
 
         if (x <= 3) levelGrid->setCellType(x, line2Y, CellType::Ground);
-        else if (x >= 4 && x <=6) levelGrid->setCellType(x, line2Y, CellType::Water);
+        else if (x >= 4 && x <=5) levelGrid->setCellType(x, line2Y, CellType::Water);
         else if (x >= 7 && x <= 9) levelGrid->setCellType(x, line2Y, CellType::Ground);
-        else if (x >= 10 && x <= 12) levelGrid->setCellType(x, line2Y, CellType::Lava);
+        else if (x >= 10 && x <= 11) levelGrid->setCellType(x, line2Y, CellType::Lava);
         else levelGrid->setCellType(x, line2Y, CellType::Ground);
     }
 

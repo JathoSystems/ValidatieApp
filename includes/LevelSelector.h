@@ -4,6 +4,7 @@
 #include <memory>
 #include "Events/EventManager.h"
 #include "Network/NetworkSystem.h"
+#include "scenes/LevelScene.hpp"
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
 

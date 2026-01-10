@@ -11,7 +11,7 @@
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_MAGENTA "\033[35m"
-#define JUMP_VELOCITY -1200.0f
+#define JUMP_VELOCITY -200000.0f
 
 BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId,
                                                  EventManager *eventManager, KeyBindings bindings, bool active) {
