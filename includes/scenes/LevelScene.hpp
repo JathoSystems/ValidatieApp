@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "SpawnEvent.hpp"
+#include "server/packet/QuitPacket.hpp"
 
 class LevelGrid;
 class Fireboy;
@@ -45,14 +46,14 @@ public:
             if (_isOnline && _network) {
                 int nextLevel = _levelNumber + 1;
 
-                NextLevelPacket packet(nextLevel);
+
+                QuitPacket packet;
                 packet.serialize();
                 _network->send(packet);
                 return;
             }
 
-            LevelSwitcher switcher{_network, _eventManager};
-            switcher.openLevel(_levelNumber + 1, false);
+            GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
         }
     }
 
