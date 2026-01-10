@@ -141,6 +141,5 @@ void RoomSelectionScene::updateLobbyIdDisplay() {
     // Update the display text using stored pointer
     if (_displayTextPtr) {
         _displayTextPtr->setText(std::to_string(_currentLobbyIdInput));
-        GameState::getInstance().set("lobby", std::to_string(_currentLobbyIdInput));
     }
 }

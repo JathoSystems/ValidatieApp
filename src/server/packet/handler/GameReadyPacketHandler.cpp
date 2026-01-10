@@ -8,7 +8,6 @@
 #include "Engine/GameEngine.h"
 #include "Scenes/SceneSystem.h"
 #include "Network/NetworkSystem.h"
-#include "Events/EventManager.h"
 #include <mutex>
 #include <vector>
 #include <functional>
@@ -30,6 +29,7 @@ void GameReadyPacketHandler::handle(const Packet &packet) {
         
         // Navigate to the level scene (should have been created by LobbyInfoPacketHandler)
         std::string sceneName = "level_" + std::to_string(gameReady.levelId) + "_online";
+        GameState::getInstance().set("lobby", std::to_string(gameReady.levelId));
 
         std::lock_guard<std::mutex> lock(eventMutex);
         eventQueue.push_back([sceneSystem, sceneName]() {
