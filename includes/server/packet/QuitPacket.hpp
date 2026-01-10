@@ -5,6 +5,7 @@
 #ifndef VUURJONGEN_WATERMEISJE_GAME_QUITPACKET_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_QUITPACKET_HPP
 #include "Network/Packet/Packet.h"
+#include "Network/GameState.hpp"
 
 class QuitPacket : public Packet {
 private:

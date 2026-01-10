@@ -10,6 +10,10 @@
 #include <asio.hpp>
 #include <iostream>
 
+#include "scenes/levels/Level1Scene.hpp"
+#include "scenes/levels/Level2Scene.hpp"
+#include "scenes/levels/Level3Scene.hpp"
+
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager)
     : _sceneSystem(sceneSystem), _network(network), _eventManager(eventManager) {
 }
@@ -95,10 +99,17 @@ void LevelSelector::createLevelSelectorScene() {
 
 void LevelSelector::onPlayClicked(int levelNumber) {
     std::string sceneName = "level_" + std::to_string(levelNumber);
-    
+    std::cout << levelNumber << std::endl;
+
+    std::unique_ptr<Scene> scene;
+    switch (levelNumber) {
+        case 3: scene = std::make_unique<Level3Scene>(); break;
+        case 2: scene = std::make_unique<Level2Scene>(); break;
+        default: scene = std::make_unique<Level1Scene>(); break;
+    }
+
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) {
-        auto levelScene = std::make_unique<LevelScene>(levelNumber, false, nullptr, _eventManager);
-        _sceneSystem->addScene(std::move(levelScene));
+        _sceneSystem->addScene(std::move(scene));
     }
     
     _sceneSystem->setScene(sceneName);

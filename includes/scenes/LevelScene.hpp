@@ -1,43 +1,37 @@
 #ifndef VUURJONGEN_WATERMEISJE_LEVELSCENE_HPP
 #define VUURJONGEN_WATERMEISJE_LEVELSCENE_HPP
 
-#include "Events/EventManager.h"
-#include "Network/NetworkSystem.h"
 #include "Scenes/Scene.h"
-#include "grid/LevelGrid.h"
-#include "LevelSwitcher.hpp"
-#include "server/packet/NextLevelPacket.hpp"
-#include "UI/Text.h"
+#include "Network/NetworkSystem.h"
+#include "Events/EventManager.h"
+#include <memory>
 #include <vector>
 
-#include "SpawnEvent.hpp"
+#include "LevelSwitcher.hpp"
+#include "server/packet/NextLevelPacket.hpp"
 
-class LevelGrid;
 class Fireboy;
 class Watergirl;
+class Text;
 class Door;
+class LevelGrid;
 
 class LevelScene : public Scene {
 public:
-    explicit LevelScene(int levelNumber, bool isOnline = false,
-                        std::shared_ptr<NetworkSystem> network = nullptr,
-                        EventManager *eventManager = nullptr);
+    LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
+               EventManager *eventManager);
 
     ~LevelScene();
 
-    void onInitialRender() override;
+    void onInitialRender() override final;
+    void onUpdate(float deltaTime) override final;
 
-    void onUpdate(float deltaTime) override;
+    Fireboy *getFireboy(Scene *scene);
 
-    void checkDiamondCollisions();
+    Watergirl *getWatergirl(Scene *scene);
 
-    void resetCharacterPointers() {
-        _fireboy = nullptr;
-        _watergirl = nullptr;
-        _fireboyDiamondText = nullptr;
-        _watergirlDiamondText = nullptr;
-    }
-
+    int getPeopleAtDoor() const { return _peopleAtDoor; }
+    void incrementPeopleAtDoor() { _peopleAtDoor++; }
     void reachedDoor() {
         _peopleAtDoor++;
 
@@ -62,40 +56,43 @@ public:
             std::cout << "Character left door. People at door: " << _peopleAtDoor << "/2" << std::endl;
         }
     }
+protected:
+    // Abstract methods that each level must implement
+    virtual void createLevelGrid() {};
+    virtual void setupLevelSpecifics() {};
+    virtual std::string getLevelName() const {
+        return "Level";
+    };
 
-private:
-    void createBasicLevelGrid();
-
-    void checkDoorCollisions();
-
-    void setupLevel();
-
+    // Helper methods available to all levels
+    void createGroundBlock(LevelGrid* grid, int x, int y);
+    void createCellObjects(LevelGrid* grid);
+    void setupBaseLevel();
     void setupCharacters();
-
     void setupHUD();
-
-    void cleanup();
-
-    void updateDiamondCounters();
-
     void createBat();
 
+    // Common level data
     int _levelNumber;
     bool _isOnline;
     std::shared_ptr<NetworkSystem> _network;
-    EventManager *_eventManager;
-    bool _isInitialized;
-    bool _batCreated;
+    EventManager* _eventManager;
+
+    Fireboy* _fireboy;
+    Watergirl* _watergirl;
+    Text* _fireboyDiamondText;
+    Text* _watergirlDiamondText;
+    std::vector<Door*> _doors;
+    int _peopleAtDoor;
     int _batCount;
 
-    Fireboy *_fireboy = nullptr;
-    Watergirl *_watergirl = nullptr;
+private:
+    void cleanup();
+    void checkDiamondCollisions();
+    void updateDiamondCounters();
+    void checkDoorCollisions();
 
-    Text *_fireboyDiamondText = nullptr;
-    Text *_watergirlDiamondText = nullptr;
-
-    int _peopleAtDoor = 0;
-    std::vector<Door*> _doors;
+    bool _isInitialized;
+    bool _batCreated;
 };
-
 #endif

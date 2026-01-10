@@ -22,7 +22,7 @@ private:
     bool _shouldJump = false;
     Direction _movementDirection = Direction::NONE;
     float _movementSpeed = 300.0f;
-    float _jumpForce = 50000.0f;
+    float _jumpForce = 5000000.0f;
     EventManager *_eventManager;
     int _parentId;
     std::shared_ptr<NetworkSystem> _network;

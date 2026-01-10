@@ -27,7 +27,6 @@
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
 
-// FIX 1: Definieer de statische lijst (anders krijg je een linker error)
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
 
 LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
@@ -67,8 +66,6 @@ void LevelScene::onInitialRender() {
             _isInitialized = false;
             return;
         }
-
-        std::cout << "[LevelScene] Scene is active, proceeding with initialization" << std::endl;
     }
 
     if (_isInitialized) {
@@ -82,11 +79,18 @@ void LevelScene::onInitialRender() {
     _watergirl = nullptr;
     _peopleAtDoor = 0;
 
-    std::cout << "[LevelScene] Creating grid..." << std::endl;
-    createBasicLevelGrid();
+    std::unique_ptr<GameObject> background = std::make_unique<GameObject>();
+    background->getTransform()->getPosition()->setX(0);
+    background->getTransform()->getPosition()->setY(0);
+    background->addComponent(std::make_unique<SpriteRenderer>("resources/bg.png"));
+    addObject(std::move(background));
 
-    std::cout << "[LevelScene] Setting up level..." << std::endl;
-    setupLevel();
+    std::cout << "[LevelScene] Creating grid..." << std::endl;
+    createLevelGrid(); // Call the derived class implementation
+
+    std::cout << "[LevelScene] Setting up base level..." << std::endl;
+    setupBaseLevel();
+
 
     std::cout << "[LevelScene] Setting up characters..." << std::endl;
     setupCharacters();
@@ -98,10 +102,10 @@ void LevelScene::onInitialRender() {
     setupHUD();
 
     _isInitialized = true;
-
-    // FIX 2: Level is klaar! Check of er vleermuizen in de wachtrij staan.
     SpawnEvent::processPending();
 
+    std::cout << "[LevelScene] Setting up level specifics..." << std::endl;
+    setupLevelSpecifics(); // Call the derived class implementation
     std::cout << "[LevelScene] Initialize completed" << std::endl;
 }
 
@@ -126,7 +130,6 @@ void LevelScene::cleanup() {
     }
     _batCount = 0;
 
-    // Leeg ook de wachtrij voor de zekerheid
     SpawnEvent::_pendingEvents.clear();
 
     std::string sceneName = getName();
@@ -135,10 +138,6 @@ void LevelScene::cleanup() {
     _isInitialized = false;
     std::cout << "[LevelScene] Cleanup: Complete" << std::endl;
 }
-
-// ... De rest van de functies blijven hetzelfde ...
-// (setupHUD, onUpdate, getFireboy, getWatergirl, checkDiamondCollisions,
-// updateDiamondCounters, createBasicLevelGrid, checkDoorCollisions, setupLevel, setupCharacters)
 
 void LevelScene::setupHUD() {
     auto hud = std::make_unique<HUD>();
@@ -184,7 +183,7 @@ void LevelScene::onUpdate(float deltaTime) {
     checkDoorCollisions();
 }
 
-Fireboy *getFireboy(Scene *scene) {
+Fireboy * LevelScene::getFireboy(Scene *scene) {
     auto &objects = scene->getObjects();
     for (auto &obj: objects) {
         if (!obj) continue;
@@ -195,7 +194,7 @@ Fireboy *getFireboy(Scene *scene) {
     return nullptr;
 }
 
-Watergirl *getWatergirl(Scene *scene) {
+Watergirl *LevelScene::getWatergirl(Scene *scene) {
     auto &objects = scene->getObjects();
     for (auto &obj: objects) {
         if (!obj) continue;
@@ -232,26 +231,6 @@ void LevelScene::updateDiamondCounters() {
     }
 }
 
-void LevelScene::createBasicLevelGrid() {
-    auto levelGrid = std::make_unique<LevelGrid>(32, 18, 40);
-    for (int x = 0; x < 32; x++) levelGrid->setCellType(x, 17, CellType::Ground);
-    levelGrid->setCellType(15, 16, CellType::RedDiamond);
-    levelGrid->setCellType(18, 16, CellType::BlueDiamond);
-    levelGrid->setCellType(3, 15, CellType::RedDoor);
-    levelGrid->setCellType(22, 15, CellType::BlueDoor);
-    for (int y = 0; y < 18; y++) {
-        levelGrid->setCellType(0, y, CellType::Ground);
-        levelGrid->setCellType(31, y, CellType::Ground);
-    }
-    for (int x = 5; x < 12; x++) levelGrid->setCellType(x, 12, CellType::Ground);
-    for (int x = 20; x < 27; x++) {
-        levelGrid->setCellType(x, 12, CellType::Ground);
-        levelGrid->setCellType(x, 12, CellType::Lava);
-    }
-    for (int x = 12; x < 20; x++) levelGrid->setCellType(x, 8, CellType::Ground);
-    GridManager::registerGrid(getName(), std::move(levelGrid));
-}
-
 void LevelScene::checkDoorCollisions() {
     if (!_isInitialized) return;
     Fireboy* fire = getFireboy(this);
@@ -267,7 +246,58 @@ void LevelScene::checkDoorCollisions() {
     }
 }
 
-void LevelScene::setupLevel() {
+void LevelScene::createGroundBlock(LevelGrid* grid, int x, int y) {
+    GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+
+    int cellSize = grid->getCellSize();
+    auto block = std::make_unique<GameObject>();
+    block->getTransform()->getPosition()->setX(x * cellSize + cellSize / 2.0f);
+    block->getTransform()->getPosition()->setY(y * cellSize + cellSize / 2.0f);
+    block->getTransform()->getSize()->setWidth(cellSize);
+    block->getTransform()->getSize()->setHeight(cellSize);
+    block->setLayer(0);
+
+    auto physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
+    physics->setBodyType(BodyType::STATIC);
+    physics->setCollider(std::make_unique<BoxCollider>(cellSize, cellSize));
+    physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
+    PhysicsComponent *physicsPtr = physics.get();
+    block->addComponent(std::move(physics));
+    physicsSystem->registerComponent(physicsPtr);
+
+    auto sprite = std::make_unique<SpriteRenderer>("resources/square.png");
+    block->addComponent(std::move(sprite));
+    addObject(std::move(block));
+}
+
+void LevelScene::createCellObjects(LevelGrid* grid) {
+    int cellSize = grid->getCellSize();
+    for (int x = 0; x < grid->getWidth(); ++x) {
+        for (int y = 0; y < grid->getHeight(); ++y) {
+            CellType type = grid->getCellType(x, y);
+            if (type == CellType::Ground) {
+                createGroundBlock(grid, x, y);
+            }
+            if (type == CellType::Water) addObject(std::make_unique<Water>(grid, x, y));
+            if (type == CellType::Lava) addObject(std::make_unique<Lava>(grid, x, y));
+            if (type == CellType::RedDiamond) addObject(std::make_unique<RedDiamond>(grid, x, y));
+            if (type == CellType::BlueDiamond) addObject(std::make_unique<BlueDiamond>(grid, x, y));
+            if (type == CellType::RedDoor) {
+                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y);
+                _doors.push_back(door.get());
+                addObject(std::move(door));
+            }
+            if (type == CellType::BlueDoor) {
+                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y, "blue");
+                _doors.push_back(door.get());
+                addObject(std::move(door));
+            }
+        }
+    }
+}
+
+void LevelScene::setupBaseLevel() {
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     physicsSystem->setGravity(0.0f, 981.0f);
@@ -275,7 +305,7 @@ void LevelScene::setupLevel() {
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     setCamera(std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360)));
 
-    auto levelText = std::make_unique<Text>("Level " + std::to_string(_levelNumber) + (_isOnline ? " (Online)" : ""));
+    auto levelText = std::make_unique<Text>(getLevelName() + (_isOnline ? " (Online)" : ""));
     levelText->setColor(std::make_unique<Color>(255, 255, 255));
     auto levelTextObj = std::make_unique<GameObject>();
     levelTextObj->addComponent(std::move(levelText));
@@ -296,51 +326,11 @@ void LevelScene::setupLevel() {
     backButtonObj->getTransform()->getSize()->setWidth(80);
     backButtonObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(backButtonObj));
-
-    LevelGrid* grid = GridManager::getGrid(getName());
-    if (!grid) return;
-
-    int cellSize = grid->getCellSize();
-    for (int x = 0; x < grid->getWidth(); ++x) {
-        for (int y = 0; y < grid->getHeight(); ++y) {
-            CellType type = grid->getCellType(x, y);
-            if (type == CellType::Ground) {
-                auto block = std::make_unique<GameObject>();
-                block->getTransform()->getPosition()->setX(x * cellSize + cellSize / 2.0f);
-                block->getTransform()->getPosition()->setY(y * cellSize + cellSize / 2.0f);
-                block->getTransform()->getSize()->setWidth(cellSize);
-                block->getTransform()->getSize()->setHeight(cellSize);
-                block->setLayer(0);
-                auto physics = std::make_unique<PhysicsComponent>(physicsSystem->getBox2DFacade());
-                physics->setBodyType(BodyType::STATIC);
-                physics->setCollider(std::make_unique<BoxCollider>(cellSize, cellSize));
-                physics->setMaterial(Material(1.0f, 0.8f, 0.0f));
-                PhysicsComponent *physicsPtr = physics.get();
-                block->addComponent(std::move(physics));
-                physicsSystem->registerComponent(physicsPtr);
-                auto sprite = std::make_unique<SpriteRenderer>("resources/square.png");
-                block->addComponent(std::move(sprite));
-                addObject(std::move(block));
-            }
-            if (type == CellType::Water) addObject(std::make_unique<Water>(grid, x, y));
-            if (type == CellType::Lava) addObject(std::make_unique<Lava>(grid, x, y));
-            if (type == CellType::RedDiamond) addObject(std::make_unique<RedDiamond>(grid, x, y));
-            if (type == CellType::BlueDiamond) addObject(std::make_unique<BlueDiamond>(grid, x, y));
-            if (type == CellType::RedDoor) {
-                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y);
-                _doors.push_back(door.get());
-                addObject(std::move(door));
-            }
-            if (type == CellType::BlueDoor) {
-                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y, "blue");
-                _doors.push_back(door.get());
-                addObject(std::move(door));
-            }
-        }
-    }
 }
 
 void LevelScene::setupCharacters() {
+    if (_watergirl) return;
+
     GameEngine *gameEngine = &GameEngine::getInstance();
     const int FIREBOY_ID = 99;
     const int WATERGIRL_ID = 100;
