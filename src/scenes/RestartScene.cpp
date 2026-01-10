@@ -23,16 +23,23 @@ void RestartScene::onInitialRender() {
     std::unique_ptr<GameObject> background = std::make_unique<GameObject>();
     std::unique_ptr<Button> restartButton = std::make_unique<Button>("Restart", std::make_unique<Color>(0, 255, 0));
     restartButton->setOnClick([this]() {
-        std::cout << "PREV " << _previousLevel << std::endl;
-        if (_isOnline) {
-            RestartPacket p{_previousLevel};
-            _network->send(p);
-        } else {
-            GameEngine *engine = &GameEngine::getInstance();
-            SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
-            
-            // Switch to the previous level scene - it will reinitialize itself
+        GameEngine *engine = &GameEngine::getInstance();
+        SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
+
+        // Get the level scene
+        Scene* oldScene = sceneSystem->getScene(_previousLevel);
+        if (auto* levelScene = dynamic_cast<LevelScene*>(oldScene)) {
+            // Do soft reset
+            levelScene->resetLevel();
+
+            // Just switch to the scene - DON'T call onInitialRender() again!
+            // The scene is already initialized, we just need to make it active
             sceneSystem->setScene(_previousLevel);
+
+            if (_isOnline) {
+                RestartPacket p{_previousLevel};
+                _network->send(p);
+            }
         }
     });
     background->addComponent(std::move(restartButton));
@@ -43,11 +50,28 @@ void RestartScene::onInitialRender() {
     std::unique_ptr<Button> mainMenuButton = std::make_unique<Button>("Main Menu",
                                                                       std::make_unique<Color>(255, 0, 0));
     mainMenuButton->setOnClick([this]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
+        std::cout << "[RestartScene] Going to Main Menu (Hard Cleanup)..." << std::endl;
+        GameEngine *engine = &GameEngine::getInstance();
+        SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
+
         if (_isOnline) {
             QuitPacket quit;
             _network->send(quit);
         }
+
+        // Clean up the level scene BEFORE switching
+        if (!_previousLevel.empty()) {
+            Scene* levelScene = sceneSystem->getScene(_previousLevel);
+            if (auto* level = dynamic_cast<LevelScene*>(levelScene)) {
+                level->cleanup();
+            }
+            sceneSystem->removeScene(_previousLevel);
+        }
+
+        GameState::getInstance().remove("lobby");
+        GameState::getInstance().remove("role");
+
+        sceneSystem->setScene("MainMenu");
     });
     mainMenuButtonObject->addComponent(std::move(mainMenuButton));
     mainMenuButtonObject->getTransform()->getPosition()->setX(640);

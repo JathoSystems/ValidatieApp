@@ -9,6 +9,7 @@
 #include "characters/BaseCharacter.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "Physics/PhysicsComponent.h"
+#include "server/GlobalFlags.h"
 
 std::string JumpEvent::getName() const {
     return "jump";
@@ -26,6 +27,13 @@ Data JumpEvent::deserialize(const Package &package) {
 }
 
 void JumpEvent::apply(GameObject *gameObject) {
+    if (!gameObject) {
+        return;
+    }
+    if (GlobalFlags::isLevelCleaning) {
+        return;
+    }
+
     BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject);
     if (!baseChar) return;
     BaseCharacterController *controller = baseChar->getController();

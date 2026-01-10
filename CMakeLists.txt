@@ -172,6 +172,7 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/handler/NextLevelHandler.hpp
         includes/LevelSwitcher.hpp
         src/LevelSwitcher.cpp
+        includes/server/GlobalFlags.h
 )
 
 include_directories("includes")

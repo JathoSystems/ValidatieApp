@@ -26,6 +26,7 @@
 #include "GameObjects/Spritesheet/Animator.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
+#include "server/GlobalFlags.h"
 
 // FIX 1: Definieer de statische lijst (anders krijg je een linker error)
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
@@ -72,8 +73,8 @@ void LevelScene::onInitialRender() {
     }
 
     if (_isInitialized) {
-        std::cout << "[LevelScene] Performing cleanup before reinitialization..." << std::endl;
-        cleanup();
+        std::cout << "[LevelScene] Already initialized, skipping reinitialization" << std::endl;
+        return;  // ← Don't cleanup and reinitialize!
     }
 
     _fireboyDiamondText = nullptr;
@@ -99,14 +100,41 @@ void LevelScene::onInitialRender() {
 
     _isInitialized = true;
 
-    // FIX 2: Level is klaar! Check of er vleermuizen in de wachtrij staan.
+    GlobalFlags::isLevelCleaning = false;
     SpawnEvent::processPending();
 
     std::cout << "[LevelScene] Initialize completed" << std::endl;
 }
 
+
 void LevelScene::cleanup() {
+    if (!_isInitialized) return;
+
     std::cout << "[LevelScene] Cleanup: Clearing all references..." << std::endl;
+    GlobalFlags::isLevelCleaning = true;
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    ObjectRegistry::getInstance().removeObject(99);
+    ObjectRegistry::getInstance().removeObject(100);
+    for(int i = 1; i <= _batCount; i++) {
+        ObjectRegistry::getInstance().removeObject(i);
+    }
+    _batCount = 0;
+
+    if (_hud) {
+        _hud->clear();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    _objects.clear();
+
+    // 4. Events wissen
+    SpawnEvent::_pendingEvents.clear();
+
+    // 5. Grid verwijderen
+    std::string sceneName = getName();
+    GridManager::unregisterGrid(sceneName);
 
     _fireboyDiamondText = nullptr;
     _watergirlDiamondText = nullptr;
@@ -115,30 +143,9 @@ void LevelScene::cleanup() {
     _doors.clear();
     _peopleAtDoor = 0;
 
-    auto& objects = getObjects();
-    const_cast<std::vector<std::unique_ptr<GameObject>>&>(objects).clear();
-
-    ObjectRegistry::getInstance().removeObject(99);
-    ObjectRegistry::getInstance().removeObject(100);
-
-    for(int i = 1; i <= _batCount; i++) {
-        ObjectRegistry::getInstance().removeObject(i);
-    }
-    _batCount = 0;
-
-    // Leeg ook de wachtrij voor de zekerheid
-    SpawnEvent::_pendingEvents.clear();
-
-    std::string sceneName = getName();
-    GridManager::unregisterGrid(sceneName);
-
     _isInitialized = false;
     std::cout << "[LevelScene] Cleanup: Complete" << std::endl;
 }
-
-// ... De rest van de functies blijven hetzelfde ...
-// (setupHUD, onUpdate, getFireboy, getWatergirl, checkDiamondCollisions,
-// updateDiamondCounters, createBasicLevelGrid, checkDoorCollisions, setupLevel, setupCharacters)
 
 void LevelScene::setupHUD() {
     auto hud = std::make_unique<HUD>();
@@ -217,6 +224,132 @@ void LevelScene::checkDiamondCollisions() {
             blueDiamond->checkCollisionWith(getWatergirl(this));
         }
     }
+}
+
+void LevelScene::resetLevel() {
+    std::cout << "\n========================================" << std::endl;
+    std::cout << "[LevelScene] SOFT RESET STARTING" << std::endl;
+    std::cout << "========================================\n" << std::endl;
+
+    // 1. Reset flags
+    GlobalFlags::isLevelCleaning = false;
+    _levelFinished = false;
+    _peopleAtDoor = 0;
+    std::cout << "[RESET] Flags reset" << std::endl;
+
+    // 2. Find ALL characters in the scene (both local and remote controlled)
+    std::vector<Fireboy*> fireboys;
+    std::vector<Watergirl*> watergirls;
+
+    auto& objects = getObjects();
+    for (auto& obj : objects) {
+        if (!obj) continue;
+
+        if (Fireboy* fire = dynamic_cast<Fireboy*>(obj.get())) {
+            fireboys.push_back(fire);
+        }
+        else if (Watergirl* water = dynamic_cast<Watergirl*>(obj.get())) {
+            watergirls.push_back(water);
+        }
+    }
+
+    std::cout << "[RESET] Found " << fireboys.size() << " Fireboy(s) and "
+              << watergirls.size() << " Watergirl(s)" << std::endl;
+
+    // 3. Reset ALL Fireboys to their start position
+    for (Fireboy* fire : fireboys) {
+        if (!fire) continue;
+
+        fire->getTransform()->getPosition()->setX(200);
+        fire->getTransform()->getPosition()->setY(500);
+        fire->resetDiamonds();
+
+        if (auto* physics = fire->getComponent<PhysicsComponent>()) {
+            physics->setVelocity(0.0f, 0.0f);
+        }
+
+        _fireboy = fire; // Update pointer
+        std::cout << "[RESET] Reset Fireboy to (200, 500)" << std::endl;
+    }
+
+    // 4. Reset ALL Watergirls to their start position
+    for (Watergirl* water : watergirls) {
+        if (!water) continue;
+
+        water->getTransform()->getPosition()->setX(400);
+        water->getTransform()->getPosition()->setY(500);
+        water->resetDiamonds();
+
+        if (auto* physics = water->getComponent<PhysicsComponent>()) {
+            physics->setVelocity(0.0f, 0.0f);
+        }
+
+        _watergirl = water; // Update pointer
+        std::cout << "[RESET] Reset Watergirl to (400, 500)" << std::endl;
+    }
+
+    // 5. Collect diamond positions from grid
+    std::cout << "[RESET] Collecting diamond positions from grid..." << std::endl;
+    std::vector<std::pair<int, int>> redDiamondPositions;
+    std::vector<std::pair<int, int>> blueDiamondPositions;
+
+    LevelGrid* grid = GridManager::getGrid(getName());
+    if (grid) {
+        for (int x = 0; x < grid->getWidth(); ++x) {
+            for (int y = 0; y < grid->getHeight(); ++y) {
+                CellType type = grid->getCellType(x, y);
+                if (type == CellType::RedDiamond) {
+                    redDiamondPositions.push_back({x, y});
+                }
+                else if (type == CellType::BlueDiamond) {
+                    blueDiamondPositions.push_back({x, y});
+                }
+            }
+        }
+    }
+    std::cout << "[RESET] Found " << redDiamondPositions.size() << " red and "
+              << blueDiamondPositions.size() << " blue diamond positions" << std::endl;
+
+    // 6. Remove all existing diamonds
+    std::cout << "[RESET] Removing old diamonds..." << std::endl;
+    objects.erase(
+        std::remove_if(objects.begin(), objects.end(), [](const std::unique_ptr<GameObject>& obj) {
+            if (!obj) return false;
+            return dynamic_cast<RedDiamond*>(obj.get()) != nullptr ||
+                   dynamic_cast<BlueDiamond*>(obj.get()) != nullptr;
+        }),
+        objects.end()
+    );
+
+    // 7. Respawn all diamonds
+    std::cout << "[RESET] Respawning diamonds..." << std::endl;
+    for (const auto& pos : redDiamondPositions) {
+        auto diamond = std::make_unique<RedDiamond>(grid, pos.first, pos.second);
+        addObject(std::move(diamond));
+    }
+
+    for (const auto& pos : blueDiamondPositions) {
+        auto diamond = std::make_unique<BlueDiamond>(grid, pos.first, pos.second);
+        addObject(std::move(diamond));
+    }
+
+    // 8. Re-register and reset all doors
+    std::cout << "[RESET] Resetting doors..." << std::endl;
+    _doors.clear();
+    for (auto& obj : objects) {
+        if (!obj) continue;
+        if (Door* door = dynamic_cast<Door*>(obj.get())) {
+            _doors.push_back(door);
+            door->resetOccupied();
+            std::cout << "[RESET] Reset " << door->getColor() << " door" << std::endl;
+        }
+    }
+
+    // 9. Update UI
+    updateDiamondCounters();
+
+    std::cout << "[RESET] COMPLETE - Level ready to play again!" << std::endl;
+    std::cout << "========================================\n" << std::endl;
 }
 
 void LevelScene::updateDiamondCounters() {

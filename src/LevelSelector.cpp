@@ -30,6 +30,16 @@ void LevelSelector::createLevelSelectorScene() {
 
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([this]() {
+        // Clean up any lobby state when going back to main menu
+        std::string lobbyIdStr = GameState::getInstance().get("lobby");
+        if (!lobbyIdStr.empty() && _network) {
+            std::cout << "[LevelSelector] Cleaning up lobby before going to main menu" << std::endl;
+            QuitPacket quit;
+            _network->send(quit);
+        }
+        GameState::getInstance().remove("lobby");
+        GameState::getInstance().remove("role");
+
         _sceneSystem->setScene("MainMenu");
     });
     auto backButtonObj = std::make_unique<GameObject>();

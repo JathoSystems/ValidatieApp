@@ -11,7 +11,13 @@
 class QuitLevelPacketHandler : public IPacketHandler {
 public:
     void handle(const Packet &packet) override {
-        std::cout << "QUIT PACKET RECEIVED" << std::endl;
+        std::cout << "[QuitLevelPacketHandler] QUIT PACKET RECEIVED" << std::endl;
+
+        // Clear lobby state
+        GameState::getInstance().remove("lobby");
+        GameState::getInstance().remove("role");
+
+        // Go to main menu
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
     }
 };

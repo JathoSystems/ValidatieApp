@@ -52,6 +52,12 @@ public:
     bool isOccupied() const { return _isOccupied; }
     std::string getColor() const { return _color; }
     
+    // NEW: Reset method for soft reset
+    void resetOccupied() {
+        _isOccupied = false;
+        std::cout << "[Door] Reset " << _color << " door occupied state" << std::endl;
+    }
+
 private:
     void checkCollisionInternal(BaseCharacter* character) {
         if (!character) return;

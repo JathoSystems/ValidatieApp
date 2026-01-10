@@ -7,6 +7,7 @@
 #include "enums/Direction.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "Physics/PhysicsComponent.h"
+#include "server/GlobalFlags.h"
 
 MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle, float x, float y, float vx, float vy)
     : _objectId(objectId), _direction(direction), _toggle(toggle), _x(x), _y(y), _vx(vx), _vy(vy) {
@@ -63,6 +64,14 @@ Data MoveEvent::deserialize(const Package &package) {
 }
 
 void MoveEvent::apply(GameObject *gameObject) {
+    if (!gameObject) {
+        return;
+    }
+
+    if (GlobalFlags::isLevelCleaning) {
+        return;
+    }
+
     if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
         BaseCharacterController* controller = baseChar->getController();
 

@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "SpawnEvent.hpp"
+#include "scenes/RestartScene.hpp"
+#include "server/packet/QuitPacket.hpp"
 
 class LevelGrid;
 class Fireboy;
@@ -37,22 +39,38 @@ public:
         _fireboyDiamondText = nullptr;
         _watergirlDiamondText = nullptr;
     }
-
+    void resetLevel();
     void reachedDoor() {
+        // 1. Voorkom dat we dit dubbel doen (als physics update blijft vuren)
+        if (_levelFinished) return;
+
         _peopleAtDoor++;
 
+        // Cap de teller op 2 (voor de zekerheid)
+        if (_peopleAtDoor > 2) _peopleAtDoor = 2;
+
+        std::cout << "[LevelScene] Character reached door. Total: " << _peopleAtDoor << "/2" << std::endl;
+
+        // 2. Als beide spelers er zijn...
         if (_peopleAtDoor >= 2) {
-            if (_isOnline && _network) {
-                int nextLevel = _levelNumber + 1;
+            _levelFinished = true; // Zet slot erop
 
-                NextLevelPacket packet(nextLevel);
-                packet.serialize();
-                _network->send(packet);
-                return;
+            std::cout << "[LevelScene] Level Finished! Switching to Restart Screen..." << std::endl;
+
+            GameEngine *engine = &GameEngine::getInstance();
+            SceneSystem* sceneSystem = engine->getSystem<SceneSystem>();
+
+            if (sceneSystem) {
+                // A. Zoek de Restart Scene en stel hem in
+                Scene* s = sceneSystem->getScene("Restart");
+                if (auto* restartScene = dynamic_cast<RestartScene*>(s)) {
+                    restartScene->setTargetLevel(getName()); // Vertel welk level we net deden
+                    restartScene->setOnline(_isOnline);
+                }
+
+                // B. Schakel over naar het Restart Scherm
+                sceneSystem->setScene("Restart");
             }
-
-            LevelSwitcher switcher{_network, _eventManager};
-            switcher.openLevel(_levelNumber + 1, false);
         }
     }
 
@@ -62,6 +80,7 @@ public:
             std::cout << "Character left door. People at door: " << _peopleAtDoor << "/2" << std::endl;
         }
     }
+    void cleanup();
 
 private:
     void createBasicLevelGrid();
@@ -74,7 +93,6 @@ private:
 
     void setupHUD();
 
-    void cleanup();
 
     void updateDiamondCounters();
 
@@ -87,6 +105,7 @@ private:
     bool _isInitialized;
     bool _batCreated;
     int _batCount;
+    bool _levelFinished = false;
 
     Fireboy *_fireboy = nullptr;
     Watergirl *_watergirl = nullptr;
