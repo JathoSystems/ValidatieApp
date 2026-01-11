@@ -19,10 +19,6 @@ private:
     EventManager* _eventManager;
     bool _networkCallbacksSetup = false;
     std::map<int, Text*> _levelTextMap;
-    float _elapsedCheckTime = 0.0f;
-    std::thread _updateThread;
-    std::atomic<bool> _running{false};
-    std::mutex _textMutex; // beveiligt toegang tot _levelTextMap
 public:
     LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);
 
