@@ -23,9 +23,6 @@ LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSy
 }
 
 LevelSelector::~LevelSelector() {
-    _running = false;
-    if (_updateThread.joinable())
-        _updateThread.join();
 }
 
 
@@ -96,26 +93,6 @@ void LevelSelector::createLevelSelectorScene() {
     std::unique_ptr<FixedCamera> camera = std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360));
     selectorScene->setCamera(std::move(camera));
     _sceneSystem->addScene(std::move(selectorScene));
-
-    _running = true;
-    _updateThread = std::thread([this]() {
-        LevelSaver saver;
-        while (_running) {
-            {
-                std::lock_guard<std::mutex> lock(_textMutex);
-                for (auto& [levelNum, textComp] : _levelTextMap) {
-                    float completionTime = saver.getCompletionTime(levelNum);
-                    if (completionTime != -1) {
-                        // Update de tekst en kleur
-                        textComp->setColor(std::make_unique<Color>(0, 255, 0));
-                        textComp->setText("Level " + std::to_string(levelNum) + " - " + std::to_string(completionTime) + "s");
-                    }
-                }
-            }
-            std::this_thread::sleep_for(std::chrono::seconds(2)); // check elke 2 seconden
-        }
-    });
-
 }
 
 void LevelSelector::onPlayClicked(int levelNumber) {
