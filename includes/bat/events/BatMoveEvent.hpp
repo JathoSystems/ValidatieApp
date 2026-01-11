@@ -14,9 +14,12 @@ public:
     BatMoveEvent(int objectId, float x, float y);
 
     std::string getName() const override;
+
     Package serialize() const override;
+
     Data deserialize(const Package &package) override;
-    void apply(GameObject* gameObject) override;
+
+    void apply(GameObject *gameObject) override;
 };
 
 #endif //VALIDATIEAPP_BATMOVEEVENT_HPP

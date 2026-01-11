@@ -1,10 +1,5 @@
-//
-// Created by jusra on 11-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_LEVELSAVER_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_LEVELSAVER_HPP
-#include "Engine/GameEngine.h"
 #include "SaveLoad/SaveLoadSystem.h"
 
 #include "nlohmann/json.hpp"
@@ -12,21 +7,21 @@
 class LevelMemento : public IMemento {
 private:
     int levelNumber;
-    float completionTime; // in seconden
+    float completionTime;
     int redGems;
     int blueGems;
     std::string timestamp;
 
 public:
     LevelMemento(int level = 0, float time = 0.0f, int red = 0, int blue = 0)
-        : levelNumber(level), completionTime(time), redGems(red), blueGems(blue) {}
+        : levelNumber(level), completionTime(time), redGems(red), blueGems(blue) {
+    }
 
-    // IMemento implementatie
     std::string getTimestamp() const override {
         return timestamp;
     }
 
-    void setTimestamp(const std::string& ts) override {
+    void setTimestamp(const std::string &ts) override {
         timestamp = ts;
     }
 
@@ -40,12 +35,11 @@ public:
         return j;
     }
 
-    void fromJson(const nlohmann::json& j) override {
+    void fromJson(const nlohmann::json &j) override {
         if (j.contains("levelNumber") && j.contains("completionTime") && j.contains("timestamp")) {
             levelNumber = j["levelNumber"].get<int>();
             completionTime = j["completionTime"].get<float>();
             timestamp = j["timestamp"].get<std::string>();
-            // Handle optional gem fields for backwards compatibility
             if (j.contains("red_gems")) {
                 redGems = j["red_gems"].get<int>();
             } else {
@@ -68,10 +62,10 @@ public:
 
     float getCompletionTime() const { return completionTime; }
     void setCompletionTime(float time) { completionTime = time; }
-    
+
     int getRedGems() const { return redGems; }
     void setRedGems(int gems) { redGems = gems; }
-    
+
     int getBlueGems() const { return blueGems; }
     void setBlueGems(int gems) { blueGems = gems; }
 };
@@ -119,7 +113,7 @@ public:
 
         return -1.0f;
     }
-    
+
     int getRedGems(int level) {
         auto system = std::make_unique<SaveLoadSystem>();
         system->initialize("saves");
@@ -136,7 +130,7 @@ public:
 
         return -1;
     }
-    
+
     int getBlueGems(int level) {
         auto system = std::make_unique<SaveLoadSystem>();
         system->initialize("saves");

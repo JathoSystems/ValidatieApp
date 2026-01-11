@@ -4,7 +4,6 @@
 #include "Network/GameState.hpp"
 #include "Scenes/SceneSystem.h"
 #include "server/packet/QuitPacket.hpp"
-#include "server/packet/RestartPacket.hpp"
 #include "UI/Button.h"
 #include "LevelSwitcher.hpp"
 
@@ -14,8 +13,7 @@ RestartScene::RestartScene(std::shared_ptr<NetworkSystem> network) : Scene("Rest
 
 void RestartScene::onInitialRender() {
     bool isOnline = (GameState::getInstance().get("lobby", "nope") != "nope");
-    
-    // Only show restart button for offline mode
+
     if (!isOnline) {
         std::unique_ptr<GameObject> restartButtonObject = std::make_unique<GameObject>();
         std::unique_ptr<Button> restartButton = std::make_unique<Button>("Restart", std::make_unique<Color>(0, 255, 0));
@@ -47,13 +45,11 @@ void RestartScene::onInitialRender() {
                                                                       std::make_unique<Color>(255, 0, 0));
     mainMenuButton->setOnClick([this, isOnline]() {
         if (isOnline) {
-            // Send quit packet BEFORE clearing game state (so lobby ID is available)
             QuitPacket quit;
             _network->send(quit);
-            // Clear game state so old lobby/role info doesn't interfere with reconnection
             GameState::getInstance().clear();
         }
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("MainMenu");
         sceneSystem->removeScene("Restart");
     });

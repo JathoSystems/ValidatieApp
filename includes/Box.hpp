@@ -1,7 +1,3 @@
-//
-// Created by jusra on 11-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_BOX_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_BOX_HPP
 #include "Engine/GameEngine.h"
@@ -13,7 +9,7 @@
 
 class Box : public GameObject {
 public:
-    Box(LevelGrid* grid, int x, int y) {
+    Box(LevelGrid *grid, int x, int y) {
         int cellSize = grid->getCellSize();
         getTransform()->getPosition()->setX(x * cellSize + cellSize / 2.0f);
         getTransform()->getPosition()->setY(y * cellSize + cellSize / 2.0f);
@@ -25,7 +21,7 @@ public:
         std::unique_ptr<SpriteRenderer> renderer = std::make_unique<SpriteRenderer>("resources/box.png");
         addComponent(std::move(renderer));
 
-        PhysicsSystem* system = GameEngine::getInstance().getSystem<PhysicsSystem>();
+        PhysicsSystem *system = GameEngine::getInstance().getSystem<PhysicsSystem>();
         std::unique_ptr<PhysicsComponent> physics = std::make_unique<PhysicsComponent>(system->getBox2DFacade());
         physics->setFixedRotation(true);
         physics->setMaterial(Material(3.0f, 0.8f, 0.0f));

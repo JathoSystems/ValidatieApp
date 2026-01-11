@@ -7,7 +7,6 @@
 #include "GameObjects/Spritesheet/Animator.h"
 #include "bat/events/BatMoveEvent.hpp"
 #include "Events/EventManager.h"
-#include "GameObjects/ObjectRegistry.hpp"
 #include "Physics/PhysicsComponent.h"
 #include "characters/BaseCharacter.hpp"
 #include <cmath>
@@ -15,7 +14,8 @@
 #include <iostream>
 #include <limits>
 
-BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed, bool isNetworked, EventManager* eventManager, int objectId, bool isAuthoritative)
+BatAI::BatAI(Bat *bat, LevelGrid *grid, Scene *scene, int cellSize, float speed, bool isNetworked,
+             EventManager *eventManager, int objectId, bool isAuthoritative)
     : _grid(grid), _scene(scene), _cellSize(cellSize), _speed(speed),
       _pathfinder(nullptr),
       _currentPathIndex(0),
@@ -42,7 +42,6 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _previousX(0.0f),
       _previousY(0.0f),
       _needsInitialTarget(isAuthoritative && grid != nullptr) {
-
     if (!grid) {
         std::cerr << "[BatAI] ERROR: Grid is nullptr in constructor!" << std::endl;
         return;
@@ -51,7 +50,7 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
     _pathfinder = std::make_unique<AStarPathfinder>(grid);
 
     if (bat && !_isAuthoritative) {
-        Transform* transform = bat->getTransform();
+        Transform *transform = bat->getTransform();
         if (transform && transform->getPosition()) {
             _lastNetworkX = static_cast<float>(transform->getPosition()->getX());
             _lastNetworkY = static_cast<float>(transform->getPosition()->getY());
@@ -93,18 +92,18 @@ void BatAI::update(float deltaTime) {
     updateMovement(deltaTime);
 }
 
-void BatAI::render(const std::unique_ptr<Window>& window) {
+void BatAI::render(const std::unique_ptr<Window> &window) {
 }
 
 void BatAI::updatePathfinding(float deltaTime) {
     float distanceToPlayer = 0.0f;
-    GameObject* nearestPlayer = findNearestPlayer(distanceToPlayer);
+    GameObject *nearestPlayer = findNearestPlayer(distanceToPlayer);
 
     if (nearestPlayer && distanceToPlayer < _fleeDistance) {
         bool wasFleeing = _isFleeing;
         _isFleeing = true;
 
-        Transform* playerTransform = nearestPlayer->getTransform();
+        Transform *playerTransform = nearestPlayer->getTransform();
         if (playerTransform && playerTransform->getPosition()) {
             float playerX = static_cast<float>(playerTransform->getPosition()->getX());
             float playerY = static_cast<float>(playerTransform->getPosition()->getY());
@@ -128,7 +127,8 @@ void BatAI::updatePathfinding(float deltaTime) {
             _targetChangeInterval = _timerDist(_rng);
         } else {
             _targetChangeTimer += deltaTime;
-            if (_targetChangeTimer >= _targetChangeInterval || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
+            if (_targetChangeTimer >= _targetChangeInterval || _currentPath.empty() || _currentPathIndex >= _currentPath
+                .size()) {
                 chooseNewTarget();
                 _targetChangeTimer = 0.0f;
                 _targetChangeInterval = _timerDist(_rng);
@@ -144,10 +144,10 @@ void BatAI::updateMovement(float deltaTime) {
         return;
     }
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return;
 
     float currentX = static_cast<float>(pos->getX());
@@ -191,7 +191,7 @@ void BatAI::updateMovement(float deltaTime) {
             float directionX = dx / distance;
             float directionY = dy / distance;
 
-            Size* size = transform->getSize();
+            Size *size = transform->getSize();
             if (size) {
                 float currentWidth = size->getWidth();
                 float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
@@ -225,7 +225,7 @@ void BatAI::updateMovement(float deltaTime) {
                 float checkY = currentY + moveY * t;
 
                 float batHalfSize = static_cast<float>(_cellSize) * 0.5f;
-                std::vector<std::pair<float, float>> checkPoints = {
+                std::vector<std::pair<float, float> > checkPoints = {
                     {checkX, checkY},
                     {checkX - batHalfSize, checkY},
                     {checkX + batHalfSize, checkY},
@@ -233,7 +233,7 @@ void BatAI::updateMovement(float deltaTime) {
                     {checkX, checkY + batHalfSize}
                 };
 
-                for (const auto& point : checkPoints) {
+                for (const auto &point: checkPoints) {
                     if (!isPositionWalkable(point.first, point.second)) {
                         canMove = false;
                         break;
@@ -245,7 +245,7 @@ void BatAI::updateMovement(float deltaTime) {
 
             if (canMove) {
                 float batHalfSize = static_cast<float>(_cellSize) * 0.5f;
-                std::vector<std::pair<float, float>> finalCheckPoints = {
+                std::vector<std::pair<float, float> > finalCheckPoints = {
                     {newX, newY},
                     {newX - batHalfSize, newY},
                     {newX + batHalfSize, newY},
@@ -253,7 +253,7 @@ void BatAI::updateMovement(float deltaTime) {
                     {newX, newY + batHalfSize}
                 };
 
-                for (const auto& point : finalCheckPoints) {
+                for (const auto &point: finalCheckPoints) {
                     if (!isPositionWalkable(point.first, point.second)) {
                         canMove = false;
                         break;
@@ -334,7 +334,7 @@ void BatAI::updateMovement(float deltaTime) {
             } else {
                 _stuckTimer += deltaTime;
                 if (_stuckTimer > 0.5f) {
-                   _stuckTimer = 0.0f;
+                    _stuckTimer = 0.0f;
                     _currentPathIndex++;
                     if (_currentPathIndex >= _currentPath.size()) {
                         chooseNewTarget();
@@ -357,10 +357,10 @@ void BatAI::updateMovement(float deltaTime) {
 void BatAI::chooseNewTarget() {
     if (!_parent || !_grid || !_pathfinder) return;
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return;
 
     float currentX = static_cast<float>(pos->getX());
@@ -449,18 +449,18 @@ bool BatAI::collidesWithDynamicObjects(float worldX, float worldY, float batWidt
     float batRight = worldX + batWidth / 2.0f;
     float batBottom = worldY + batHeight / 2.0f;
 
-    const auto& objects = _scene->getObjects();
-    for (const auto& obj : objects) {
+    const auto &objects = _scene->getObjects();
+    for (const auto &obj: objects) {
         if (obj.get() == _parent) continue;
 
-        PhysicsComponent* physics = obj->getComponent<PhysicsComponent>();
+        PhysicsComponent *physics = obj->getComponent<PhysicsComponent>();
         if (!physics) continue;
 
-        Transform* objTransform = obj->getTransform();
+        Transform *objTransform = obj->getTransform();
         if (!objTransform) continue;
 
-        Position* objPos = objTransform->getPosition();
-        Size* objSize = objTransform->getSize();
+        Position *objPos = objTransform->getPosition();
+        Size *objSize = objTransform->getSize();
         if (!objPos || !objSize) continue;
 
         float objCenterX = static_cast<float>(objPos->getX());
@@ -482,32 +482,32 @@ bool BatAI::collidesWithDynamicObjects(float worldX, float worldY, float batWidt
     return false;
 }
 
-GameObject* BatAI::findNearestPlayer(float& distance) const {
+GameObject *BatAI::findNearestPlayer(float &distance) const {
     if (!_scene || !_parent) return nullptr;
 
-    Transform* batTransform = _parent->getTransform();
+    Transform *batTransform = _parent->getTransform();
     if (!batTransform) return nullptr;
 
-    Position* batPos = batTransform->getPosition();
+    Position *batPos = batTransform->getPosition();
     if (!batPos) return nullptr;
 
     float batX = static_cast<float>(batPos->getX());
     float batY = static_cast<float>(batPos->getY());
 
-    GameObject* nearestPlayer = nullptr;
+    GameObject *nearestPlayer = nullptr;
     float nearestDistance = std::numeric_limits<float>::max();
 
-    const auto& objects = _scene->getObjects();
-    for (const auto& obj : objects) {
+    const auto &objects = _scene->getObjects();
+    for (const auto &obj: objects) {
         if (obj.get() == _parent) continue;
 
-        BaseCharacter* character = dynamic_cast<BaseCharacter*>(obj.get());
+        BaseCharacter *character = dynamic_cast<BaseCharacter *>(obj.get());
         if (!character) continue;
 
-        Transform* playerTransform = obj->getTransform();
+        Transform *playerTransform = obj->getTransform();
         if (!playerTransform) continue;
 
-        Position* playerPos = playerTransform->getPosition();
+        Position *playerPos = playerTransform->getPosition();
         if (!playerPos) continue;
 
         float playerX = static_cast<float>(playerPos->getX());
@@ -530,10 +530,10 @@ GameObject* BatAI::findNearestPlayer(float& distance) const {
 void BatAI::chooseFleeTarget(float playerX, float playerY) {
     if (!_parent || !_grid || !_pathfinder) return;
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return;
 
     float currentX = static_cast<float>(pos->getX());
@@ -556,7 +556,7 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
     dx /= distance;
     dy /= distance;
 
-    std::vector<std::pair<float, float>> directions = {
+    std::vector<std::pair<float, float> > directions = {
         {dx, dy},
         {-dy, dx},
         {dy, -dx},
@@ -567,7 +567,7 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
     bool foundPath = false;
     float fleeDistance = _fleeDistance * 2.0f;
 
-    for (const auto& dir : directions) {
+    for (const auto &dir: directions) {
         float targetX = currentX + dir.first * fleeDistance;
         float targetY = currentY + dir.second * fleeDistance;
 
@@ -622,7 +622,7 @@ void BatAI::chooseFleeTarget(float playerX, float playerY) {
             targetY += _cellSize / 2.0f;
 
             float distToPlayer = std::sqrt((targetX - playerX) * (targetX - playerX) +
-                                          (targetY - playerY) * (targetY - playerY));
+                                           (targetY - playerY) * (targetY - playerY));
             if (distToPlayer > _fleeDistance) {
                 _currentPath = _pathfinder->findPath(currentX, currentY, targetX, targetY);
                 _currentPathIndex = 0;
@@ -643,10 +643,10 @@ void BatAI::syncToNetwork() {
     if (!_parent || !_eventManager) return;
     if (_objectId == -1) return;
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return;
 
     float x = static_cast<float>(pos->getX());
@@ -668,10 +668,10 @@ void BatAI::setNetworkPosition(float x, float y) {
 void BatAI::applyNetworkPosition() {
     if (!_parent) return;
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return;
 
     float currentX = static_cast<float>(pos->getX());
@@ -691,7 +691,7 @@ void BatAI::applyNetworkPosition() {
     float movementX = currentX - _previousX;
 
     if (std::abs(movementX) > 0.1f) {
-        Size* size = transform->getSize();
+        Size *size = transform->getSize();
         if (size) {
             float currentWidth = size->getWidth();
             float absWidth = (currentWidth < 0) ? -currentWidth : currentWidth;
@@ -731,10 +731,10 @@ float BatAI::getDirectionX() const {
         return 0.0f;
     }
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return 0.0f;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return 0.0f;
 
     float currentX = static_cast<float>(pos->getX());
@@ -750,10 +750,10 @@ float BatAI::getDirectionY() const {
         return 0.0f;
     }
 
-    Transform* transform = _parent->getTransform();
+    Transform *transform = _parent->getTransform();
     if (!transform) return 0.0f;
 
-    Position* pos = transform->getPosition();
+    Position *pos = transform->getPosition();
     if (!pos) return 0.0f;
 
     float currentY = static_cast<float>(pos->getY());

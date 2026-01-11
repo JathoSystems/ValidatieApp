@@ -1,11 +1,7 @@
 #include "characters/BaseCharacter.hpp"
 #include <iostream>
 #include <cmath>
-#include <iomanip>
-
 #include "GameObjects/Component/KeyInputComponent.h"
-#include "GameObjects/Component/SpriteRenderer.h"
-#include "GameObjects/Component/RectangleRenderer.h"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "Input/InputSystem.h"
 #include "Physics/Box2DFacade.h"
@@ -41,11 +37,6 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
 
     getTransform()->getSize()->setWidth(50);
     getTransform()->getSize()->setHeight(100);
-
-    // SDL_Color debugColor = activePlayer ? SDL_Color{0, 255, 0, 255} : SDL_Color{0, 0, 255, 255};
-    // auto debugRenderer = std::make_unique<RectangleRenderer>(debugColor, false);
-    // addComponent(std::move(debugRenderer));
-    // setLayer(100);
 
     std::unique_ptr<PhysicsComponent> component = std::make_unique<PhysicsComponent>(
         engine->getSystem<PhysicsSystem>()->getBox2DFacade());
@@ -98,7 +89,6 @@ void BaseCharacter::applyPendingJump() {
 void BaseCharacter::applyPendingNetworkUpdate() {
     if (!_pendingUpdate.hasPending) return;
 
-    // Store the values BEFORE clearing the flag
     _lastRemoteX = _pendingUpdate.x;
     _lastRemoteY = _pendingUpdate.y;
     _lastRemoteVx = _pendingUpdate.vx;
@@ -117,7 +107,6 @@ void BaseCharacter::update(float delta) {
 
     GameObject::update(delta);
 
-    // Remote Player Sync / correction part
     if (_controller && !_controller->isActive()) {
         PhysicsComponent *physics = getComponent<PhysicsComponent>();
 

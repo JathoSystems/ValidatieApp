@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+extern std::map<int, std::function<std::unique_ptr<Scene>()> > g_levels;
 
 void GameReadyPacketHandler::handle(const Packet &packet) {
     GameReadyPacket gameReady;
@@ -20,9 +20,9 @@ void GameReadyPacketHandler::handle(const Packet &packet) {
     if (sceneSystem) {
         std::cout << "[GameReadyPacketHandler] Starting game for level " << gameReady.levelId << std::endl;
 
-        // Check if level exists in registry
         if (g_levels.find(gameReady.levelId) == g_levels.end()) {
-            std::cerr << "[GameReadyPacketHandler] Level " << gameReady.levelId << " not found in g_levels!" << std::endl;
+            std::cerr << "[GameReadyPacketHandler] Level " << gameReady.levelId << " not found in g_levels!" <<
+                    std::endl;
             return;
         }
 

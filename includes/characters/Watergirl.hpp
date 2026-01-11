@@ -6,10 +6,12 @@
 class Watergirl : public BaseCharacter {
 public:
     Watergirl(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine, bool active);
-    Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine, bool active);
-    
+
+    Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+              bool active);
+
     static KeyBindings getDefaultBindings() {
-        return { Key::LEFT, Key::RIGHT, Key::UP };
+        return {Key::LEFT, Key::RIGHT, Key::UP};
     }
 };
 

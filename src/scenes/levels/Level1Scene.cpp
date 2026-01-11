@@ -1,8 +1,4 @@
-//
-// Created by jusra on 10-1-2026.
-//
 #include "scenes/levels/Level1Scene.hpp"
-
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "grid/LevelGrid.h"
@@ -44,13 +40,13 @@ void Level1Scene::createLevelGrid() {
 }
 
 void Level1Scene::setupLevelSpecifics() {
-    LevelGrid* grid = GridManager::getGrid(getName());
+    LevelGrid *grid = GridManager::getGrid(getName());
     if (!grid) return;
 
     createCellObjects(grid);
 
-    Fireboy* fireboy = getFireboy(this);
-    Watergirl* watergirl = getWatergirl(this);
+    Fireboy *fireboy = getFireboy(this);
+    Watergirl *watergirl = getWatergirl(this);
 
     watergirl->getTransform()->getPosition()->setX(550);
     watergirl->getTransform()->getPosition()->setY(10);

@@ -1,5 +1,4 @@
 #include "scenes/MainMenu.hpp"
-
 #include "Animation/Animation.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
@@ -45,11 +44,11 @@ MainMenu::MainMenu() : Scene("MainMenu") {
     std::unique_ptr<Keyframe> s = std::make_unique<Keyframe>(std::move(b));
     std::unique_ptr<Keyframe> t = std::make_unique<Keyframe>(std::move(c));
 
-    int speed {3};
+    int speed{3};
 
     animator->addKeyframe(0, std::move(f));
     animator->addKeyframe(speed, std::move(s));
-    animator->addKeyframe(speed*2, std::move(t));
+    animator->addKeyframe(speed * 2, std::move(t));
     titleObj->addComponent(std::move(animator));
 
     addObject(std::move(titleObj));
@@ -86,7 +85,7 @@ MainMenu::MainMenu() : Scene("MainMenu") {
 
 void MainMenu::onInitialRender() {
     GameEngine::getInstance().getSystem<AudioSystem>()->initialize();
-    auto* audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
+    auto *audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
     if (audioSystem) {
         audioSystem->loadSound("mainmenu", "resources/mainmenu.mp3");
         audioSystem->playMusic("mainmenu", 0.05f, true);

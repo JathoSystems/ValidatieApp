@@ -4,27 +4,23 @@
 #include <memory>
 #include "Events/EventManager.h"
 #include "Network/NetworkSystem.h"
-#include "scenes/LevelScene.hpp"
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
 #include "UI/Text.h"
-#include <thread>
-#include <atomic>
-#include <chrono>
-#include <mutex>
 #include <map>
 
 class LevelSelector {
 private:
     SceneSystem *_sceneSystem;
     std::shared_ptr<NetworkSystem> _network;
-    EventManager* _eventManager;
+    EventManager *_eventManager;
     bool _networkCallbacksSetup = false;
-    std::map<int, Text*> _levelTextMap;
-    std::map<int, Text*> _statsTextMap;
-    static LevelSelector* _instance;
+    std::map<int, Text *> _levelTextMap;
+    std::map<int, Text *> _statsTextMap;
+    static LevelSelector *_instance;
+
 public:
-    LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);
+    LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager *eventManager);
 
     ~LevelSelector();
 
@@ -33,13 +29,14 @@ public:
     void createLevelSelectorScene();
 
     void update(float deltaTime);
-    
-    static LevelSelector* getInstance() { return _instance; }
+
+    static LevelSelector *getInstance() { return _instance; }
 
     void setupNetworkCallbacks();
 
 private:
     void onPlayClicked(int levelNumber);
+
     void onOnlinePlayClicked(int levelNumber);
 };
 

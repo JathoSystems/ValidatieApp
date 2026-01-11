@@ -17,22 +17,21 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Scene.h"
 #include "Network/GameState.hpp"
-#include "GameObjects/ObjectRegistry.hpp"
 
 class GameObjectFactory {
 public:
     using CreatorFunc = std::function<std::unique_ptr<GameObject>(int parentId)>;
 
-    static GameObjectFactory& getInstance() {
+    static GameObjectFactory &getInstance() {
         static GameObjectFactory instance;
         return instance;
     }
 
-    void registerType(const std::string& name, CreatorFunc func) {
+    void registerType(const std::string &name, CreatorFunc func) {
         creators_[name] = func;
     }
 
-    std::unique_ptr<GameObject> create(int parentId, const std::string& name) {
+    std::unique_ptr<GameObject> create(int parentId, const std::string &name) {
         auto it = creators_.find(name);
         if (it != creators_.end()) {
             return it->second(parentId);
@@ -44,17 +43,17 @@ public:
         _network = network;
     }
 
-    void setEventManager(EventManager * manager) {
+    void setEventManager(EventManager *manager) {
         _manager = manager;
     }
 
-    EventManager* getEventManager() const {
+    EventManager *getEventManager() const {
         return _manager;
     }
 
 private:
     std::shared_ptr<NetworkSystem> _network;
-    EventManager * _manager = nullptr;
+    EventManager *_manager = nullptr;
 
     GameObjectFactory() {
         // Capture 'this' to access member variables at runtime
@@ -85,39 +84,39 @@ private:
                 false
             );
         });
-        
+
         registerType("bat", [this](int parentId) -> std::unique_ptr<GameObject> {
             auto system = GameEngine::getInstance().getSystem<SceneSystem>();
             if (!system) {
                 std::cerr << "[Factory] SceneSystem is null when creating bat!" << std::endl;
                 return nullptr;
             }
-            
-            Scene* activeScene = system->getActiveSceneObj();
+
+            Scene *activeScene = system->getActiveSceneObj();
             if (!activeScene) {
                 std::cerr << "[Factory] Active scene is null when creating bat!" << std::endl;
                 return nullptr;
             }
-            
+
             std::string sceneName = activeScene->getName();
-            LevelGrid* grid = GridManager::getGrid(sceneName);
+            LevelGrid *grid = GridManager::getGrid(sceneName);
             if (!grid) {
                 std::cerr << "[Factory] Grid not found for scene: " << sceneName << std::endl;
                 return nullptr;
             }
-            
+
             const int CELL_SIZE = grid->getCellSize();
             auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f, parentId);
-            
+
             const int BAT_SIZE = CELL_SIZE;
             bat->getTransform()->getSize()->setWidth(BAT_SIZE);
             bat->getTransform()->getSize()->setHeight(BAT_SIZE);
-            
+
             auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
             bat->addComponent(std::move(batAnimator));
-            
-            Bat* batPtr = bat.get();
-            
+
+            Bat *batPtr = bat.get();
+
             bool isNetworked = (_network != nullptr);
             bool isAuthoritative = false;
             if (isNetworked) {
@@ -126,16 +125,18 @@ private:
             } else {
                 isAuthoritative = true; // Single player
             }
-            
-            auto batAI = std::make_unique<BatAI>(batPtr, grid, activeScene, CELL_SIZE, 80.0f, isNetworked, _manager, parentId, isAuthoritative);
+
+            auto batAI = std::make_unique<BatAI>(batPtr, grid, activeScene, CELL_SIZE, 80.0f, isNetworked, _manager,
+                                                 parentId, isAuthoritative);
             bat->addComponent(std::move(batAI));
-            
+
             return bat;
         });
     }
 
-    GameObjectFactory(const GameObjectFactory&) = delete;
-    GameObjectFactory& operator=(const GameObjectFactory&) = delete;
+    GameObjectFactory(const GameObjectFactory &) = delete;
+
+    GameObjectFactory &operator=(const GameObjectFactory &) = delete;
 
     std::unordered_map<std::string, CreatorFunc> creators_;
 };

@@ -39,7 +39,7 @@ public:
         std::vector<SpawnEvent> events = _pendingEvents;
         _pendingEvents.clear();
 
-        for (auto& event : events) {
+        for (auto &event: events) {
             event.spawn();
         }
     }
@@ -47,15 +47,15 @@ public:
     Package serialize() const override {
         Package p;
 
-        const uint8_t* idBytes = reinterpret_cast<const uint8_t*>(&registryId);
+        const uint8_t *idBytes = reinterpret_cast<const uint8_t *>(&registryId);
         for (int i = 0; i < sizeof(int); ++i) {
             p.push_back(idBytes[i]);
         }
 
-        uint8_t* xBytes = (uint8_t*)&spawnX;
+        uint8_t *xBytes = (uint8_t *) &spawnX;
         for (int i = 0; i < 4; i++) p.push_back(xBytes[i]);
 
-        uint8_t* yBytes = (uint8_t*)&spawnY;
+        uint8_t *yBytes = (uint8_t *) &spawnY;
         for (int i = 0; i < 4; i++) p.push_back(yBytes[i]);
 
         for (char c: objectName) {
@@ -64,8 +64,8 @@ public:
         p.push_back(0);
 
         std::cout << "SENDING SPAWN EVENT " << objectName
-                  << " WITH ID " << registryId
-                  << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
+                << " WITH ID " << registryId
+                << " AT (" << spawnX << ", " << spawnY << ")" << std::endl;
         return p;
     }
 
@@ -90,13 +90,11 @@ public:
         return data;
     }
 
-    void apply(GameObject * gameObject) override {
-        // Now called directly on main thread - safe to access game objects
+    void apply(GameObject *gameObject) override {
         spawn();
     }
 
     void spawn() {
-        // Safety check: only process if we're in a level scene
         auto system = GameEngine::getInstance().getSystem<SceneSystem>();
         if (!system) return;
 
@@ -107,17 +105,17 @@ public:
 
         if (!gridReady) {
             std::cout << "[SpawnEvent] Grid not ready for scene: " << scene->getName()
-                      << " - BUFFERING spawn of " << objectName << std::endl;
-            _pendingEvents.push_back(*this); // <--- IN DE WACHTRIJ
+                    << " - BUFFERING spawn of " << objectName << std::endl;
+            _pendingEvents.push_back(*this);
             return;
         }
-        
+
         std::string sceneName = scene->getName();
         if (sceneName.find("level_") != 0) {
             return;
         }
-        
-        GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
+
+        GameObject *existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             auto transform = existingObj->getTransform();
             if (transform) {
@@ -137,22 +135,20 @@ public:
             return;
         }
 
-        Transform* transform = object->getTransform();
+        Transform *transform = object->getTransform();
         if (transform && transform->getPosition()) {
             transform->getPosition()->setX(spawnX);
             transform->getPosition()->setY(spawnY);
         }
 
-        GameObject* objectPtr = object.get();
-        
-        // Note: Objects with Broadcastable (like Bat, BaseCharacter) register themselves
-        // in the constructor, so we only need to insert non-Broadcastable objects here
+        GameObject *objectPtr = object.get();
+
         if (objectName != "bat" && objectName != "fireboy" && objectName != "watergirl") {
             ObjectRegistry::getInstance().insert(objectPtr, registryId);
         }
 
         if (objectName == "bat") {
-            BatAI* batAI = objectPtr->getComponent<BatAI>();
+            BatAI *batAI = objectPtr->getComponent<BatAI>();
             if (batAI) {
                 batAI->setNetworkPosition(spawnX, spawnY);
                 batAI->setScene(scene);
@@ -168,7 +164,7 @@ public:
 
     float getSpawnX() const { return spawnX; }
     float getSpawnY() const { return spawnY; }
-    
+
     static int getMappedId(int originalId);
 };
 

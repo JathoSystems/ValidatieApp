@@ -1,10 +1,7 @@
-//
-// Created by jusra on 16-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_PLAYERASSIGNPACKET_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_PLAYERASSIGNPACKET_HPP
 #include "Network/Packet/Packet.h"
+
 class PlayerAssignPacket : public Packet {
 private:
     std::string _role;
@@ -12,7 +9,7 @@ private:
 public:
     PlayerAssignPacket() { packetId = 110; }
 
-    explicit PlayerAssignPacket(const std::string& role)
+    explicit PlayerAssignPacket(const std::string &role)
         : _role(role) {
         packetId = 110;
     }
@@ -28,7 +25,7 @@ public:
         _role = buffer.readString(offset);
     }
 
-    const std::string& getRole() const { return _role; }
+    const std::string &getRole() const { return _role; }
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_PLAYERASSIGNPACKET_HPP

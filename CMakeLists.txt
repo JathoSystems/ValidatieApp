@@ -39,7 +39,6 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/enums/Direction.hpp
         includes/characters/BaseCharacterController.hpp
         src/characters/BaseCharacterController.cpp
-        src/server/Player.cpp
         src/server/PlayerManager.cpp
         includes/server/LobbyManager.hpp
         src/server/LobbyManager.cpp

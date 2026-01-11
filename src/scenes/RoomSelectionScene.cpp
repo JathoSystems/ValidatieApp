@@ -11,14 +11,13 @@
 
 #include "Network/GameState.hpp"
 
-RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, int levelNumber, std::function<std::unique_ptr<Scene>()> levelFactory)
+RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, int levelNumber,
+                                       std::function<std::unique_ptr<Scene>()> levelFactory)
     : Scene("room_selection_level_" + std::to_string(levelNumber)),
       _network(network),
       _selectedLevel(levelNumber),
       _levelFactory(levelFactory),
       _currentLobbyIdInput(0) {
-
-    // Title
     auto titleText = std::make_unique<Text>("Room Selection - Level " + std::to_string(levelNumber));
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
     titleText->setFontSize(40);
@@ -30,12 +29,10 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     titleObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(titleObj));
 
-    // Create New Lobby Button
     auto createButton = std::make_unique<Button>("Create New Lobby", std::make_unique<Color>(0, 200, 0));
     createButton->setOnClick([this]() {
         CreateLobbyPacket packet(_selectedLevel);
         packet.serialize();
-        // Send packet through NetworkSystem
         _network->send(packet);
         std::cout << "[RoomSelection] Creating lobby for level " << _selectedLevel << std::endl;
     });
@@ -47,7 +44,6 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     createButtonObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(createButtonObj));
 
-    // Lobby ID Input Label
     auto labelText = std::make_unique<Text>("Enter Lobby ID (0-9):");
     labelText->setColor(std::make_unique<Color>(255, 255, 255));
     labelText->setFontSize(24);
@@ -59,12 +55,11 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     labelObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(labelObj));
 
-    // Display current input
     auto displayText = std::make_unique<Text>("0");
     displayText->setColor(std::make_unique<Color>(255, 255, 255));
     displayText->setFontSize(48);
     auto displayObj = std::make_unique<GameObject>();
-    Text* displayTextPtr = displayText.get();
+    Text *displayTextPtr = displayText.get();
     displayObj->addComponent(std::move(displayText));
     displayObj->getTransform()->getPosition()->setX(640);
     displayObj->getTransform()->getPosition()->setY(370);
@@ -72,10 +67,8 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     displayObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(displayObj));
 
-    // Store reference for later updates
     _displayTextPtr = displayTextPtr;
 
-    // Number buttons (0-9)
     float startX = 540;
     float startY = 450;
     float btnWidth = 60;
@@ -101,13 +94,11 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
         addObject(std::move(numButtonObj));
     }
 
-    // Join Lobby Button
     auto joinButton = std::make_unique<Button>("Join Lobby", std::make_unique<Color>(200, 100, 0));
     joinButton->setOnClick([this]() {
         if (_currentLobbyIdInput > 0) {
             JoinLobbyPacket packet(_currentLobbyIdInput, _selectedLevel);
             packet.serialize();
-            // Send packet through NetworkSystem
             _network->send(packet);
             std::cout << "[RoomSelection] Joining lobby " << _currentLobbyIdInput << std::endl;
         }
@@ -120,11 +111,10 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     joinButtonObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(joinButtonObj));
 
-    // Back Button
     std::string currentSceneName = getName();
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([currentSceneName]() {
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("level_selector");
         sceneSystem->removeScene(currentSceneName);
     });
@@ -142,11 +132,8 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
 }
 
 void RoomSelectionScene::updateLobbyIdDisplay() {
-    // Update the display text using stored pointer
     if (_displayTextPtr) {
         _displayTextPtr->setText(std::to_string(_currentLobbyIdInput));
-        // Note: Don't set GameState "lobby" here - it will be set when server
-        // confirms lobby join via LobbyInfoPacketHandler
     }
 }
 

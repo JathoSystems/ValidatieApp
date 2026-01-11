@@ -1,7 +1,3 @@
-//
-// Created by jusra on 17-12-2025.
-//
-
 #include "server/packet/handler/PlayerAssignPacketHandler.hpp"
 
 #include "Network/GameState.hpp"

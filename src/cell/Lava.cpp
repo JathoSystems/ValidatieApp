@@ -1,11 +1,5 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #include "cell/Lava.hpp"
-
 #include "grid/LevelGrid.h"
-#include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/Component/AudioComponent.h"
 #include "Network/GameState.hpp"
@@ -39,7 +33,6 @@ Lava::Lava(LevelGrid *grid, int x, int y)
 }
 
 void Lava::onCollisionEnter(const CollisionData &collision) {
-    // Lava kills Watergirl, not Fireboy
     if (dynamic_cast<Watergirl *>(collision.other)) {
         AudioSystem *audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
         audioSystem->initialize();
@@ -49,20 +42,18 @@ void Lava::onCollisionEnter(const CollisionData &collision) {
         GameEngine *gameEngine = &GameEngine::getInstance();
         SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
         if (!sceneSystem) return;
-        
-        Scene* activeScene = sceneSystem->getActiveSceneObj();
+
+        Scene *activeScene = sceneSystem->getActiveSceneObj();
         if (!activeScene) return;
 
         std::string previousSceneName = activeScene->getName();
         if (previousSceneName != "Restart") {
             std::cout << "Current scene" << previousSceneName << std::endl;
 
-            // Clear packet queue before scene change
-            NetworkSystem* networkSystem = gameEngine->getSystem<NetworkSystem>();
+            NetworkSystem *networkSystem = gameEngine->getSystem<NetworkSystem>();
             if (networkSystem && networkSystem->getMiddleware()) {
                 networkSystem->getMiddleware()->clearPacketQueue();
             }
-            // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
 
             sceneSystem->setScene("Restart");
 

@@ -13,13 +13,14 @@ private:
     bool _flipHorizontal;
 
 public:
-    BatSpriteRenderer(const std::string& path);
-    
+    BatSpriteRenderer(const std::string &path);
+
     void setFlipHorizontal(bool flip) { _flipHorizontal = flip; }
     bool getFlipHorizontal() const { return _flipHorizontal; }
-    
+
     void update(float delta) override;
-    void render(const std::unique_ptr<Window>& window) override;
+
+    void render(const std::unique_ptr<Window> &window) override;
 };
 
 #endif //VALIDATIEAPP_BATSPRITERENDERER_H

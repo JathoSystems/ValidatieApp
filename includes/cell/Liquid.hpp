@@ -1,7 +1,3 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_LIQUID_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_LIQUID_HPP
 #include <string>
@@ -16,7 +12,7 @@ private:
     std::string _middleSprite;
 
 public:
-    Liquid(LevelGrid* grid, int x, int y, std::string left, std::string right, std::string middle);
+    Liquid(LevelGrid *grid, int x, int y, std::string left, std::string right, std::string middle);
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_LIQUID_HPP

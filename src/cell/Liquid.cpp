@@ -1,16 +1,11 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #include "cell/Liquid.hpp"
-
 #include "grid/LevelGrid.h"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include <memory>
 
 Liquid::Liquid(
-    LevelGrid* grid,
+    LevelGrid *grid,
     int x,
     int y,
     std::string left,
@@ -19,8 +14,7 @@ Liquid::Liquid(
 )
     : _leftSprite(std::move(left)),
       _rightSprite(std::move(right)),
-      _middleSprite(std::move(middle))
-{
+      _middleSprite(std::move(middle)) {
     CellType currentType = grid->getCellType(x, y);
     CellType leftType = grid->getCellType(x - 1, y);
     CellType rightType = grid->getCellType(x + 1, y);

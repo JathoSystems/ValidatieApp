@@ -11,19 +11,20 @@ private:
     bool _toggle;
     float _x;
     float _y;
-    // NEW: Velocity variables
     float _vx;
     float _vy;
 
 public:
-    // Update constructor to take velocity
     MoveEvent(int objectId = 0, Direction direction = Direction::NONE, bool toggle = false,
               float x = 0.0f, float y = 0.0f, float vx = 0.0f, float vy = 0.0f);
 
     std::string getName() const override;
+
     Package serialize() const override;
-    Data deserialize(const Package& package) override;
-    void apply(GameObject* gameObject) override;
+
+    Data deserialize(const Package &package) override;
+
+    void apply(GameObject *gameObject) override;
 };
 
 #endif

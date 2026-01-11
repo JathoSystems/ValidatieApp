@@ -31,7 +31,7 @@ struct PendingJump {
     bool shouldJump = false;
 };
 
-class BaseCharacter : public GameObject , public Broadcastable {
+class BaseCharacter : public GameObject, public Broadcastable {
 private:
     std::string idle;
     std::string left;
@@ -47,18 +47,18 @@ private:
     PendingNetworkUpdate _pendingUpdate;
     PendingJump _pendingJump;
 
-    // --- SYNC VARIABLES (Member variables, NOT static) ---
-    // These track the last known network position for THIS character only.
     float _lastRemoteX = 0.0f;
     float _lastRemoteY = 0.0f;
     float _lastRemoteVx = 0.0f;
     float _lastRemoteVy = 0.0f;
-    // ----------------------------------------------------
 
     void updateAnimator(Animation newAnimation);
+
     void initializeCharacter(int id, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
                              GameEngine *engine, bool activePlayer, KeyBindings bindings);
+
     void applyPendingNetworkUpdate();
+
     void applyPendingJump();
 
 public:
@@ -71,33 +71,44 @@ public:
     virtual ~BaseCharacter() = default;
 
     std::string getJumpingSpritesheet() const;
+
     std::string getLeftSpritesheet() const;
+
     std::string getRightSpritesheet() const;
+
     std::string getIdleSpritesheet() const;
+
     std::string getFallingSpritesheet() const;
 
     void setMovementDirection(Direction direction);
+
     void setPendingNetworkUpdate(float x, float y, float vx, float vy, Direction direction, bool toggle);
+
     void setPendingJump(bool shouldJump);
 
     void updateAnimation();
 
     void addDiamond() { _diamonds++; }
-    int getDiamonds() {return _diamonds;}
+    int getDiamonds() { return _diamonds; }
 
 
-
-    BaseCharacterController* getController() { return _controller.get(); }
+    BaseCharacterController *getController() { return _controller.get(); }
 
 protected:
     void update(float delta) override;
+
     void onCollisionEnter(const CollisionData &collision) override;
+
     void onCollisionExit(const CollisionData &collision) override;
 
     void setIdleSpritesheet(std::string idle);
+
     void setMovingLeftSpritesheet(std::string left);
+
     void setMovingRightSpritesheet(std::string right);
+
     void setJumpingSpritesheet(std::string jump);
+
     void setFallingSpritesheet(std::string falling);
 };
 

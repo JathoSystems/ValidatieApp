@@ -1,9 +1,4 @@
-//
-// Created by jusra on 16-12-2025.
-//
-
 #include "scenes/Game.hpp"
-
 #include "../../external/GameEngine/includes/Network/GameState.hpp"
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
@@ -18,10 +13,8 @@
 #include "grid/GridManager.h"
 #include "bat/Bat.h"
 #include "bat/BatAI.h"
-#include "GameObjects/ObjectRegistry.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "SpawnEvent.hpp"
-#include "GameObjectFactory.hpp"
 #include "UI/Text.h"
 #include "Scenes/SceneSystem.h"
 
@@ -35,7 +28,7 @@ Game::Game(std::shared_ptr<NetworkSystem> network, EventManager *eventManager) :
 
 void Game::onInitialRender() {
     std::cout << "[Game] onInitialRender() called" << std::endl;
-    
+
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
@@ -45,19 +38,19 @@ void Game::onInitialRender() {
         std::cout << "[Game] Systems not available, returning" << std::endl;
         return;
     }
-    
+
     Scene *activeScene = sceneSystem->getActiveSceneObj();
-    std::cout << "[Game] Active scene: " << (activeScene ? activeScene->getName() : "nullptr") 
-              << ", This scene: " << getName() << std::endl;
-    
+    std::cout << "[Game] Active scene: " << (activeScene ? activeScene->getName() : "nullptr")
+            << ", This scene: " << getName() << std::endl;
+
     if (!activeScene || activeScene->getName() != getName()) {
         std::cout << "[Game] Scene is not active, skipping initialization" << std::endl;
         _isInitialized = false;
         return;
     }
-    
+
     std::cout << "[Game] Scene is active, proceeding with initialization" << std::endl;
-    
+
     if (_isInitialized) {
         return;
     }
@@ -200,7 +193,7 @@ void Game::onInitialRender() {
     fpsCounter->setFontSize(20);
 
     Fireboy *fireboy = nullptr;
-    for (const std::unique_ptr<GameObject>& gameObject : getObjects()) {
+    for (const std::unique_ptr<GameObject> &gameObject: getObjects()) {
         if (Fireboy *temp = dynamic_cast<Fireboy *>(gameObject.get())) {
             fireboy = temp;
         }
@@ -224,7 +217,7 @@ void Game::onInitialRender() {
 
     hud->setFPSCounter(std::move(fpsCounter));
     setHUD(std::move(hud));
-    
+
     _isInitialized = true;
 }
 
@@ -236,7 +229,7 @@ void Game::setupGrid() {
     const int GRID_HEIGHT = WINDOW_HEIGHT / CELL_SIZE;
 
     auto levelGrid = std::make_unique<LevelGrid>(GRID_WIDTH, GRID_HEIGHT, CELL_SIZE);
-    LevelGrid* gridPtr = levelGrid.get();
+    LevelGrid *gridPtr = levelGrid.get();
 
     auto markCellsAsGround = [gridPtr, CELL_SIZE](float posX, float posY, float width, float height) {
         float left = posX - width / 2.0f;
@@ -274,7 +267,7 @@ void Game::setupGrid() {
 void Game::createBat() {
     if (_batCreated) return;
 
-    LevelGrid* grid = GridManager::getGrid("Game");
+    LevelGrid *grid = GridManager::getGrid("Game");
     if (!grid) return;
 
     const int CELL_SIZE = 10;
@@ -306,7 +299,7 @@ void Game::createBat() {
 
     if (!foundStart) return;
 
-    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f); // Faster speed
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
 
     float worldX, worldY;
     grid->gridToWorld(startGridX, startGridY, worldX, worldY);
@@ -320,7 +313,7 @@ void Game::createBat() {
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
 
-    // Bat registers itself via Broadcastable, get its ID
+
     int batId = bat->getId();
 
     auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
@@ -328,7 +321,8 @@ void Game::createBat() {
 
     bool isNetworked = (_network != nullptr);
     bool isAuthoritative = true;
-    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId, isAuthoritative);
+    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId,
+                                         isAuthoritative);
     bat->addComponent(std::move(batAI));
 
     addObject(std::move(bat));
@@ -342,7 +336,7 @@ void Game::createBat() {
 void Game::createCharacter() {
     if (_characterCreated) return;
 
-    GameEngine* gameEngine = &GameEngine::getInstance();
+    GameEngine *gameEngine = &GameEngine::getInstance();
     std::string characterState = GameState::getInstance().get("role");
 
     if (characterState.empty()) {
@@ -360,29 +354,28 @@ void Game::createCharacter() {
     }
 
     if (character) {
-        // BaseCharacter registers itself via Broadcastable, get its ID
         int characterId = character->getId();
 
-        BaseCharacterController* controller = character->getController();
+        BaseCharacterController *controller = character->getController();
         if (controller) {
             controller->setParentId(characterId);
         }
 
-        auto* pos = character->getTransform()->getPosition();
+        auto *pos = character->getTransform()->getPosition();
         if (pos) {
             pos->setX(characterState == "fireboy" ? 200 : 600);
             pos->setY(500);
         }
 
-        auto* size = character->getTransform()->getSize();
+        auto *size = character->getTransform()->getSize();
         if (size) {
             size->setWidth(50);
             size->setHeight(100);
         }
 
         std::string idleSprite = characterState == "fireboy"
-            ? "resources/fireboy/idle.png"
-            : "resources/watergirl/idle.png";
+                                     ? "resources/fireboy/idle.png"
+                                     : "resources/watergirl/idle.png";
 
         auto animator = std::make_unique<Animator>(idleSprite, 1, 5);
         character->addComponent(std::move(animator));

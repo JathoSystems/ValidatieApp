@@ -1,6 +1,6 @@
 #include "scenes/LevelScene.hpp"
-
 #include "Box.hpp"
+#include "LevelSaver.hpp"
 #include "grid/LevelGrid.h"
 #include "grid/GridManager.h"
 #include "characters/Fireboy.hpp"
@@ -33,11 +33,11 @@
 #include "LevelSelector.h"
 
 void LevelScene::updateLevelSelectorStatus() {
-    LevelSelector* selector = LevelSelector::getInstance();
+    LevelSelector *selector = LevelSelector::getInstance();
     if (selector) {
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         if (sceneSystem) {
-            Scene* selectorScene = sceneSystem->getActiveSceneObj();
+            Scene *selectorScene = sceneSystem->getActiveSceneObj();
             if (selectorScene && selectorScene->getName() == "level_selector") {
                 selector->updateLevelStatus(selectorScene);
             }
@@ -114,7 +114,7 @@ void LevelScene::onInitialRender() {
     addObject(std::move(background));
 
     std::cout << "[LevelScene] Creating grid..." << std::endl;
-    createLevelGrid(); // Call the derived class implementation
+    createLevelGrid();
 
     std::cout << "[LevelScene] Setting up base level..." << std::endl;
     setupBaseLevel();
@@ -133,7 +133,7 @@ void LevelScene::onInitialRender() {
     SpawnEvent::processPending();
 
     std::cout << "[LevelScene] Setting up level specifics..." << std::endl;
-    setupLevelSpecifics(); // Call the derived class implementation
+    setupLevelSpecifics();
     std::cout << "[LevelScene] Initialize completed" << std::endl;
 }
 
@@ -152,10 +152,10 @@ void LevelScene::cleanup() {
     InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
     auto &objects = getObjects();
-    std::vector<PhysicsComponent*> allPhysicsComponents;
-    std::vector<KeyInputComponent*> allKeyInputComponents;
+    std::vector<PhysicsComponent *> allPhysicsComponents;
+    std::vector<KeyInputComponent *> allKeyInputComponents;
 
-    for (auto &obj : objects) {
+    for (auto &obj: objects) {
         if (!obj) continue;
 
         auto physicsComponents = obj->getComponents<PhysicsComponent>();
@@ -165,21 +165,22 @@ void LevelScene::cleanup() {
         allKeyInputComponents.insert(allKeyInputComponents.end(), keyInputComponents.begin(), keyInputComponents.end());
     }
 
-    std::cout << "[LevelScene] Cleanup: Found " << allPhysicsComponents.size() << " physics components to remove" << std::endl;
+    std::cout << "[LevelScene] Cleanup: Found " << allPhysicsComponents.size() << " physics components to remove" <<
+            std::endl;
 
-    for (auto *physics : allPhysicsComponents) {
+    for (auto *physics: allPhysicsComponents) {
         if (physics) {
             physics->destroyBody();
         }
     }
 
-    for (auto *physics : allPhysicsComponents) {
+    for (auto *physics: allPhysicsComponents) {
         if (physics && physicsSystem) {
             physicsSystem->unregisterComponent(physics);
         }
     }
 
-    for (auto *keyInput : allKeyInputComponents) {
+    for (auto *keyInput: allKeyInputComponents) {
         if (keyInput && inputSystem) {
             inputSystem->unregisterKeyComponent(keyInput);
         }
@@ -302,79 +303,68 @@ void LevelScene::updateDiamondCounters() {
 }
 
 void LevelScene::checkDoorCollisions() {
-    // Safety: don't check if level is completed or doors have been cleared
     if (!_isInitialized || _levelCompleted || _doors.empty()) return;
-    
+
     Fireboy *fire = getFireboy(this);
     Watergirl *water = getWatergirl(this);
     if (fire) _fireboy = fire;
     if (water) _watergirl = water;
     if (!fire && !water) return;
 
-    // Make a copy of the door pointer vector in case it gets modified
-    std::vector<Door*> doorsCopy = _doors;
-    for (Door *door : doorsCopy) {
-        // Double check we haven't completed during iteration
+
+    std::vector<Door *> doorsCopy = _doors;
+    for (Door *door: doorsCopy) {
         if (!door || _levelCompleted) break;
         if (fire && door->getColor() == "red") door->checkCollisionWithFireboy(fire);
-        if (_levelCompleted) break; // Check again after fireboy
+        if (_levelCompleted) break;
         if (water && door->getColor() == "blue") door->checkCollisionWithWatergirl(water);
     }
 }
 
 void LevelScene::reachedDoor() {
-    // Prevent double-processing - use atomic-like check
     if (_levelCompleted) {
         std::cout << "[LevelScene] reachedDoor called but level already completed, ignoring" << std::endl;
         return;
     }
-    
+
     _peopleAtDoor++;
     std::cout << "[LevelScene] Character reached door. People at door: " << _peopleAtDoor << "/2" << std::endl;
 
     if (_peopleAtDoor >= 2) {
-        // Mark as completed FIRST to prevent any further processing
         _levelCompleted = true;
         _isInitialized = false;
-        
+
         std::cout << "[LevelScene] Both players at door! Level complete!" << std::endl;
-        
-        // Save the level progress
+
         _levelEndTime = _elapsedTime;
         int redGems = _fireboy ? _fireboy->getDiamonds() : 0;
         int blueGems = _watergirl ? _watergirl->getDiamonds() : 0;
 
         LevelSaver saver;
         saver.save(_levelNumber, _levelEndTime, redGems, blueGems);
-        std::cout << "[LevelScene] Level saved. Time: " << _levelEndTime << ", Red: " << redGems << ", Blue: " << blueGems << std::endl;
+        std::cout << "[LevelScene] Level saved. Time: " << _levelEndTime << ", Red: " << redGems << ", Blue: " <<
+                blueGems << std::endl;
 
-        // Stop audio
         if (audio) {
             audio->setVolume(0.0f);
         }
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
 
-        // Clear online state if applicable
         if (_isOnline) {
             GameState::getInstance().clear();
         }
 
-        // Clear door pointers to prevent any further collision checks
         _doors.clear();
         _fireboy = nullptr;
         _watergirl = nullptr;
-        
-        // Get scene system and switch - do this LAST
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+
+
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         if (sceneSystem) {
             std::string currentSceneName = getName();
             std::cout << "[LevelScene] Switching to level_selector, will remove: " << currentSceneName << std::endl;
             sceneSystem->setScene("level_selector");
-            
-            // Remove this level scene to free resources
             sceneSystem->removeScene(currentSceneName);
-            
-            // Update level selector after switching
             updateLevelSelectorStatus();
         }
     }
@@ -457,9 +447,9 @@ void LevelScene::setupBaseLevel() {
     backButton->setOnClick([this]() {
         cleanup();
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("level_selector");
-        
+
         updateLevelSelectorStatus();
     });
     auto backButtonObj = std::make_unique<GameObject>();
@@ -472,8 +462,6 @@ void LevelScene::setupBaseLevel() {
 }
 
 void LevelScene::setupCharacters() {
-    // Only skip if both characters already exist (to prevent duplicate creation)
-    // But allow re-initialization if we're restarting (both should be nullptr after cleanup)
     if (_fireboy && _watergirl) return;
 
     GameEngine *gameEngine = &GameEngine::getInstance();

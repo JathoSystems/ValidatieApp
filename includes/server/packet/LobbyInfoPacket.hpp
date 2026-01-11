@@ -1,7 +1,3 @@
-//
-// Created for lobby system
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_LOBBYINFOPACKET_HPP
 #define VUURJONGEN_WATERMEISJE_LOBBYINFOPACKET_HPP
 #include "Network/Packet/Packet.h"
@@ -11,13 +7,19 @@ public:
     int lobbyId = 0;
     int levelId = 0;
     int playerCount = 0;
-    std::string status; // "created", "waiting", "ready"
-    
-    LobbyInfoPacket() { packetId = 105; lobbyId = 0; levelId = 0; playerCount = 0; status = ""; }
-    
-    LobbyInfoPacket(int lobby, int level, int players, const std::string& stat) 
-        : lobbyId(lobby), levelId(level), playerCount(players), status(stat) { 
-        packetId = 105; 
+    std::string status;
+
+    LobbyInfoPacket() {
+        packetId = 105;
+        lobbyId = 0;
+        levelId = 0;
+        playerCount = 0;
+        status = "";
+    }
+
+    LobbyInfoPacket(int lobby, int level, int players, const std::string &stat)
+        : lobbyId(lobby), levelId(level), playerCount(players), status(stat) {
+        packetId = 105;
     }
 
     void serialize() override {

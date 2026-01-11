@@ -1,18 +1,14 @@
-//
-// Created by jusra on 11-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_LEVEL3SCENE_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_LEVEL3SCENE_HPP
 #include "grid/GridManager.h"
 #include "scenes/LevelScene.hpp"
 
 class Level3Scene : public LevelScene {
-
 public:
     Level3Scene(bool isOnline = false, std::shared_ptr<NetworkSystem> network = nullptr,
                 EventManager *eventManager = nullptr)
-        : LevelScene(3, isOnline, network, eventManager) {}
+        : LevelScene(3, isOnline, network, eventManager) {
+    }
 
 protected:
     void createLevelGrid() override {
@@ -23,7 +19,7 @@ protected:
         for (int x = 0; x < w; ++x) {
             levelGrid->setCellType(x, 0, CellType::Ground);
 
-            if (x%2==0)
+            if (x % 2 == 0)
                 levelGrid->setCellType(x, 1, CellType::Box);
             levelGrid->setCellType(x, h - 1, CellType::Ground);
         }
@@ -34,7 +30,7 @@ protected:
 
         int holeSize = 5;
         int holeStart = (w - holeSize) / 2;
-        int holeEnd   = holeStart + holeSize;
+        int holeEnd = holeStart + holeSize;
 
         for (int x = 0; x < w; ++x) {
             if (x >= holeStart && x < holeEnd) {
@@ -51,8 +47,9 @@ protected:
 
         GridManager::registerGrid(getName(), std::move(levelGrid));
     }
+
     void setupLevelSpecifics() override {
-        LevelGrid* grid = GridManager::getGrid(getName());
+        LevelGrid *grid = GridManager::getGrid(getName());
         if (!grid) return;
 
         createCellObjects(grid);

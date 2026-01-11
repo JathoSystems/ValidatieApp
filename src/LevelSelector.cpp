@@ -1,6 +1,5 @@
 #include "LevelSelector.h"
 #include "scenes/LevelScene.hpp"
-#include "scenes/LevelScene.hpp"
 #include "scenes/RoomSelectionScene.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
@@ -18,7 +17,7 @@
 
 extern std::map<int, std::function<std::unique_ptr<Scene>()> > g_levels;
 
-LevelSelector* LevelSelector::_instance = nullptr;
+LevelSelector *LevelSelector::_instance = nullptr;
 
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network,
                              EventManager *eventManager) : _sceneSystem(sceneSystem), _network(network),
@@ -73,7 +72,7 @@ void LevelSelector::createLevelSelectorScene() {
         if (completionTime != -1) color = std::make_unique<Color>(0, 255, 0);
         levelText->setColor(std::move(color));
         auto levelTextObj = std::make_unique<GameObject>();
-        Text* levelTextPtr = levelText.get();
+        Text *levelTextPtr = levelText.get();
         _levelTextMap[levelNum] = levelTextPtr;
         levelTextObj->addComponent(std::move(levelText));
         levelTextObj->getTransform()->getPosition()->setX(x + 80);
@@ -81,8 +80,7 @@ void LevelSelector::createLevelSelectorScene() {
         levelTextObj->getTransform()->getSize()->setWidth(150);
         levelTextObj->getTransform()->getSize()->setHeight(40);
         selectorScene->addObject(std::move(levelTextObj));
-        
-        // Always add stats text (empty if level not completed)
+
         std::ostringstream statsText;
         if (completionTime != -1) {
             statsText << std::fixed << std::setprecision(1) << completionTime << "s";
@@ -98,13 +96,12 @@ void LevelSelector::createLevelSelectorScene() {
             }
         }
         std::string statsTextStr = statsText.str();
-        // Only create stats text object if there's actual text to display
         if (!statsTextStr.empty()) {
             auto statsTextObj = std::make_unique<Text>(statsTextStr);
             statsTextObj->setColor(std::make_unique<Color>(200, 200, 200));
             statsTextObj->setFontSize(10);
             auto statsGameObj = std::make_unique<GameObject>();
-            Text* statsTextPtr = statsTextObj.get();
+            Text *statsTextPtr = statsTextObj.get();
             _statsTextMap[levelNum] = statsTextPtr;
             statsGameObj->addComponent(std::move(statsTextObj));
             statsGameObj->getTransform()->getPosition()->setX(x + 10);
@@ -143,8 +140,7 @@ void LevelSelector::onPlayClicked(int levelNumber) {
         std::cerr << "Level " << levelNumber << " not found!" << std::endl;
         return;
     }
-    
-    // Remove any existing level scenes to prevent resource accumulation
+
     for (int i = 1; i <= 10; i++) {
         std::string offlineSceneName = "level_" + std::to_string(i);
         std::string onlineSceneName = "level_" + std::to_string(i) + "_online";
@@ -155,7 +151,7 @@ void LevelSelector::onPlayClicked(int levelNumber) {
             _sceneSystem->removeScene(onlineSceneName);
         }
     }
-    
+
     std::string sceneName = "level_" + std::to_string(levelNumber);
     std::unique_ptr<Scene> scene = g_levels[levelNumber]();
     _sceneSystem->addScene(std::move(scene));
@@ -189,9 +185,9 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
     if (!selectorScene || selectorScene->getName() != "level_selector") {
         return;
     }
-    
+
     LevelSaver saver;
-    for (const auto &[levelNum, textPtr] : _levelTextMap) {
+    for (const auto &[levelNum, textPtr]: _levelTextMap) {
         if (textPtr) {
             float completionTime = saver.getCompletionTime(levelNum);
             std::unique_ptr<Color> color = std::make_unique<Color>(255, 255, 255);
@@ -201,14 +197,13 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
             textPtr->setColor(std::move(color));
         }
     }
-    
-    // Update stats text
-    for (const auto &[levelNum, statsTextPtr] : _statsTextMap) {
+
+    for (const auto &[levelNum, statsTextPtr]: _statsTextMap) {
         if (statsTextPtr) {
             float completionTime = saver.getCompletionTime(levelNum);
             int redGems = saver.getRedGems(levelNum);
             int blueGems = saver.getBlueGems(levelNum);
-            
+
             std::ostringstream statsText;
             if (completionTime != -1) {
                 statsText << std::fixed << std::setprecision(1) << completionTime << "s";
@@ -224,8 +219,6 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
                 }
             }
             std::string statsTextStr = statsText.str();
-            // If text is empty, set to a space to avoid "Text has zero width" error
-            // This ensures the text object always has valid content
             if (statsTextStr.empty()) {
                 statsTextStr = " ";
             }
@@ -239,8 +232,7 @@ void LevelSelector::onOnlinePlayClicked(int levelNumber) {
         std::cerr << "Level " << levelNumber << " not found!" << std::endl;
         return;
     }
-    
-    // Remove any existing level scenes and room selection scenes to prevent resource accumulation
+
     for (int i = 1; i <= 10; i++) {
         std::string offlineSceneName = "level_" + std::to_string(i);
         std::string onlineSceneName = "level_" + std::to_string(i) + "_online";
@@ -255,7 +247,7 @@ void LevelSelector::onOnlinePlayClicked(int levelNumber) {
             _sceneSystem->removeScene(roomSceneName);
         }
     }
-    
+
     std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber, g_levels[levelNumber]);
     _sceneSystem->addScene(std::move(roomScene));

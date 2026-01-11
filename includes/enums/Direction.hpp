@@ -1,7 +1,3 @@
-//
-// Created by jusra on 12-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_DIRECTION_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_DIRECTION_HPP
 
@@ -14,11 +10,11 @@ enum class Direction {
 inline std::string DirectionToString(Direction dir) {
     switch (dir) {
         case Direction::NORTH: return "NORTH";
-        case Direction::EAST:  return "EAST";
+        case Direction::EAST: return "EAST";
         case Direction::SOUTH: return "SOUTH";
-        case Direction::WEST:  return "WEST";
-        case Direction::NONE:  return "NONE";
-        default:               return "UNKNOWN";
+        case Direction::WEST: return "WEST";
+        case Direction::NONE: return "NONE";
+        default: return "UNKNOWN";
     }
 }
 

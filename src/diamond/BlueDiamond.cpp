@@ -1,13 +1,9 @@
-//
-// Created by jusra on 6-1-2026.
-//
-
 #include "diamond/BlueDiamond.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Engine/GameEngine.h"
 
-BlueDiamond::BlueDiamond(LevelGrid* grid, int x, int y) {
+BlueDiamond::BlueDiamond(LevelGrid *grid, int x, int y) {
     _grid = grid;
     _x = x;
     _y = y;
@@ -26,12 +22,12 @@ BlueDiamond::BlueDiamond(LevelGrid* grid, int x, int y) {
     addComponent(std::move(sprite));
 }
 
-void BlueDiamond::checkCollisionWith(GameObject* other) {
+void BlueDiamond::checkCollisionWith(GameObject *other) {
     if (_collected) {
         return;
     }
-    
-    if (Watergirl* watergirl = dynamic_cast<Watergirl*>(other)) {
+
+    if (Watergirl *watergirl = dynamic_cast<Watergirl *>(other)) {
         float x1 = getTransform()->getPosition()->getX();
         float y1 = getTransform()->getPosition()->getY();
         float w1 = getTransform()->getSize()->getWidth();
@@ -43,7 +39,7 @@ void BlueDiamond::checkCollisionWith(GameObject* other) {
         float h2 = watergirl->getTransform()->getSize()->getHeight();
 
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
-                        (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
+                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
 
         if (collision) {
             watergirl->addDiamond();
@@ -54,12 +50,12 @@ void BlueDiamond::checkCollisionWith(GameObject* other) {
     }
 }
 
-void BlueDiamond::onCollisionEnter(const CollisionData& collision) {
+void BlueDiamond::onCollisionEnter(const CollisionData &collision) {
     if (_collected) {
         return;
     }
-    
-    if (Watergirl* watergirl = dynamic_cast<Watergirl*>(collision.other)) {
+
+    if (Watergirl *watergirl = dynamic_cast<Watergirl *>(collision.other)) {
         watergirl->addDiamond();
         _collected = true;
         removeComponent<SpriteRenderer>(false);

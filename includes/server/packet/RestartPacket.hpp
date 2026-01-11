@@ -1,7 +1,3 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_RESTARTPACKET_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_RESTARTPACKET_HPP
 #include "Network/GameState.hpp"

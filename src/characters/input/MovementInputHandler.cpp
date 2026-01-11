@@ -1,7 +1,3 @@
-//
-// Created by jusra on 8-12-2025.
-//
-
 #include "characters/input/MovementInputHandler.hpp"
 
 MovementInputHandler::MovementInputHandler(Key up, Key down, Key left, Key right)
