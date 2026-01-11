@@ -6,9 +6,13 @@
 #include "Events/EventManager.h"
 #include <memory>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
+#include "LevelSaver.hpp"
 #include "LevelSwitcher.hpp"
 #include "server/packet/NextLevelPacket.hpp"
+
 
 class Fireboy;
 class Watergirl;
@@ -42,18 +46,24 @@ public:
     void reachedDoor() {
         _peopleAtDoor++;
 
-        if (_peopleAtDoor >= 2) {
+        if (_peopleAtDoor >= 2 && !_levelCompleted) {
+            _levelCompleted = true;
+            _levelEndTime = _elapsedTime;
+
+            LevelSaver saver;
+            saver.save(_levelNumber, _levelEndTime);
+
             if (_isOnline && _network) {
                 int nextLevel = _levelNumber + 1;
 
-                NextLevelPacket packet(nextLevel);
-                packet.serialize();
-                _network->send(packet);
-                return;
+                // NextLevelPacket packet(nextLevel);
+                // packet.serialize();
+                // _network->send(packet);
+                // return;
             }
 
-            LevelSwitcher switcher{_network, _eventManager};
-            switcher.openLevel(_levelNumber + 1, false);
+            // LevelSwitcher switcher{_network, _eventManager};
+            // switcher.openLevel(_levelNumber + 1, false);
         }
     }
 
@@ -63,6 +73,7 @@ public:
             std::cout << "Character left door. People at door: " << _peopleAtDoor << "/2" << std::endl;
         }
     }
+
 protected:
     // Abstract methods that each level must implement
     virtual void createLevelGrid() = 0;
@@ -96,6 +107,11 @@ private:
     void checkDiamondCollisions();
     void updateDiamondCounters();
     void checkDoorCollisions();
+
+    // Level timing
+    float _elapsedTime;
+    float _levelEndTime;
+    bool _levelCompleted;
 
     bool _isInitialized;
     bool _batCreated;

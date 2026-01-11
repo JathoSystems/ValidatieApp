@@ -53,6 +53,10 @@ LevelScene::~LevelScene() {
 }
 
 void LevelScene::onInitialRender() {
+    _elapsedTime = 0.0f;
+    _levelEndTime = 0.0f;
+    _levelCompleted = false;
+
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
@@ -61,7 +65,7 @@ void LevelScene::onInitialRender() {
     if (sceneSystem) {
         Scene *activeScene = sceneSystem->getActiveSceneObj();
         std::cout << "[LevelScene] Active scene: " << (activeScene ? activeScene->getName() : "nullptr")
-                  << ", This scene: " << getName() << std::endl;
+                << ", This scene: " << getName() << std::endl;
 
         if (!activeScene || activeScene->getName() != getName()) {
             std::cout << "[LevelScene] Scene is not active, skipping initialization" << std::endl;
@@ -121,13 +125,13 @@ void LevelScene::cleanup() {
     _doors.clear();
     _peopleAtDoor = 0;
 
-    auto& objects = getObjects();
-    const_cast<std::vector<std::unique_ptr<GameObject>>&>(objects).clear();
+    auto &objects = getObjects();
+    const_cast<std::vector<std::unique_ptr<GameObject> > &>(objects).clear();
 
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
 
-    for(int i = 1; i <= _batCount; i++) {
+    for (int i = 1; i <= _batCount; i++) {
         ObjectRegistry::getInstance().removeObject(i);
     }
     _batCount = 0;
@@ -180,12 +184,13 @@ void LevelScene::onUpdate(float deltaTime) {
     if (!_isInitialized) {
         return;
     }
+    _elapsedTime += deltaTime;
     updateDiamondCounters();
     checkDiamondCollisions();
     checkDoorCollisions();
 }
 
-Fireboy * LevelScene::getFireboy(Scene *scene) {
+Fireboy *LevelScene::getFireboy(Scene *scene) {
     auto &objects = scene->getObjects();
     for (auto &obj: objects) {
         if (!obj) continue;
@@ -235,20 +240,20 @@ void LevelScene::updateDiamondCounters() {
 
 void LevelScene::checkDoorCollisions() {
     if (!_isInitialized) return;
-    Fireboy* fire = getFireboy(this);
-    Watergirl* water = getWatergirl(this);
+    Fireboy *fire = getFireboy(this);
+    Watergirl *water = getWatergirl(this);
     if (fire) _fireboy = fire;
     if (water) _watergirl = water;
     if (!fire && !water) return;
 
-    for (Door* door : _doors) {
+    for (Door *door: _doors) {
         if (!door) continue;
         if (fire && door->getColor() == "red") door->checkCollisionWithFireboy(fire);
         if (water && door->getColor() == "blue") door->checkCollisionWithWatergirl(water);
     }
 }
 
-void LevelScene::createGroundBlock(LevelGrid* grid, int x, int y) {
+void LevelScene::createGroundBlock(LevelGrid *grid, int x, int y) {
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
 
@@ -273,7 +278,7 @@ void LevelScene::createGroundBlock(LevelGrid* grid, int x, int y) {
     addObject(std::move(block));
 }
 
-void LevelScene::createCellObjects(LevelGrid* grid) {
+void LevelScene::createCellObjects(LevelGrid *grid) {
     int cellSize = grid->getCellSize();
     for (int x = 0; x < grid->getWidth(); ++x) {
         for (int y = 0; y < grid->getHeight(); ++y) {
@@ -378,7 +383,7 @@ void LevelScene::createBat() {
     }
 
     std::string sceneName = getName();
-    LevelGrid* grid = GridManager::getGrid(sceneName);
+    LevelGrid *grid = GridManager::getGrid(sceneName);
     if (!grid) return;
 
     const int CELL_SIZE = grid->getCellSize();
@@ -435,7 +440,8 @@ void LevelScene::createBat() {
     float batX = static_cast<float>(bat->getTransform()->getPosition()->getX());
     float batY = static_cast<float>(bat->getTransform()->getPosition()->getY());
 
-    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId, isAuthoritative);
+    auto batAI = std::make_unique<BatAI>(bat.get(), grid, this, CELL_SIZE, 80.0f, isNetworked, _eventManager, batId,
+                                         isAuthoritative);
     bat->addComponent(std::move(batAI));
 
     addObject(std::move(bat));
