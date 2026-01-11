@@ -68,6 +68,8 @@ std::string getLocalIPAddress() {
     return "192.168.2.161";
 }
 
+std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+
 int main() {
     try {
         GameEngine *gameEngine = &GameEngine::getInstance();

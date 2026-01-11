@@ -11,6 +11,7 @@
 
 #define COLOR_RED     "\033[31m"
 #define COLOR_MAGENTA "\033[35m"
+#define JUMP_VELOCITY -1200.0f
 
 BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> network, int parentId,
                                                  EventManager *eventManager, KeyBindings bindings, bool active) {
@@ -113,8 +114,9 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
     physics->getVelocity(currentVx, currentVy);
     float newVy = currentVy;
 
-    if (_shouldJump && _grounded) {
-        newVy = -800.0f;
+    // Apply jump if requested
+    if (_shouldJump) {
+        newVy = JUMP_VELOCITY;
         _grounded = false;
         _shouldJump = false;
     }

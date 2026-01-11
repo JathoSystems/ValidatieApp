@@ -12,14 +12,16 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
+#define JUMP_VELOCITY -1200.0f
 
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-                             bool activePlayer, KeyBindings bindings): Broadcastable(this) {
+                             bool activePlayer, KeyBindings bindings) : Broadcastable(this) {
     initializeCharacter(getId(), network, eventManager, engine, activePlayer, bindings);
 }
 
 BaseCharacter::BaseCharacter(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : Broadcastable(this, parentId) {
+                             GameEngine *engine, bool activePlayer, KeyBindings bindings) : Broadcastable(
+    this, parentId) {
     initializeCharacter(parentId, network, eventManager, engine, activePlayer, bindings);
 }
 
@@ -28,7 +30,7 @@ void BaseCharacter::initializeCharacter(int id, std::shared_ptr<NetworkSystem> n
     _controller = std::make_unique<BaseCharacterController>(network, id, eventManager, bindings, activePlayer);
 
     std::cout << "[BaseCharacter] Created with ID: " << id
-              << " Active: " << (activePlayer ? "YES" : "NO") << std::endl;
+            << " Active: " << (activePlayer ? "YES" : "NO") << std::endl;
 
     if (activePlayer) {
         auto keyInput = std::make_unique<KeyInputComponent>(this);
@@ -83,8 +85,10 @@ void BaseCharacter::applyPendingJump() {
     if (!_pendingJump.shouldJump) return;
     _pendingJump.shouldJump = false;
 
-    if (auto* physics = getComponent<PhysicsComponent>()) {
-         physics->setVelocity(0, -800.0f);
+    if (auto *physics = getComponent<PhysicsComponent>()) {
+        float vx, vy;
+        physics->getVelocity(vx, vy);
+        physics->setVelocity(vx, JUMP_VELOCITY);
     }
     if (_controller) {
         _controller->setGrounded(false);
@@ -115,7 +119,7 @@ void BaseCharacter::update(float delta) {
 
     // Remote Player Sync / correction part
     if (_controller && !_controller->isActive()) {
-        PhysicsComponent* physics = getComponent<PhysicsComponent>();
+        PhysicsComponent *physics = getComponent<PhysicsComponent>();
 
         if (_lastRemoteX != 0 && _lastRemoteY != 0 && physics) {
             float currentX = getTransform()->getPosition()->getX();
@@ -127,11 +131,10 @@ void BaseCharacter::update(float delta) {
 
             if (errorDistance > 100.0f) {
                 std::cout << "[Remote Sync] Large error detected (" << errorDistance
-                         << "px), snapping to network position" << std::endl;
+                        << "px), snapping to network position" << std::endl;
                 physics->setPosition(_lastRemoteX, _lastRemoteY);
                 physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
-            }
-            else if (errorDistance > 5.0f) {
+            } else if (errorDistance > 5.0f) {
                 const float CORRECTION_STRENGTH = 15.0f;
                 float correctionVx = errorX * CORRECTION_STRENGTH;
                 float correctionVy = errorY * CORRECTION_STRENGTH;
@@ -140,8 +143,7 @@ void BaseCharacter::update(float delta) {
                 float finalVy = _lastRemoteVy * 0.7f + correctionVy * 0.3f;
 
                 physics->setVelocity(finalVx, finalVy);
-            }
-            else {
+            } else {
                 physics->setVelocity(_lastRemoteVx, _lastRemoteVy);
             }
         }
@@ -201,11 +203,16 @@ void BaseCharacter::updateAnimator(Animation newAnimation) {
     _currentAnimation = newAnimation;
     removeComponent<Animator>(true);
     switch (newAnimation) {
-        case Animation::IDLE: addComponent(std::make_unique<Animator>(idle, 1, 5)); break;
-        case Animation::LEFT: addComponent(std::make_unique<Animator>(left, 1, 7)); break;
-        case Animation::RIGHT: addComponent(std::make_unique<Animator>(right, 1, 7)); break;
-        case Animation::JUMP: addComponent(std::make_unique<Animator>(jump, 1, 4)); break;
-        case Animation::FALLING: addComponent(std::make_unique<Animator>(falling, 1, 4)); break;
+        case Animation::IDLE: addComponent(std::make_unique<Animator>(idle, 1, 5));
+            break;
+        case Animation::LEFT: addComponent(std::make_unique<Animator>(left, 1, 7));
+            break;
+        case Animation::RIGHT: addComponent(std::make_unique<Animator>(right, 1, 7));
+            break;
+        case Animation::JUMP: addComponent(std::make_unique<Animator>(jump, 1, 4));
+            break;
+        case Animation::FALLING: addComponent(std::make_unique<Animator>(falling, 1, 4));
+            break;
     }
 }
 
@@ -232,8 +239,8 @@ void BaseCharacter::updateAnimation() {
             updateAnimator(Animation::FALLING);
         } else {
             if (movementDir != Direction::NONE) {
-                if(movementDir == Direction::WEST) updateAnimator(Animation::RIGHT);
-                 else updateAnimator(Animation::LEFT);
+                if (movementDir == Direction::WEST) updateAnimator(Animation::RIGHT);
+                else updateAnimator(Animation::LEFT);
             } else {
                 updateAnimator(Animation::IDLE);
             }

@@ -11,12 +11,13 @@
 
 #include "Network/GameState.hpp"
 
-RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, int levelNumber)
+RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, int levelNumber, std::function<std::unique_ptr<Scene>()> levelFactory)
     : Scene("room_selection_level_" + std::to_string(levelNumber)),
       _network(network),
       _selectedLevel(levelNumber),
+      _levelFactory(levelFactory),
       _currentLobbyIdInput(0) {
-    
+
     // Title
     auto titleText = std::make_unique<Text>("Room Selection - Level " + std::to_string(levelNumber));
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
@@ -70,7 +71,7 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     displayObj->getTransform()->getSize()->setWidth(80);
     displayObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(displayObj));
-    
+
     // Store reference for later updates
     _displayTextPtr = displayTextPtr;
 
@@ -80,7 +81,7 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     float btnWidth = 60;
     float btnHeight = 50;
     float spacing = 10;
-    
+
     for (int i = 0; i <= 9; i++) {
         int num = i;
         auto numButton = std::make_unique<Button>(std::to_string(i), std::make_unique<Color>(100, 150, 255));
@@ -90,7 +91,7 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
         });
         auto numButtonObj = std::make_unique<GameObject>();
         numButtonObj->addComponent(std::move(numButton));
-        
+
         int col = i % 5;
         int row = i / 5;
         numButtonObj->getTransform()->getPosition()->setX(startX + col * (btnWidth + spacing));
@@ -147,4 +148,8 @@ void RoomSelectionScene::updateLobbyIdDisplay() {
         // Note: Don't set GameState "lobby" here - it will be set when server
         // confirms lobby join via LobbyInfoPacketHandler
     }
+}
+
+std::function<std::unique_ptr<Scene>()> RoomSelectionScene::getLevelFactory() const {
+    return _levelFactory;
 }

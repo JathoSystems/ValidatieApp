@@ -1,7 +1,3 @@
-//
-// Created for lobby system
-//
-
 #include "server/packet/handler/LobbyInfoPacketHandler.hpp"
 #include "server/packet/LobbyInfoPacket.hpp"
 #include "scenes/Lobby.hpp"
@@ -13,9 +9,10 @@
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
 
-// Static storage for network and event manager (set from Main.cpp)
 static std::shared_ptr<NetworkSystem> g_network = nullptr;
 static EventManager* g_eventManager = nullptr;
+
+extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
 
 void LobbyInfoPacketHandler::setNetworkAndEventManager(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) {
     g_network = network;
@@ -31,9 +28,6 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
     auto sceneSystem = gameEngine->getSystem<SceneSystem>();
     
     if (sceneSystem) {
-        // Note: Don't clear packet queue here - we need GameReadyPacket to be processed after this
-        // The lobby scene doesn't have networked game objects that could cause crashes
-        
         int lobbyId = lobbyInfo.lobbyId;
         int levelId = lobbyInfo.levelId;
         int playerCount = lobbyInfo.playerCount;
@@ -67,16 +61,13 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
             }
         }
         
-        // Create the level scene for when game starts (if not already created)
-        std::string levelSceneName = "level_" + std::to_string(lobbyInfo.levelId) + "_online";
-        if (g_network && g_eventManager) {
-            // addScene handles duplicates, so we can just try to add it
-            auto newLevelScene = std::make_unique<LevelScene>(levelId, true, g_network, g_eventManager);
-            sceneSystem->addScene(std::move(newLevelScene));
+        // Create the level scene using the level registry
+        if (g_network && g_eventManager && g_levels.find(levelId) != g_levels.end()) {
+            auto scene = g_levels[levelId]();
+            if (LevelScene* lvl = dynamic_cast<LevelScene*>(scene.get())) {
+                lvl->toggleOnline(g_network, g_eventManager);
+            }
+            sceneSystem->addScene(std::move(scene));
         }
     }
 }
-
-
-
-

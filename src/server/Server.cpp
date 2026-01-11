@@ -24,6 +24,8 @@
 #include "server/packet/QuitPacket.hpp"
 #include "server/packet/RestartPacket.hpp"
 
+std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+
 int main() {
     try {
         asio::io_context io_context;
@@ -197,7 +199,9 @@ int main() {
                     return;
                 }
 
-                std::cout << "Restarting lobby: " << restart.getLobby() << "\n";
+                std::cout << "Restarting lobby: " << restart.getLobby() << ", level: " << restart.getLevel() << "\n";
+                // Serialize the packet before broadcasting to ensure it's in the correct format
+                restart.serialize();
                 lobby->broadcastInLobby(restart, server);
                 // Handle NetworkEventPacket
             } else if (packetId == 122) {

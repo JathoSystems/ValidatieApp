@@ -8,6 +8,7 @@
 #include "scenes/LevelScene.hpp"
 #include "server/packet/RestartPacket.hpp"
 #include "LevelSwitcher.hpp"
+#include "Scenes/SceneSystem.h"
 
 class RestartLevelPacketHandler : public IPacketHandler {
 private:
@@ -17,7 +18,7 @@ private:
 public:
     void handle(const Packet &packet) override {
         // Now called on main thread - safe to execute directly
-        std::cout << "RESTART PACKET RECEIVED\n";
+        std::cout << "[RestartLevelPacketHandler] Restart packet received\n";
         
         RestartPacket restartPacket;
         restartPacket.getBuffer().setData(packet.getBuffer().getData());
