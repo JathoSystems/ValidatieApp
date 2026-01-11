@@ -2,6 +2,7 @@
 #include "bat/BatAI.h"
 #include "GameObjects/Transform/Transform.h"
 #include "GameObjects/Transform/Position.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include <cmath>
 #include <cstring>
 
@@ -53,11 +54,18 @@ Data BatMoveEvent::deserialize(const Package &package) {
 }
 
 void BatMoveEvent::apply(GameObject* gameObject) {
-    if (!gameObject) return;
+    int objectId = _objectId;
+    float x = _x;
+    float y = _y;
     
-    // Get BatAI component
-    BatAI* batAI = gameObject->getComponent<BatAI>();
-    if (!batAI) return;
+    std::lock_guard<std::mutex> lock(eventMutex);
+    eventQueue.push_back([objectId, x, y]() {
+        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
+        if (!obj) return;
+        
+        BatAI* batAI = obj->getComponent<BatAI>();
+        if (!batAI) return;
 
-    batAI->setNetworkPosition(_x, _y);
+        batAI->setNetworkPosition(x, y);
+    });
 }

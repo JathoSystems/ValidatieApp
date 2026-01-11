@@ -327,9 +327,12 @@ void LevelScene::setupLevel() {
     levelTextObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(levelTextObj));
 
+    std::string currentSceneName = getName();
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
+    backButton->setOnClick([currentSceneName]() {
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
+        sceneSystem->removeScene(currentSceneName);
     });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));
@@ -392,15 +395,17 @@ void LevelScene::setupLevel() {
             }
 
             if (type == CellType::RedDoor) {
-                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y);
+                auto door = std::make_unique<Door>(grid->getCellSize(), x, y);
                 Door* doorPtr = door.get();
+                doorPtr->setOnReachedCallback([this]() { reachedDoor(); });
                 _doors.push_back(doorPtr);
                 addObject(std::move(door));
             }
 
             if (type == CellType::BlueDoor) {
-                auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y, "blue");
+                auto door = std::make_unique<Door>(grid->getCellSize(), x, y, "blue");
                 Door* doorPtr = door.get();
+                doorPtr->setOnReachedCallback([this]() { reachedDoor(); });
                 _doors.push_back(doorPtr);
                 addObject(std::move(door));
             }

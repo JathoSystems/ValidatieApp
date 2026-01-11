@@ -64,7 +64,9 @@ Lobby::Lobby() : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lob
     // Back Button
     auto backButton = std::make_unique<Button>("Leave Lobby", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
+        sceneSystem->removeScene("Lobby");
     });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));

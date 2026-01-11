@@ -12,6 +12,7 @@
 #include "server/packet/QuitPacket.hpp"
 #include "server/packet/RestartPacket.hpp"
 #include "UI/Button.h"
+#include "LevelSwitcher.hpp"
 
 extern std::shared_ptr<NetworkSystem> network;
 
@@ -28,11 +29,17 @@ void RestartScene::onInitialRender() {
             RestartPacket p{_previousLevel};
             _network->send(p);
         } else {
-            GameEngine *engine = &GameEngine::getInstance();
-            SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
-            
-            // Switch to the previous level scene - it will reinitialize itself
-            sceneSystem->setScene(_previousLevel);
+            int levelNumber = 1;
+            if (_previousLevel.find("level_") == 0) {
+                std::string numStr = _previousLevel.substr(6);
+                try {
+                    levelNumber = std::stoi(numStr);
+                } catch (...) {
+                    levelNumber = 1;
+                }
+            }
+            LevelSwitcher switcher{nullptr, nullptr};
+            switcher.openLevel(levelNumber, false);
         }
     });
     background->addComponent(std::move(restartButton));
@@ -43,7 +50,9 @@ void RestartScene::onInitialRender() {
     std::unique_ptr<Button> mainMenuButton = std::make_unique<Button>("Main Menu",
                                                                       std::make_unique<Color>(255, 0, 0));
     mainMenuButton->setOnClick([this]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("MainMenu");
+        sceneSystem->removeScene("Restart");
         if (_isOnline) {
             QuitPacket quit;
             _network->send(quit);

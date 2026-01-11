@@ -7,6 +7,9 @@
 #include <iostream>
 #include <cstring>
 #include <unordered_map>
+#include <mutex>
+#include <vector>
+#include <functional>
 
 #include "GameObjectFactory.hpp"
 #include "Engine/GameEngine.h"
@@ -14,6 +17,10 @@
 #include "GameObjects/ObjectRegistry.hpp"
 #include "Scenes/SceneSystem.h"
 #include "bat/BatAI.h"
+
+// External event queue for thread-safe operations
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
 
 class SpawnEvent : public IEvent {
 private:
@@ -94,14 +101,26 @@ public:
     }
 
     void apply(GameObject * gameObject) override {
-        spawn();
+        // Queue the spawn operation to the main thread for thread safety
+        int id = registryId;
+        std::string name = objectName;
+        float x = spawnX;
+        float y = spawnY;
+        
+        std::lock_guard<std::mutex> lock(eventMutex);
+        eventQueue.push_back([id, name, x, y]() {
+            SpawnEvent::spawnOnMainThread(id, name, x, y);
+        });
     }
 
-    void spawn() {
+    static void spawnOnMainThread(int registryId, const std::string& objectName, float spawnX, float spawnY) {
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
-            existingObj->getTransform()->getPosition()->setX(spawnX);
-            existingObj->getTransform()->getPosition()->setY(spawnY);
+            auto transform = existingObj->getTransform();
+            if (transform && transform->getPosition()) {
+                transform->getPosition()->setX(spawnX);
+                transform->getPosition()->setY(spawnY);
+            }
             return;
         }
 
@@ -139,6 +158,11 @@ public:
         } catch (const std::exception &e) {
             std::cout << "[SpawnEvent] Exception adding object to scene: " << e.what() << std::endl;
         }
+    }
+    
+    // Legacy spawn method - kept for local use only
+    void spawn() {
+        spawnOnMainThread(registryId, objectName, spawnX, spawnY);
     }
 
     float getSpawnX() const { return spawnX; }

@@ -47,14 +47,14 @@ private:
     int _objectId;
     bool _isAuthoritative;
     
-    // Network position synchronization (similar to BaseCharacter)
     float _lastNetworkX;
     float _lastNetworkY;
     bool _hasNetworkUpdate;
     
-    // Track previous position for direction calculation (non-authoritative clients)
     float _previousX;
     float _previousY;
+    
+    bool _needsInitialTarget;
 
 public:
     BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed = 80.0f, bool isNetworked = false, EventManager* eventManager = nullptr, int objectId = -1, bool isAuthoritative = true);

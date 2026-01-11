@@ -6,6 +6,7 @@
 #include "characters/BaseCharacter.hpp"
 #include "enums/Direction.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Physics/PhysicsComponent.h"
 
 MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle, float x, float y, float vx, float vy)
@@ -63,13 +64,27 @@ Data MoveEvent::deserialize(const Package &package) {
 }
 
 void MoveEvent::apply(GameObject *gameObject) {
-    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
-        BaseCharacterController* controller = baseChar->getController();
+    int objectId = _objectId;
+    float x = _x;
+    float y = _y;
+    float vx = _vx;
+    float vy = _vy;
+    Direction direction = _direction;
+    bool toggle = _toggle;
+    
+    std::lock_guard<std::mutex> lock(eventMutex);
+    eventQueue.push_back([objectId, x, y, vx, vy, direction, toggle]() {
+        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
+        if (!obj) return;
+        
+        if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj)) {
+            BaseCharacterController* controller = baseChar->getController();
 
-        bool isActive = controller && controller->isActive();
-        if (isActive) return;
+            bool isActive = controller && controller->isActive();
+            if (isActive) return;
 
-        // Pass velocity to the character
-        baseChar->setPendingNetworkUpdate(_x, _y, _vx, _vy, _direction, _toggle);
-    }
+            // Pass velocity to the character
+            baseChar->setPendingNetworkUpdate(x, y, vx, vy, direction, toggle);
+        }
+    });
 }

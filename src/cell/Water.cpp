@@ -66,6 +66,10 @@ void Water::onCollisionEnter(const CollisionData &collision) {
                 restartScene->setTargetLevel(previousSceneName);
                 restartScene->setOnline((GameState::getInstance().get("lobby", "nope") != "nope"));
             }
+
+            if (previousSceneName.find("level_") == 0) {
+                sceneSystem->removeScene(previousSceneName);
+            }
         }
     }
 }

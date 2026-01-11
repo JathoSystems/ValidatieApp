@@ -96,7 +96,13 @@ void LevelSelector::createLevelSelectorScene() {
 void LevelSelector::onPlayClicked(int levelNumber) {
     std::string sceneName = "level_" + std::to_string(levelNumber);
     
-    if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) {
+    std::string currentSceneName = "";
+    Scene* currentScene = _sceneSystem->getActiveSceneObj();
+    if (currentScene) {
+        currentSceneName = currentScene->getName();
+    }
+    
+    if (currentSceneName != sceneName) {
         auto levelScene = std::make_unique<LevelScene>(levelNumber, false, nullptr, _eventManager);
         _sceneSystem->addScene(std::move(levelScene));
     }
@@ -133,12 +139,21 @@ void LevelSelector::setupNetworkCallbacks() {
 }
 
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
-    // Navigate to room selection scene for this level
     std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     
-    // Create the room selection scene (addScene handles duplicates or we can track)
+    std::string currentSceneName = "";
+    Scene* currentScene = _sceneSystem->getActiveSceneObj();
+    if (currentScene) {
+        currentSceneName = currentScene->getName();
+    }
+    
     auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber);
     _sceneSystem->addScene(std::move(roomScene));
     
     _sceneSystem->setScene(sceneName);
+    
+    if (!currentSceneName.empty() && currentSceneName != sceneName && 
+        (currentSceneName.find("level_") == 0 || currentSceneName.find("room_selection_") == 0)) {
+        _sceneSystem->removeScene(currentSceneName);
+    }
 }

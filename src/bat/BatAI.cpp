@@ -24,14 +24,14 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _stuckTimer(0.0f),
       _accumulatedX(0.0f),
       _accumulatedY(0.0f),
-      _fleeDistance(200.0f), // Start fleeing when player is within 200 pixels
+      _fleeDistance(200.0f),
       _isFleeing(false),
-      _fleeSpeedMultiplier(1.5f), // Move 50% faster when fleeing
+      _fleeSpeedMultiplier(1.5f),
       _rng(std::random_device{}()),
-      _timerDist(3.0f, 7.0f), // 3-7 seconds instead of 1-3
+      _timerDist(3.0f, 7.0f),
       _isNetworked(isNetworked),
       _networkSyncTimer(0.0f),
-      _networkSyncInterval(0.033f), // Sync every ~33ms (30 times per second) for smoother sync
+      _networkSyncInterval(0.033f),
       _eventManager(eventManager),
       _objectId(objectId),
       _isAuthoritative(isAuthoritative),
@@ -39,31 +39,17 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _lastNetworkY(0.0f),
       _hasNetworkUpdate(false),
       _previousX(0.0f),
-      _previousY(0.0f) {
-    
-    if (_parent && !_isAuthoritative) {
-        Transform* transform = _parent->getTransform();
-        if (transform && transform->getPosition()) {
-            _lastNetworkX = static_cast<float>(transform->getPosition()->getX());
-            _lastNetworkY = static_cast<float>(transform->getPosition()->getY());
-            _previousX = _lastNetworkX;
-            _previousY = _lastNetworkY;
-        }
-    }
-
-    if (_isAuthoritative && _grid) {
-        float minWorldX, minWorldY, maxWorldX, maxWorldY;
-        _grid->gridToWorld(0, 0, minWorldX, minWorldY);
-        _grid->gridToWorld(_grid->getWidth() - 1, _grid->getHeight() - 1, maxWorldX, maxWorldY);
-        maxWorldX += _cellSize;
-        maxWorldY += _cellSize;
-
-        chooseNewTarget();
-    }
+      _previousY(0.0f),
+      _needsInitialTarget(isAuthoritative && grid != nullptr) {
 }
 
 void BatAI::update(float deltaTime) {
     if (!_parent || !_grid || !_pathfinder) return;
+
+    if (_needsInitialTarget) {
+        _needsInitialTarget = false;
+        chooseNewTarget();
+    }
 
     if (!_isAuthoritative && _isNetworked) {
         applyNetworkPosition();

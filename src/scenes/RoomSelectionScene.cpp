@@ -120,9 +120,12 @@ RoomSelectionScene::RoomSelectionScene(std::shared_ptr<NetworkSystem> network, i
     addObject(std::move(joinButtonObj));
 
     // Back Button
+    std::string currentSceneName = getName();
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
+    backButton->setOnClick([currentSceneName]() {
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
+        sceneSystem->removeScene(currentSceneName);
     });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));

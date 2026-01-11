@@ -109,6 +109,7 @@ int main() {
         auto lobbyInfoHandler = std::make_shared<LobbyInfoPacketHandler>();
         LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
         NextLevelPacketHandler::setNetworkAndEventManager(network, &manager);
+        RestartLevelPacketHandler::setNetworkAndEventManager(network, &manager);
         PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         // Register events

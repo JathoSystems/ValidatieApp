@@ -3,6 +3,12 @@
 
 #include "Events/IEvent.h"
 #include "Events/EventRegistry.h"
+#include <mutex>
+#include <vector>
+#include <functional>
+
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
 
 class BatMoveEvent : public IEvent {
 private:

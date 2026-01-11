@@ -6,7 +6,12 @@
 #define VUURJONGEN_WATERMEISJE_JUMPEVENT_H
 #include "Events/IEvent.h"
 #include <string>
+#include <mutex>
+#include <vector>
+#include <functional>
 
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
 
 class JumpEvent : public IEvent {
 private:

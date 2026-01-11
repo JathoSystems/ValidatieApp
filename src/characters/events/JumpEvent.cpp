@@ -8,6 +8,7 @@
 
 #include "characters/BaseCharacter.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Physics/PhysicsComponent.h"
 
 std::string JumpEvent::getName() const {
@@ -26,14 +27,22 @@ Data JumpEvent::deserialize(const Package &package) {
 }
 
 void JumpEvent::apply(GameObject *gameObject) {
-    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject);
-    if (!baseChar) return;
-    BaseCharacterController *controller = baseChar->getController();
+    int objectId = _objectId;
+    
+    std::lock_guard<std::mutex> lock(eventMutex);
+    eventQueue.push_back([objectId]() {
+        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
+        if (!obj) return;
+        
+        BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj);
+        if (!baseChar) return;
+        BaseCharacterController *controller = baseChar->getController();
 
-    if (controller && controller->isActive()) {
-        return;
-    }
+        if (controller && controller->isActive()) {
+            return;
+        }
 
-    // Store pending jump instead of applying immediately
-    baseChar->setPendingJump(true);
+        // Store pending jump instead of applying immediately
+        baseChar->setPendingJump(true);
+    });
 }

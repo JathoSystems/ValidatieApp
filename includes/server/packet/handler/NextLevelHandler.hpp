@@ -8,6 +8,12 @@
 #include "scenes/LevelScene.hpp"
 #include <iostream>
 #include <memory>
+#include <mutex>
+#include <vector>
+#include <functional>
+
+extern std::mutex eventMutex;
+extern std::vector<std::function<void()>> eventQueue;
 
 class NextLevelPacketHandler : public IPacketHandler {
 private:
@@ -20,8 +26,15 @@ public:
         nextLevel.getBuffer().setData(packet.getBuffer().getData());
         nextLevel.deserialize();
 
-        LevelSwitcher switcher {g_network, g_eventManager};
-        switcher.openLevel(nextLevel.getNextLevel(), true);
+        int level = nextLevel.getNextLevel();
+        auto network = g_network;
+        auto eventManager = g_eventManager;
+
+        std::lock_guard<std::mutex> lock(eventMutex);
+        eventQueue.push_back([level, network, eventManager]() {
+            LevelSwitcher switcher{network, eventManager};
+            switcher.openLevel(level, true);
+        });
     }
 
     static void setNetworkAndEventManager(const std::shared_ptr<NetworkSystem> &network, EventManager *eventManager) {
@@ -30,7 +43,6 @@ public:
     }
 };
 
-// Static member initialization (put this in the .cpp file if you have one)
 inline std::shared_ptr<NetworkSystem> NextLevelPacketHandler::g_network = nullptr;
 inline EventManager* NextLevelPacketHandler::g_eventManager = nullptr;
 
