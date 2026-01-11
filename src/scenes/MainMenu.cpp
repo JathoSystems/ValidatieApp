@@ -4,6 +4,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 #include "Engine/GameEngine.h"
+#include "GameObjects/Component/AudioComponent.h"
 
 MainMenu::MainMenu() : Scene("MainMenu") {
     auto titleText = std::make_unique<Text>("Vuurjongen en Watermeisje");
@@ -44,4 +45,12 @@ MainMenu::MainMenu() : Scene("MainMenu") {
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360));
     setCamera(std::move(camera));
+}
+
+void MainMenu::onInitialRender() {
+    GameEngine::getInstance().getSystem<AudioSystem>()->initialize();
+    std::unique_ptr<GameObject> object = std::unique_ptr<GameObject>();
+    auto audio = std::make_unique<AudioComponent>(GameEngine::getInstance().getSystem<AudioSystem>());
+    audio->addClip("mainmenu", "resources/mainmenu.mp3", 0.05f);
+    audio->play("mainmenu", true);
 }

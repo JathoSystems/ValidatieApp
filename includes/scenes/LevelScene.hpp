@@ -11,6 +11,7 @@
 
 #include "LevelSaver.hpp"
 #include "LevelSwitcher.hpp"
+#include "GameObjects/Component/AudioComponent.h"
 #include "server/packet/NextLevelPacket.hpp"
 
 
@@ -34,6 +35,10 @@ public:
         _eventManager = eventManager;
     }
 
+    void onExit() override {
+        GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
+    }
+
     void onInitialRender() override final;
     void onUpdate(float deltaTime) override final;
 
@@ -52,6 +57,9 @@ public:
 
             LevelSaver saver;
             saver.save(_levelNumber, _levelEndTime);
+
+
+            audio->setVolume(0.0f);
 
             if (_isOnline && _network) {
                 int nextLevel = _levelNumber + 1;
@@ -101,6 +109,7 @@ protected:
     std::vector<Door*> _doors;
     int _peopleAtDoor;
     int _batCount;
+    std::unique_ptr<AudioComponent> audio;
 
 private:
     void cleanup();

@@ -28,6 +28,7 @@
 #include "GameObjects/Spritesheet/Animator.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
+#include "GameObjects/Component/AudioComponent.h"
 
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
 
@@ -61,6 +62,12 @@ void LevelScene::onInitialRender() {
 
     GameEngine *gameEngine = &GameEngine::getInstance();
     SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
+    gameEngine->getSystem<AudioSystem>()->initialize();
+
+    std::unique_ptr<GameObject> object = std::unique_ptr<GameObject>();
+    audio = std::make_unique<AudioComponent>(gameEngine->getSystem<AudioSystem>());
+    audio->addClip("background", "resources/music.mp3", 0.05f);
+    audio->play("background", true);
 
     if (sceneSystem) {
         Scene *activeScene = sceneSystem->getActiveSceneObj();
@@ -324,7 +331,9 @@ void LevelScene::setupBaseLevel() {
     addObject(std::move(levelTextObj));
 
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([]() {
+    backButton->setOnClick([this]() {
+        GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
+
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
     });
     auto backButtonObj = std::make_unique<GameObject>();
