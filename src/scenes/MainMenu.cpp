@@ -1,10 +1,13 @@
 #include "scenes/MainMenu.hpp"
+
+#include "Animation/Animation.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/AudioComponent.h"
+#include "GameObjects/Spritesheet/Animator.h"
 
 MainMenu::MainMenu() : Scene("MainMenu") {
     auto titleText = std::make_unique<Text>("Vuurjongen en Watermeisje");
@@ -16,6 +19,38 @@ MainMenu::MainMenu() : Scene("MainMenu") {
     titleObj->getTransform()->getPosition()->setY(100);
     titleObj->getTransform()->getSize()->setWidth(600);
     titleObj->getTransform()->getSize()->setHeight(80);
+
+    std::unique_ptr<Animation> animator = std::make_unique<Animation>(AnimationType::BOUNCE);
+    std::unique_ptr<Transform> a = std::make_unique<Transform>();
+    a->getPosition()->setX(350);
+    a->getPosition()->setY(100);
+    a->getSize()->setWidth(600);
+    a->getSize()->setHeight(80);
+    a->getScale()->setScale(1);
+
+    std::unique_ptr<Transform> b = std::make_unique<Transform>();
+    b->getPosition()->setX(350);
+    b->getPosition()->setY(100);
+    b->getSize()->setWidth(650);
+    b->getSize()->setHeight(130);
+
+    std::unique_ptr<Transform> c = std::make_unique<Transform>();
+    c->getPosition()->setX(350);
+    c->getPosition()->setY(100);
+    c->getSize()->setWidth(600);
+    c->getSize()->setHeight(80);
+
+    std::unique_ptr<Keyframe> f = std::make_unique<Keyframe>(std::move(a));
+    std::unique_ptr<Keyframe> s = std::make_unique<Keyframe>(std::move(b));
+    std::unique_ptr<Keyframe> t = std::make_unique<Keyframe>(std::move(c));
+
+    int speed {3};
+
+    animator->addKeyframe(0, std::move(f));
+    animator->addKeyframe(speed, std::move(s));
+    animator->addKeyframe(speed*2, std::move(t));
+    titleObj->addComponent(std::move(animator));
+
     addObject(std::move(titleObj));
 
     auto playButton = std::make_unique<Button>("Play", std::make_unique<Color>(0, 128, 255));
