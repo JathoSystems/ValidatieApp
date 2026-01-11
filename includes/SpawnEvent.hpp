@@ -99,6 +99,22 @@ public:
     }
 
     void spawn() {
+        // Safety check: only process if we're in a level scene
+        auto system = GameEngine::getInstance().getSystem<SceneSystem>();
+        if (!system) {
+            return;
+        }
+
+        Scene *scene = system->getActiveSceneObj();
+        if (!scene) {
+            return;
+        }
+        
+        std::string sceneName = scene->getName();
+        if (sceneName.find("level_") != 0) {
+            return;
+        }
+        
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             auto transform = existingObj->getTransform();
@@ -109,16 +125,6 @@ public:
                     position->setY(spawnY);
                 }
             }
-            return;
-        }
-
-        auto system = GameEngine::getInstance().getSystem<SceneSystem>();
-        if (!system) {
-            return;
-        }
-
-        Scene *scene = system->getActiveSceneObj();
-        if (!scene) {
             return;
         }
 

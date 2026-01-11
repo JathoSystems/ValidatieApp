@@ -48,17 +48,21 @@ void Lava::onCollisionEnter(const CollisionData &collision) {
 
         GameEngine *gameEngine = &GameEngine::getInstance();
         SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
+        if (!sceneSystem) return;
+        
+        Scene* activeScene = sceneSystem->getActiveSceneObj();
+        if (!activeScene) return;
 
-        std::string previousSceneName = sceneSystem->getActiveSceneObj()->getName();
+        std::string previousSceneName = activeScene->getName();
         if (previousSceneName != "Restart") {
             std::cout << "Current scene" << previousSceneName << std::endl;
 
-            // Clear packet queue and object registry before scene change
+            // Clear packet queue before scene change
             NetworkSystem* networkSystem = gameEngine->getSystem<NetworkSystem>();
             if (networkSystem && networkSystem->getMiddleware()) {
                 networkSystem->getMiddleware()->clearPacketQueue();
             }
-            ObjectRegistry::getInstance().clear();
+            // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
 
             sceneSystem->setScene("Restart");
 

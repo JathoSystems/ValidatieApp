@@ -15,14 +15,30 @@ public:
     void handle(const Packet &packet) override {
         std::cout << "QUIT PACKET RECEIVED" << std::endl;
         
-        // Clear packet queue and object registry before scene change
+        auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        if (!sceneSystem) return;
+        
+        // Get current scene name before switching
+        std::string currentSceneName;
+        Scene* currentScene = sceneSystem->getActiveSceneObj();
+        if (currentScene) {
+            currentSceneName = currentScene->getName();
+        }
+        
+        // Clear packet queue before scene change
         NetworkSystem* networkSystem = GameEngine::getInstance().getSystem<NetworkSystem>();
         if (networkSystem && networkSystem->getMiddleware()) {
             networkSystem->getMiddleware()->clearPacketQueue();
         }
-        ObjectRegistry::getInstance().clear();
+        // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
         
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
+        // Switch to main menu
+        sceneSystem->setScene("MainMenu");
+        
+        // Remove the old level scene to properly destroy GameObjects
+        if (!currentSceneName.empty() && currentSceneName.find("level_") == 0) {
+            sceneSystem->removeScene(currentSceneName);
+        }
     }
 };
 

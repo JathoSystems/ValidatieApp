@@ -25,8 +25,10 @@ void LevelSwitcher::openLevel(int level, bool online) {
         _network->getMiddleware()->clearPacketQueue();
     }
     
-    // Clear the object registry to prevent stale object references
-    ObjectRegistry::getInstance().clear();
+    // NOTE: Don't clear ObjectRegistry here - let Broadcastable destructors
+    // handle cleanup naturally when the old scene is destroyed. Clearing here
+    // can cause issues because new scene objects get registered, then old
+    // scene destruction tries to remove by same IDs.
 
     std::string currentSceneName = "";
     Scene* currentScene = sceneSystem->getActiveSceneObj();

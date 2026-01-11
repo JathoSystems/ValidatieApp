@@ -3,6 +3,8 @@
 #include "GameObjects/Transform/Transform.h"
 #include "GameObjects/Transform/Position.h"
 #include "GameObjects/ObjectRegistry.hpp"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
 #include <cmath>
 #include <cstring>
 
@@ -54,7 +56,16 @@ Data BatMoveEvent::deserialize(const Package &package) {
 }
 
 void BatMoveEvent::apply(GameObject* gameObject) {
-    // Now called directly on main thread - safe to access game objects
+    // Safety check: only process if we're in a level scene
+    auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+    if (!sceneSystem) return;
+    
+    Scene* scene = sceneSystem->getActiveSceneObj();
+    if (!scene) return;
+    
+    std::string sceneName = scene->getName();
+    if (sceneName.find("level_") != 0) return;
+    
     GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
     if (!obj) return;
     
