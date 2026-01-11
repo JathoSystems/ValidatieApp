@@ -21,6 +21,7 @@ private:
     std::string objectName = "fireboy";
     float spawnX = 0.0f;
     float spawnY = 0.0f;
+    static std::mutex _pendingMutex;
 
 public:
     static std::vector<SpawnEvent> _pendingEvents;
@@ -34,6 +35,8 @@ public:
     }
 
     static void processPending() {
+        std::lock_guard<std::mutex> lock(_pendingMutex);
+
         if (_pendingEvents.empty()) return;
 
         std::cout << "[SpawnEvent] Processing " << _pendingEvents.size() << " pending spawns..." << std::endl;
@@ -95,7 +98,10 @@ public:
         if (GlobalFlags::isLevelCleaning) {
             return;
         }
-        spawn();
+
+        std::lock_guard<std::mutex> lock(_pendingMutex);  // ADD THIS
+        std::cout << "[SpawnEvent] Deferring spawn to main thread: " << objectName << std::endl;
+        _pendingEvents.push_back(*this);
     }
 
     void spawn() {

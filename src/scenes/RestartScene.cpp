@@ -52,26 +52,34 @@ void RestartScene::onInitialRender() {
     std::unique_ptr<Button> mainMenuButton = std::make_unique<Button>("Main Menu",
                                                                       std::make_unique<Color>(255, 0, 0));
     mainMenuButton->setOnClick([this]() {
-        std::cout << "[RestartScene] Going to Main Menu (Hard Cleanup)..." << std::endl;
+        std::cout << "[RestartScene] Going to Main Menu..." << std::endl;
         GameEngine *engine = &GameEngine::getInstance();
         SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
 
         if (_isOnline) {
-            // Send quit packet - server will broadcast to all players
+            // Send quit packet - handler will do the cleanup
             QuitPacket quit;
             _network->send(quit);
         } else {
-            // For offline mode, do local cleanup
+            // For offline mode, do cleanup manually
             if (!_previousLevel.empty()) {
+                // Set global flag FIRST
+                GlobalFlags::isLevelCleaning = true;
+
+                // Small delay
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
                 Scene* levelScene = sceneSystem->getScene(_previousLevel);
                 if (auto* level = dynamic_cast<LevelScene*>(levelScene)) {
                     level->cleanup();
                 }
                 sceneSystem->removeScene(_previousLevel);
+
+                GlobalFlags::isLevelCleaning = false;
             }
         }
 
-        // Clear state (QuitPacketHandler will do this too for online, but safe to do twice)
+        // Clear state
         GameState::getInstance().remove("lobby");
         GameState::getInstance().remove("role");
 

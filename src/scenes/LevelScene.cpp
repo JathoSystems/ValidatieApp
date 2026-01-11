@@ -28,8 +28,8 @@
 #include "SpawnEvent.hpp"
 #include "server/GlobalFlags.h"
 
-// FIX 1: Definieer de statische lijst (anders krijg je een linker error)
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
+std::mutex SpawnEvent::_pendingMutex;
 
 LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
                        EventManager *eventManager)
@@ -56,6 +56,11 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+    if (physicsSystem) {
+        physicsSystem->endShutdown();
+    }
+
     SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
 
     if (sceneSystem) {
@@ -110,29 +115,63 @@ void LevelScene::onInitialRender() {
 void LevelScene::cleanup() {
     if (!_isInitialized) return;
 
-    std::cout << "[LevelScene] Cleanup: Clearing all references..." << std::endl;
+    std::cout << "[LevelScene] Cleanup: Starting..." << std::endl;
+
     GlobalFlags::isLevelCleaning = true;
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
 
-    std::cout << "[LevelScene] Cleanup: Destroying all physics bodies..." << std::endl;
-    for (auto& obj : _objects) {
-        if (!obj) continue;
+    if (!physicsSystem) {
+        std::cout << "[LevelScene] No physics system, aborting cleanup" << std::endl;
+        return;
+    }
 
-        // Get physics component and destroy its body explicitly
-        if (auto* physics = obj->getComponent<PhysicsComponent>()) {
-            if (B2_IS_NON_NULL(physics->getBodyId())) {
-                physicsSystem->getBox2DFacade()->destroyBody(physics->getBodyId());
-                physics->clearBodyId();  // Mark as destroyed
+    physicsSystem->beginShutdown();
+    std::cout << "[LevelScene] Physics shutdown initiated" << std::endl;
+
+    std::cout << "[LevelScene] Waiting for physics to stop..." << std::endl;
+    int waitCount = 0;
+    while (physicsSystem->isUpdating() && waitCount < 200) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        waitCount++;
+    }
+
+    if (waitCount >= 200) {
+        std::cout << "[LevelScene] WARNING: Timeout waiting for physics!" << std::endl;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::cout << "[LevelScene] Locking physics system..." << std::endl;
+    physicsSystem->lockPhysics();
+
+    std::cout << "[LevelScene] Physics locked, destroying bodies..." << std::endl;
+
+    if (physicsSystem->getBox2DFacade()) {
+        for (auto& obj : _objects) {
+            if (!obj) continue;
+
+            if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+                b2BodyId bodyId = physics->getBodyId();
+
+                if (B2_IS_NON_NULL(bodyId)) {
+                    physicsSystem->getBox2DFacade()->destroyBody(bodyId);
+                    std::cout << "[LevelScene] Destroyed body" << std::endl;
+                }
+
+                physics->clearBodyId();
+                physicsSystem->unregisterComponent(physics);
             }
-            // Unregister from physics system
-            physicsSystem->unregisterComponent(physics);
         }
     }
 
-    std::cout << "[LevelScene] Cleanup: All physics bodies destroyed" << std::endl;
+    std::cout << "[LevelScene] All bodies destroyed, unlocking physics..." << std::endl;
+    physicsSystem->unlockPhysics();
+
+    // IMPORTANT: Reset the shutdown flag so physics can work again
+    physicsSystem->endShutdown();
+    std::cout << "[LevelScene] Physics shutdown ended" << std::endl;
 
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
@@ -147,12 +186,11 @@ void LevelScene::cleanup() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+    std::cout << "[LevelScene] Clearing objects..." << std::endl;
     _objects.clear();
 
-    // 4. Events wissen
     SpawnEvent::_pendingEvents.clear();
 
-    // 5. Grid verwijderen
     std::string sceneName = getName();
     GridManager::unregisterGrid(sceneName);
 
@@ -164,6 +202,8 @@ void LevelScene::cleanup() {
     _peopleAtDoor = 0;
 
     _isInitialized = false;
+    GlobalFlags::isLevelCleaning = false;
+
     std::cout << "[LevelScene] Cleanup: Complete" << std::endl;
 }
 
@@ -206,6 +246,9 @@ void LevelScene::onUpdate(float deltaTime) {
     if (!_isInitialized) {
         return;
     }
+
+    SpawnEvent::processPending();
+
     updateDiamondCounters();
     checkDiamondCollisions();
     checkDoorCollisions();
