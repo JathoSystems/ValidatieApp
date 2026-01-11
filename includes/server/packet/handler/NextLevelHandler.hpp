@@ -6,14 +6,9 @@
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
 #include "scenes/LevelScene.hpp"
+#include "LevelSwitcher.hpp"
 #include <iostream>
 #include <memory>
-#include <mutex>
-#include <vector>
-#include <functional>
-
-extern std::mutex eventMutex;
-extern std::vector<std::function<void()>> eventQueue;
 
 class NextLevelPacketHandler : public IPacketHandler {
 private:
@@ -22,19 +17,14 @@ private:
 
 public:
     void handle(const Packet &packet) override {
+        // Now called on main thread - safe to execute directly
         NextLevelPacket nextLevel;
         nextLevel.getBuffer().setData(packet.getBuffer().getData());
         nextLevel.deserialize();
 
         int level = nextLevel.getNextLevel();
-        auto network = g_network;
-        auto eventManager = g_eventManager;
-
-        std::lock_guard<std::mutex> lock(eventMutex);
-        eventQueue.push_back([level, network, eventManager]() {
-            LevelSwitcher switcher{network, eventManager};
-            switcher.openLevel(level, true);
-        });
+        LevelSwitcher switcher{g_network, g_eventManager};
+        switcher.openLevel(level, true);
     }
 
     static void setNetworkAndEventManager(const std::shared_ptr<NetworkSystem> &network, EventManager *eventManager) {

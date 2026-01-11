@@ -54,18 +54,12 @@ Data BatMoveEvent::deserialize(const Package &package) {
 }
 
 void BatMoveEvent::apply(GameObject* gameObject) {
-    int objectId = _objectId;
-    float x = _x;
-    float y = _y;
+    // Now called directly on main thread - safe to access game objects
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
     
-    std::lock_guard<std::mutex> lock(eventMutex);
-    eventQueue.push_back([objectId, x, y]() {
-        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
-        if (!obj) return;
-        
-        BatAI* batAI = obj->getComponent<BatAI>();
-        if (!batAI) return;
+    BatAI* batAI = obj->getComponent<BatAI>();
+    if (!batAI) return;
 
-        batAI->setNetworkPosition(x, y);
-    });
+    batAI->setNetworkPosition(_x, _y);
 }

@@ -320,7 +320,8 @@ void Game::createBat() {
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
 
-    int batId = ObjectRegistry::getInstance().registerObject(bat.get());
+    // Bat registers itself via Broadcastable, get its ID
+    int batId = bat->getId();
 
     auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
     bat->addComponent(std::move(batAnimator));
@@ -359,7 +360,8 @@ void Game::createCharacter() {
     }
 
     if (character) {
-        int characterId = ObjectRegistry::getInstance().registerObject(character.get());
+        // BaseCharacter registers itself via Broadcastable, get its ID
+        int characterId = character->getId();
 
         BaseCharacterController* controller = character->getController();
         if (controller) {

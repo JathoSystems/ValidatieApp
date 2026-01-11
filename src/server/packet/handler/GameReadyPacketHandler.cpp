@@ -9,13 +9,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Network/NetworkSystem.h"
 #include "Events/EventManager.h"
-#include <mutex>
-#include <vector>
-#include <functional>
-
-// External event queue for thread-safe scene changes
-extern std::mutex eventMutex;
-extern std::vector<std::function<void()>> eventQueue;
+#include "GameObjects/ObjectRegistry.hpp"
 
 void GameReadyPacketHandler::handle(const Packet &packet) {
     GameReadyPacket gameReady;
@@ -28,12 +22,11 @@ void GameReadyPacketHandler::handle(const Packet &packet) {
     if (sceneSystem) {
         std::cout << "[GameReadyPacketHandler] Starting game for level " << gameReady.levelId << std::endl;
         
+        // Note: Don't clear packet queue here - we're transitioning INTO a level
+        // The lobby scene doesn't have networked game objects that could cause crashes
+        
         // Navigate to the level scene (should have been created by LobbyInfoPacketHandler)
         std::string sceneName = "level_" + std::to_string(gameReady.levelId) + "_online";
-
-        std::lock_guard<std::mutex> lock(eventMutex);
-        eventQueue.push_back([sceneSystem, sceneName]() {
-            sceneSystem->setScene(sceneName);
-        });
+        sceneSystem->setScene(sceneName);
     }
 }

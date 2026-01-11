@@ -3,12 +3,6 @@
 
 #include "Events/IEvent.h"
 #include "enums/Direction.hpp"
-#include <mutex>
-#include <vector>
-#include <functional>
-
-extern std::mutex eventMutex;
-extern std::vector<std::function<void()>> eventQueue;
 
 class MoveEvent : public IEvent {
 private:

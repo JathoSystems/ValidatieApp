@@ -6,22 +6,23 @@
 #define VUURJONGEN_WATERMEISJE_GAME_QUITLEVELPACKETHANDLER_HPP
 #include "Engine/GameEngine.h"
 #include "Network/Packet/Handler/IPacketHandler.hpp"
+#include "Network/NetworkSystem.h"
 #include "Scenes/SceneSystem.h"
-#include <mutex>
-#include <vector>
-#include <functional>
-
-extern std::mutex eventMutex;
-extern std::vector<std::function<void()>> eventQueue;
+#include "GameObjects/ObjectRegistry.hpp"
 
 class QuitLevelPacketHandler : public IPacketHandler {
 public:
     void handle(const Packet &packet) override {
         std::cout << "QUIT PACKET RECEIVED" << std::endl;
-        std::lock_guard<std::mutex> lock(eventMutex);
-        eventQueue.push_back([]() {
-            GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
-        });
+        
+        // Clear packet queue and object registry before scene change
+        NetworkSystem* networkSystem = GameEngine::getInstance().getSystem<NetworkSystem>();
+        if (networkSystem && networkSystem->getMiddleware()) {
+            networkSystem->getMiddleware()->clearPacketQueue();
+        }
+        ObjectRegistry::getInstance().clear();
+        
+        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("MainMenu");
     }
 };
 

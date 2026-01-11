@@ -27,22 +27,18 @@ Data JumpEvent::deserialize(const Package &package) {
 }
 
 void JumpEvent::apply(GameObject *gameObject) {
-    int objectId = _objectId;
+    // Now called directly on main thread - safe to access game objects
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
     
-    std::lock_guard<std::mutex> lock(eventMutex);
-    eventQueue.push_back([objectId]() {
-        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
-        if (!obj) return;
-        
-        BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj);
-        if (!baseChar) return;
-        BaseCharacterController *controller = baseChar->getController();
+    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj);
+    if (!baseChar) return;
+    BaseCharacterController *controller = baseChar->getController();
 
-        if (controller && controller->isActive()) {
-            return;
-        }
+    if (controller && controller->isActive()) {
+        return;
+    }
 
-        // Store pending jump instead of applying immediately
-        baseChar->setPendingJump(true);
-    });
+    // Store pending jump instead of applying immediately
+    baseChar->setPendingJump(true);
 }

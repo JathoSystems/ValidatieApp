@@ -12,6 +12,8 @@
 #include "Physics/PhysicsSystem.h"
 #include "scenes/RestartScene.hpp"
 #include "Scenes/SceneSystem.h"
+#include "Network/NetworkSystem.h"
+#include "GameObjects/ObjectRegistry.hpp"
 
 Lava::Lava(LevelGrid *grid, int x, int y)
     : Liquid(
@@ -50,6 +52,13 @@ void Lava::onCollisionEnter(const CollisionData &collision) {
         std::string previousSceneName = sceneSystem->getActiveSceneObj()->getName();
         if (previousSceneName != "Restart") {
             std::cout << "Current scene" << previousSceneName << std::endl;
+
+            // Clear packet queue and object registry before scene change
+            NetworkSystem* networkSystem = gameEngine->getSystem<NetworkSystem>();
+            if (networkSystem && networkSystem->getMiddleware()) {
+                networkSystem->getMiddleware()->clearPacketQueue();
+            }
+            ObjectRegistry::getInstance().clear();
 
             sceneSystem->setScene("Restart");
 

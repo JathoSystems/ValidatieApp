@@ -503,7 +503,10 @@ void LevelScene::createBat() {
         return;
     }
 
-    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+    _batCount++;
+    int batId = _batCount;
+
+    auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f, batId);
 
     float worldX, worldY;
     grid->gridToWorld(startGridX, startGridY, worldX, worldY);
@@ -516,11 +519,6 @@ void LevelScene::createBat() {
     const int BAT_SIZE = CELL_SIZE;
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
-
-    _batCount++;
-    int batId = _batCount;
-
-    ObjectRegistry::getInstance().insert(bat.get(), batId);
 
     auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
     bat->addComponent(std::move(batAnimator));

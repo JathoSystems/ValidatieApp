@@ -141,19 +141,8 @@ void LevelSelector::setupNetworkCallbacks() {
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
     std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     
-    std::string currentSceneName = "";
-    Scene* currentScene = _sceneSystem->getActiveSceneObj();
-    if (currentScene) {
-        currentSceneName = currentScene->getName();
-    }
-    
     auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber);
     _sceneSystem->addScene(std::move(roomScene));
     
     _sceneSystem->setScene(sceneName);
-    
-    if (!currentSceneName.empty() && currentSceneName != sceneName && 
-        (currentSceneName.find("level_") == 0 || currentSceneName.find("room_selection_") == 0)) {
-        _sceneSystem->removeScene(currentSceneName);
-    }
 }

@@ -68,9 +68,6 @@ std::string getLocalIPAddress() {
     return "192.168.2.161";
 }
 
-extern std::mutex eventMutex;
-extern std::vector<std::function<void()>> eventQueue;
-
 int main() {
     try {
         GameEngine *gameEngine = &GameEngine::getInstance();
@@ -82,9 +79,20 @@ int main() {
             return 1;
         }
 
-        // Network mag pas na de init gedaan worden
-        auto network = std::make_shared<NetworkSystem>();
-        network->connect(getLocalIPAddress(), 7534);
+        // Add NetworkSystem to the engine so its update() is called (processes packet queue)
+        gameEngine->addSystem(std::make_unique<NetworkSystem>());
+        auto* networkSystem = gameEngine->getSystem<NetworkSystem>();
+        if (!networkSystem) {
+            std::cerr << "[Main] ERROR: NetworkSystem is null!" << std::endl;
+            return 1;
+        }
+        
+        // Network connection after init
+        networkSystem->connect(getLocalIPAddress(), 7534);
+        
+        // Create shared_ptr wrapper for compatibility with existing code
+        // Note: This shared_ptr does NOT own the NetworkSystem - it's owned by GameEngine
+        auto network = std::shared_ptr<NetworkSystem>(networkSystem, [](NetworkSystem*) {});
 
         EventManager manager(network->getMiddleware());
 
@@ -110,6 +118,7 @@ int main() {
         LobbyInfoPacketHandler::setNetworkAndEventManager(network, &manager);
         NextLevelPacketHandler::setNetworkAndEventManager(network, &manager);
         RestartLevelPacketHandler::setNetworkAndEventManager(network, &manager);
+        GameReadyPacketHandler::setNetwork(network);
         PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
         // Register events
@@ -129,27 +138,24 @@ int main() {
             return std::make_shared<BatMoveEvent>(0, 0.0f, 0.0f);
         });
 
-        // Set up event handlers
+        // Set up event handlers - now called on main thread via packet queue
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
-            std::lock_guard<std::mutex> lock(eventMutex);
-            eventQueue.push_back([id, event]() {
-                if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
-                    spawn->spawn();
-                    return;
-                }
+            if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
+                spawn->spawn();
+                return;
+            }
 
-                GameObject *object = ObjectRegistry::getInstance().getObject(id);
-                if (!object) {
-                    int mappedId = SpawnEvent::getMappedId(id);
-                    if (mappedId != id) {
-                        object = ObjectRegistry::getInstance().getObject(mappedId);
-                    }
+            GameObject *object = ObjectRegistry::getInstance().getObject(id);
+            if (!object) {
+                int mappedId = SpawnEvent::getMappedId(id);
+                if (mappedId != id) {
+                    object = ObjectRegistry::getInstance().getObject(mappedId);
                 }
-                if (!object) {
-                    return;
-                }
-                event->apply(object);
-            });
+            }
+            if (!object) {
+                return;
+            }
+            event->apply(object);
         });
 
         manager.setEventCallback([](int id, std::shared_ptr<IEvent> event) {

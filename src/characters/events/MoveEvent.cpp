@@ -64,27 +64,17 @@ Data MoveEvent::deserialize(const Package &package) {
 }
 
 void MoveEvent::apply(GameObject *gameObject) {
-    int objectId = _objectId;
-    float x = _x;
-    float y = _y;
-    float vx = _vx;
-    float vy = _vy;
-    Direction direction = _direction;
-    bool toggle = _toggle;
+    // Now called directly on main thread - safe to access game objects
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
     
-    std::lock_guard<std::mutex> lock(eventMutex);
-    eventQueue.push_back([objectId, x, y, vx, vy, direction, toggle]() {
-        GameObject* obj = ObjectRegistry::getInstance().getObject(objectId);
-        if (!obj) return;
-        
-        if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj)) {
-            BaseCharacterController* controller = baseChar->getController();
+    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj)) {
+        BaseCharacterController* controller = baseChar->getController();
 
-            bool isActive = controller && controller->isActive();
-            if (isActive) return;
+        bool isActive = controller && controller->isActive();
+        if (isActive) return;
 
-            // Pass velocity to the character
-            baseChar->setPendingNetworkUpdate(x, y, vx, vy, direction, toggle);
-        }
-    });
+        // Pass velocity to the character
+        baseChar->setPendingNetworkUpdate(_x, _y, _vx, _vy, _direction, _toggle);
+    }
 }

@@ -8,6 +8,7 @@
 
 #include "scenes/LevelScene.hpp"
 #include "scenes/RoomSelectionScene.hpp"
+#include "GameObjects/ObjectRegistry.hpp"
 
 void LevelSwitcher::openLevel(int level, bool online) {
     GameEngine *engine = &GameEngine::getInstance();
@@ -17,6 +18,15 @@ void LevelSwitcher::openLevel(int level, bool online) {
         std::cerr << "SceneSystem not found!\n";
         return;
     }
+
+    // Clear the packet queue BEFORE changing scenes to prevent stale packets
+    // from accessing destroyed objects
+    if (_network && _network->getMiddleware()) {
+        _network->getMiddleware()->clearPacketQueue();
+    }
+    
+    // Clear the object registry to prevent stale object references
+    ObjectRegistry::getInstance().clear();
 
     std::string currentSceneName = "";
     Scene* currentScene = sceneSystem->getActiveSceneObj();
