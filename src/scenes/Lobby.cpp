@@ -8,8 +8,10 @@
 #include "Scenes/Camera/FixedCamera.h"
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
+#include "Network/GameState.hpp"
+#include "server/packet/QuitPacket.hpp"
 
-Lobby::Lobby() : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lobbyIdTextObj(nullptr), _statusTextObj(nullptr), _levelTextObj(nullptr) {
+Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lobbyIdTextObj(nullptr), _statusTextObj(nullptr), _levelTextObj(nullptr), _network(network) {
     // Title
     auto titleText = std::make_unique<Text>("Waiting in Lobby");
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
@@ -63,8 +65,16 @@ Lobby::Lobby() : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lob
 
     // Back Button
     auto backButton = std::make_unique<Button>("Leave Lobby", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([]() {
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
+    backButton->setOnClick([this]() {
+        // Send quit packet to notify server (lobby ID is in GameState)
+        if (_network) {
+            QuitPacket quit;
+            _network->send(quit);
+        }
+        // Clear game state so old lobby/role info doesn't interfere with reconnection
+        GameState::getInstance().clear();
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
     });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));

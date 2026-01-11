@@ -9,7 +9,8 @@ enum class CellType {
     RedDoor,
     BlueDoor,
     RedDiamond,
-    BlueDiamond
+    BlueDiamond,
+    Box
 };
 
 #endif //VALIDATIEAPP_GRIDCELL_H

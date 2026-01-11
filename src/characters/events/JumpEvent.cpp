@@ -8,7 +8,10 @@
 
 #include "characters/BaseCharacter.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Physics/PhysicsComponent.h"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
 
 std::string JumpEvent::getName() const {
     return "jump";
@@ -26,7 +29,20 @@ Data JumpEvent::deserialize(const Package &package) {
 }
 
 void JumpEvent::apply(GameObject *gameObject) {
-    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject);
+    // Safety check: only process if we're in a level scene
+    auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+    if (!sceneSystem) return;
+    
+    Scene* scene = sceneSystem->getActiveSceneObj();
+    if (!scene) return;
+    
+    std::string sceneName = scene->getName();
+    if (sceneName.find("level_") != 0) return;
+    
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
+    
+    BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj);
     if (!baseChar) return;
     BaseCharacterController *controller = baseChar->getController();
 

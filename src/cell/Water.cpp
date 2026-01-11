@@ -17,6 +17,8 @@
 #include "Network/GameState.hpp"
 #include "scenes/RestartScene.hpp"
 #include "Scenes/SceneSystem.h"
+#include "Network/NetworkSystem.h"
+#include "GameObjects/ObjectRegistry.hpp"
 
 Water::Water(LevelGrid* grid, int x, int y)
     : Liquid(
@@ -52,10 +54,21 @@ void Water::onCollisionEnter(const CollisionData &collision) {
 
         GameEngine *gameEngine = &GameEngine::getInstance();
         SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
+        if (!sceneSystem) return;
+        
+        Scene* activeScene = sceneSystem->getActiveSceneObj();
+        if (!activeScene) return;
 
-        std::string previousSceneName = sceneSystem->getActiveSceneObj()->getName();
+        std::string previousSceneName = activeScene->getName();
         if (previousSceneName != "Restart") {
             std::cout << "Current scene" << previousSceneName << std::endl;
+
+            // Clear packet queue before scene change
+            NetworkSystem* networkSystem = gameEngine->getSystem<NetworkSystem>();
+            if (networkSystem && networkSystem->getMiddleware()) {
+                networkSystem->getMiddleware()->clearPacketQueue();
+            }
+            // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
 
             sceneSystem->setScene("Restart");
 
@@ -65,6 +78,10 @@ void Water::onCollisionEnter(const CollisionData &collision) {
             if (restartScene) {
                 restartScene->setTargetLevel(previousSceneName);
                 restartScene->setOnline((GameState::getInstance().get("lobby", "nope") != "nope"));
+            }
+
+            if (previousSceneName.find("level_") == 0) {
+                sceneSystem->removeScene(previousSceneName);
             }
         }
     }

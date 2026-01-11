@@ -6,7 +6,10 @@
 #include "characters/BaseCharacter.hpp"
 #include "enums/Direction.hpp"
 #include "GameObjects/Spritesheet/Animator.h"
+#include "GameObjects/ObjectRegistry.hpp"
 #include "Physics/PhysicsComponent.h"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
 
 MoveEvent::MoveEvent(int objectId, Direction direction, bool toggle, float x, float y, float vx, float vy)
     : _objectId(objectId), _direction(direction), _toggle(toggle), _x(x), _y(y), _vx(vx), _vy(vy) {
@@ -63,7 +66,21 @@ Data MoveEvent::deserialize(const Package &package) {
 }
 
 void MoveEvent::apply(GameObject *gameObject) {
-    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(gameObject)) {
+    // Safety check: only process if we're in a level scene
+    auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+    if (!sceneSystem) return;
+    
+    Scene* scene = sceneSystem->getActiveSceneObj();
+    if (!scene) return;
+    
+    // Don't process move events if we're not in a level scene
+    std::string sceneName = scene->getName();
+    if (sceneName.find("level_") != 0) return;
+    
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
+    
+    if (BaseCharacter *baseChar = dynamic_cast<BaseCharacter *>(obj)) {
         BaseCharacterController* controller = baseChar->getController();
 
         bool isActive = controller && controller->isActive();

@@ -62,7 +62,7 @@ void Game::onInitialRender() {
         return;
     }
 
-    physicsSystem->setGravity(0.0f, 981.0f);
+    physicsSystem->setGravity(0.0f, 400.0f);
 
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360));
@@ -320,7 +320,8 @@ void Game::createBat() {
     bat->getTransform()->getSize()->setWidth(BAT_SIZE);
     bat->getTransform()->getSize()->setHeight(BAT_SIZE);
 
-    int batId = ObjectRegistry::getInstance().registerObject(bat.get());
+    // Bat registers itself via Broadcastable, get its ID
+    int batId = bat->getId();
 
     auto batAnimator = std::make_unique<Animator>("resources/bat/flying.png", 1, 8);
     bat->addComponent(std::move(batAnimator));
@@ -359,7 +360,8 @@ void Game::createCharacter() {
     }
 
     if (character) {
-        int characterId = ObjectRegistry::getInstance().registerObject(character.get());
+        // BaseCharacter registers itself via Broadcastable, get its ID
+        int characterId = character->getId();
 
         BaseCharacterController* controller = character->getController();
         if (controller) {

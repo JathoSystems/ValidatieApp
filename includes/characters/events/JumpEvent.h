@@ -7,7 +7,6 @@
 #include "Events/IEvent.h"
 #include <string>
 
-
 class JumpEvent : public IEvent {
 private:
     int _objectId;

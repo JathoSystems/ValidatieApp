@@ -5,17 +5,19 @@
 #include "characters/Fireboy.hpp"
 #include "characters/Watergirl.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
-#include "scenes/LevelScene.hpp"
+#include <functional>
+
+class LevelScene;
 
 class Door : public GameObject {
 private:
     std::string _color;
-    LevelScene *_scene;
+    std::function<void()> _onReached;
     bool _isOccupied;
 
 public:
-    explicit Door(LevelScene* scene, int cellSize, int x, int y, std::string color = "red")
-        : _color(color), _scene(scene), _isOccupied(false) {
+    explicit Door(int cellSize, int x, int y, std::string color = "red")
+        : _color(color), _isOccupied(false), _onReached(nullptr) {
 
         float half = cellSize * 0.5f;
         float scale = 2.0f;
@@ -28,7 +30,6 @@ public:
         size->setHeight(cellSize * scale);
         setLayer(5);
 
-
         std::string sprite = color == "red" ?
             "resources/doors/door_red.png" :
             "resources/doors/door_blue.png";
@@ -38,7 +39,10 @@ public:
         addComponent(std::move(spriteRenderer));
     }
 
-    // Separate methods to avoid dynamic_cast (which was causing crashes due to vtable corruption)
+    void setOnReachedCallback(std::function<void()> callback) {
+        _onReached = std::move(callback);
+    }
+
     void checkCollisionWithFireboy(Fireboy* fireboy) {
         if (!fireboy || _color != "red") return;
         checkCollisionInternal(fireboy);
@@ -85,7 +89,9 @@ private:
 
         if (collision && !_isOccupied) {
             _isOccupied = true;
-            _scene->reachedDoor();
+            if (_onReached) {
+                _onReached();
+            }
             std::cout << _color << " character reached door!" << std::endl;
         }
     }

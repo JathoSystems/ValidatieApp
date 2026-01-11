@@ -6,6 +6,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
 #include "scenes/LevelScene.hpp"
+#include "LevelSwitcher.hpp"
 #include <iostream>
 #include <memory>
 
@@ -16,12 +17,14 @@ private:
 
 public:
     void handle(const Packet &packet) override {
+        // Now called on main thread - safe to execute directly
         NextLevelPacket nextLevel;
         nextLevel.getBuffer().setData(packet.getBuffer().getData());
         nextLevel.deserialize();
 
-        LevelSwitcher switcher {g_network, g_eventManager};
-        switcher.openLevel(nextLevel.getNextLevel(), true);
+        int level = nextLevel.getNextLevel();
+        LevelSwitcher switcher{g_network, g_eventManager};
+        switcher.openLevel(level, true);
     }
 
     static void setNetworkAndEventManager(const std::shared_ptr<NetworkSystem> &network, EventManager *eventManager) {
@@ -30,7 +33,6 @@ public:
     }
 };
 
-// Static member initialization (put this in the .cpp file if you have one)
 inline std::shared_ptr<NetworkSystem> NextLevelPacketHandler::g_network = nullptr;
 inline EventManager* NextLevelPacketHandler::g_eventManager = nullptr;
 

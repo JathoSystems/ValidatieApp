@@ -24,6 +24,8 @@
 #include "server/packet/QuitPacket.hpp"
 #include "server/packet/RestartPacket.hpp"
 
+std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+
 int main() {
     try {
         asio::io_context io_context;
@@ -83,6 +85,14 @@ int main() {
                 createPacket.getBuffer().setData(packet.getBuffer().getData());
                 createPacket.deserialize();
 
+                // Clean up any existing lobby membership first
+                int existingLobby = lobbyManager.getLobbyIdForPlayer(clientId);
+                if (existingLobby > 0) {
+                    std::cout << "Player " << clientId << " leaving existing lobby " << existingLobby << " before creating new one\n";
+                    lobbyManager.leaveLobby(existingLobby, clientId);
+                    playerManager.leave(clientId);
+                }
+
                 int lobbyId = lobbyManager.createLobby(createPacket.levelId, clientId);
                 std::cout << "Lobby " << lobbyId << " created for level " << createPacket.levelId << " by player " <<
                         clientId << "\n";
@@ -104,8 +114,16 @@ int main() {
                 joinPacket.getBuffer().setData(packet.getBuffer().getData());
                 joinPacket.deserialize();
 
+                // Clean up any existing lobby membership first
+                int existingLobby = lobbyManager.getLobbyIdForPlayer(clientId);
+                if (existingLobby > 0) {
+                    std::cout << "Player " << clientId << " leaving existing lobby " << existingLobby << " before joining new one\n";
+                    lobbyManager.leaveLobby(existingLobby, clientId);
+                    playerManager.leave(clientId);
+                }
+
                 Lobby *lobby = lobbyManager.getLobby(joinPacket.lobbyId);
-                if (!lobby && lobby->isFull()) {
+                if (!lobby || lobby->isFull()) {
                     std::cout << "Lobby " << joinPacket.lobbyId << " not found or full\n";
                     return;
                 }
@@ -133,17 +151,43 @@ int main() {
 
                 lobby->broadcastInLobby(ready, server);
             } else if (packetId == 120) {
+                // Quit packet - player wants to leave the game
                 QuitPacket quitPacket;
                 quitPacket.getBuffer().setData(packet.getBuffer().getData());
                 quitPacket.deserialize();
 
-                Lobby *lobby = lobbyManager.getLobby(quitPacket.getLobby());
-                std::cout << "Disbanding " << std::to_string(quitPacket.getLobby()) << std::endl;
-                lobby->broadcastInLobby(quitPacket, server);
-                for (int32_t player: lobby->players)
-                    lobbyManager.leaveLobby(quitPacket.getLobby(), player);
+                int lobbyId = quitPacket.getLobby();
+                
+                // If no lobby ID in packet, try to find it from player
+                if (lobbyId <= 0) {
+                    lobbyId = lobbyManager.getLobbyIdForPlayer(clientId);
+                }
+                
+                if (lobbyId <= 0) {
+                    std::cout << "Player " << clientId << " tried to quit but is not in any lobby\n";
+                    return;
+                }
 
-                lobbyManager.removeLobby(quitPacket.getLobby());
+                Lobby *lobby = lobbyManager.getLobby(lobbyId);
+                if (!lobby) {
+                    std::cout << "Lobby " << lobbyId << " not found for quit\n";
+                    // Still remove player from any lobbies they might be in
+                    playerManager.leave(clientId);
+                    return;
+                }
+                
+                std::cout << "Disbanding lobby " << lobbyId << " (player " << clientId << " quit)\n";
+                
+                // Broadcast quit to all players in lobby
+                lobby->broadcastInLobby(quitPacket, server);
+                
+                // Remove all players from the lobby and clean up player manager
+                for (int32_t player : lobby->players) {
+                    playerManager.leave(player);
+                }
+                
+                // Remove the lobby entirely
+                lobbyManager.removeLobby(lobbyId);
             } else if (packetId == 121) {
                 RestartPacket restart;
                 restart.getBuffer().setData(packet.getBuffer().getData());
@@ -155,7 +199,9 @@ int main() {
                     return;
                 }
 
-                std::cout << "Restarting lobby: " << restart.getLobby() << "\n";
+                std::cout << "Restarting lobby: " << restart.getLobby() << ", level: " << restart.getLevel() << "\n";
+                // Serialize the packet before broadcasting to ensure it's in the correct format
+                restart.serialize();
                 lobby->broadcastInLobby(restart, server);
                 // Handle NetworkEventPacket
             } else if (packetId == 122) {

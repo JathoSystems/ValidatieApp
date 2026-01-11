@@ -2,6 +2,9 @@
 #include "bat/BatAI.h"
 #include "GameObjects/Transform/Transform.h"
 #include "GameObjects/Transform/Position.h"
+#include "GameObjects/ObjectRegistry.hpp"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
 #include <cmath>
 #include <cstring>
 
@@ -53,10 +56,20 @@ Data BatMoveEvent::deserialize(const Package &package) {
 }
 
 void BatMoveEvent::apply(GameObject* gameObject) {
-    if (!gameObject) return;
+    // Safety check: only process if we're in a level scene
+    auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+    if (!sceneSystem) return;
     
-    // Get BatAI component
-    BatAI* batAI = gameObject->getComponent<BatAI>();
+    Scene* scene = sceneSystem->getActiveSceneObj();
+    if (!scene) return;
+    
+    std::string sceneName = scene->getName();
+    if (sceneName.find("level_") != 0) return;
+    
+    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+    if (!obj) return;
+    
+    BatAI* batAI = obj->getComponent<BatAI>();
     if (!batAI) return;
 
     batAI->setNetworkPosition(_x, _y);

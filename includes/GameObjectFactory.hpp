@@ -107,7 +107,7 @@ private:
             }
             
             const int CELL_SIZE = grid->getCellSize();
-            auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f);
+            auto bat = std::make_unique<Bat>(grid, CELL_SIZE, 80.0f, parentId);
             
             const int BAT_SIZE = CELL_SIZE;
             bat->getTransform()->getSize()->setWidth(BAT_SIZE);

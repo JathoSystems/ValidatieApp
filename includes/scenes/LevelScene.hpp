@@ -1,58 +1,60 @@
 #ifndef VUURJONGEN_WATERMEISJE_LEVELSCENE_HPP
 #define VUURJONGEN_WATERMEISJE_LEVELSCENE_HPP
 
-#include "Events/EventManager.h"
-#include "Network/NetworkSystem.h"
 #include "Scenes/Scene.h"
-#include "grid/LevelGrid.h"
-#include "LevelSwitcher.hpp"
-#include "server/packet/NextLevelPacket.hpp"
-#include "UI/Text.h"
+#include "Network/NetworkSystem.h"
+#include "Events/EventManager.h"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
+#include "Audio/AudioSystem.h"
+#include <memory>
 #include <vector>
+#include <iostream>
+#include <iomanip>
 
-class LevelGrid;
+#include "LevelSaver.hpp"
+#include "LevelSwitcher.hpp"
+#include "GameObjects/Component/AudioComponent.h"
+#include "server/packet/NextLevelPacket.hpp"
+
+
 class Fireboy;
 class Watergirl;
+class Text;
 class Door;
+class LevelGrid;
+class LevelSelector;
 
 class LevelScene : public Scene {
 public:
-    explicit LevelScene(int levelNumber, bool isOnline = false,
-                        std::shared_ptr<NetworkSystem> network = nullptr,
-                        EventManager *eventManager = nullptr);
+    LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
+               EventManager *eventManager);
 
-    ~LevelScene();
+    virtual ~LevelScene();
 
-    void onInitialRender() override;
-
-    void onUpdate(float deltaTime) override;
-
-    void checkDiamondCollisions();
-
-    void resetCharacterPointers() {
-        _fireboy = nullptr;
-        _watergirl = nullptr;
-        _fireboyDiamondText = nullptr;
-        _watergirlDiamondText = nullptr;
+    void toggleOnline(std::shared_ptr<NetworkSystem> network,
+               EventManager *eventManager) {
+        _isOnline = true;
+        _network = network;
+        _eventManager = eventManager;
+        // Update scene name to include _online suffix
+        setName("level_" + std::to_string(_levelNumber) + "_online");
     }
 
-    void reachedDoor() {
-        _peopleAtDoor++;
-
-        if (_peopleAtDoor >= 2) {
-            if (_isOnline && _network) {
-                int nextLevel = _levelNumber + 1;
-
-                NextLevelPacket packet(nextLevel);
-                packet.serialize();
-                _network->send(packet);
-                return;
-            }
-
-            LevelSwitcher switcher{_network, _eventManager};
-            switcher.openLevel(_levelNumber + 1, false);
-        }
+    void onExit() {
+        GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
     }
+
+    void onInitialRender() override final;
+    void onUpdate(float deltaTime) override final;
+
+    Fireboy *getFireboy(Scene *scene);
+
+    Watergirl *getWatergirl(Scene *scene);
+
+    int getPeopleAtDoor() const { return _peopleAtDoor; }
+    void incrementPeopleAtDoor() { _peopleAtDoor++; }
+    void reachedDoor();
 
     void leftDoor() {
         if (_peopleAtDoor > 0) {
@@ -61,39 +63,52 @@ public:
         }
     }
 
-private:
-    void createBasicLevelGrid();
-
-    void checkDoorCollisions();
-
-    void setupLevel();
-
-    void setupCharacters();
-
-    void setupHUD();
-
+    // Cleanup function to be called when exiting a level
     void cleanup();
+    
+    // Update level selector status after completing a level
+    void updateLevelSelectorStatus();
 
-    void updateDiamondCounters();
+protected:
+    // Abstract methods that each level must implement
+    virtual void createLevelGrid() = 0;
+    virtual void setupLevelSpecifics() = 0;
+    virtual std::string getLevelName() const = 0;
 
+    // Helper methods available to all levels
+    void createGroundBlock(LevelGrid* grid, int x, int y);
+    void createCellObjects(LevelGrid* grid);
+    void setupBaseLevel();
+    void setupCharacters();
+    void setupHUD();
     void createBat();
 
+    // Common level data
     int _levelNumber;
     bool _isOnline;
     std::shared_ptr<NetworkSystem> _network;
-    EventManager *_eventManager;
+    EventManager* _eventManager;
+
+    Fireboy* _fireboy;
+    Watergirl* _watergirl;
+    Text* _fireboyDiamondText;
+    Text* _watergirlDiamondText;
+    std::vector<Door*> _doors;
+    int _peopleAtDoor;
+    int _batCount;
+    std::unique_ptr<AudioComponent> audio;
+
+private:
+    void checkDiamondCollisions();
+    void updateDiamondCounters();
+    void checkDoorCollisions();
+
+    // Level timing
+    float _elapsedTime;
+    float _levelEndTime;
+    bool _levelCompleted;
+
     bool _isInitialized;
     bool _batCreated;
-    int _batCount;
-
-    Fireboy *_fireboy = nullptr;
-    Watergirl *_watergirl = nullptr;
-
-    Text *_fireboyDiamondText = nullptr;
-    Text *_watergirlDiamondText = nullptr;
-
-    int _peopleAtDoor = 0;
-    std::vector<Door*> _doors;
 };
-
 #endif

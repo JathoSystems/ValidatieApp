@@ -7,20 +7,47 @@
 #include "Network/Packet/Handler/IPacketHandler.hpp"
 #include "scenes/LevelScene.hpp"
 #include "server/packet/RestartPacket.hpp"
+#include "LevelSwitcher.hpp"
+#include "Scenes/SceneSystem.h"
 
 class RestartLevelPacketHandler : public IPacketHandler {
+private:
+    static std::shared_ptr<NetworkSystem> g_network;
+    static EventManager* g_eventManager;
+
+public:
     void handle(const Packet &packet) override {
-        std::cout << "INCOMING\n";
-        if (const RestartPacket* p = dynamic_cast<const RestartPacket*>(&packet)) {
-            std::string sceneName = p->getLevel();
-            GameEngine *engine = &GameEngine::getInstance();
-            SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
-            
-            // Switch to the level scene - it will reinitialize itself
-            sceneSystem->setScene(sceneName);
+        // Now called on main thread - safe to execute directly
+        std::cout << "[RestartLevelPacketHandler] Restart packet received\n";
+        
+        RestartPacket restartPacket;
+        restartPacket.getBuffer().setData(packet.getBuffer().getData());
+        restartPacket.deserialize();
+        
+        std::string sceneName = restartPacket.getLevel();
+        int levelNumber = 1;
+        if (sceneName.find("level_") == 0) {
+            size_t pos = 6;
+            size_t end = sceneName.find('_', pos);
+            std::string numStr = (end != std::string::npos) ? sceneName.substr(pos, end - pos) : sceneName.substr(pos);
+            try {
+                levelNumber = std::stoi(numStr);
+            } catch (...) {
+                levelNumber = 1;
+            }
         }
+        
+        LevelSwitcher switcher{g_network, g_eventManager};
+        switcher.openLevel(levelNumber, true);
+    }
+    
+    static void setNetworkAndEventManager(const std::shared_ptr<NetworkSystem> &network, EventManager *eventManager) {
+        g_network = network;
+        g_eventManager = eventManager;
     }
 };
 
+inline std::shared_ptr<NetworkSystem> RestartLevelPacketHandler::g_network = nullptr;
+inline EventManager* RestartLevelPacketHandler::g_eventManager = nullptr;
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_RESTARTLEVELPACKETHANDLER_HPP
