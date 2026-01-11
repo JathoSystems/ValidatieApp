@@ -35,7 +35,7 @@ public:
         _eventManager = eventManager;
     }
 
-    void onExit() override {
+    void onExit() {
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
     }
 
