@@ -37,6 +37,8 @@ public:
         _isOnline = true;
         _network = network;
         _eventManager = eventManager;
+        // Update scene name to include _online suffix
+        setName("level_" + std::to_string(_levelNumber) + "_online");
     }
 
     void onExit() {
