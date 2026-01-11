@@ -13,6 +13,7 @@
 #include "bat/BatAI.h"
 #include "grid/GridManager.h"
 #include "server/GlobalFlags.h"
+#include <cstdint>
 
 class SpawnEvent : public IEvent {
 private:
@@ -112,9 +113,20 @@ public:
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             Transform* transform = existingObj->getTransform();
-            if (transform && transform->getPosition()) {
-                transform->getPosition()->setX(spawnX);
-                transform->getPosition()->setY(spawnY);
+            if (transform) {
+                Position* position = transform->getPosition();
+                // Check if position is valid: not null and not a clearly invalid address (like 0x1)
+                if (position && reinterpret_cast<uintptr_t>(position) > 0x1000) {
+                    try {
+                        position->setX(spawnX);
+                        position->setY(spawnY);
+                    } catch (...) {
+                        std::cout << "[SpawnEvent] ERROR: Failed to set position for existing object: " << objectName << std::endl;
+                    }
+                } else {
+                    std::cout << "[SpawnEvent] WARNING: Position is invalid for existing object: " << objectName 
+                              << " (ptr: " << std::hex << reinterpret_cast<uintptr_t>(position) << std::dec << ")" << std::endl;
+                }
             }
             return;
         }
@@ -142,9 +154,25 @@ public:
         }
 
         Transform* transform = object->getTransform();
-        if (transform && transform->getPosition()) {
-            transform->getPosition()->setX(spawnX);
-            transform->getPosition()->setY(spawnY);
+        if (transform) {
+            Position* position = transform->getPosition();
+            // Check if position is valid: not null and not a clearly invalid address (like 0x1)
+            if (position && reinterpret_cast<uintptr_t>(position) > 0x1000) {
+                try {
+                    position->setX(spawnX);
+                    position->setY(spawnY);
+                } catch (...) {
+                    std::cout << "[SpawnEvent] ERROR: Failed to set position for new object: " << objectName << std::endl;
+                }
+            } else {
+                std::cout << "[SpawnEvent] WARNING: Position is invalid for new object: " << objectName 
+                          << " (ptr: " << std::hex << reinterpret_cast<uintptr_t>(position) << std::dec << ")" << std::endl;
+                // Don't continue if position is invalid - this object is broken
+                return;
+            }
+        } else {
+            std::cout << "[SpawnEvent] WARNING: Transform is null for new object: " << objectName << std::endl;
+            return;
         }
 
         GameObject* objectPtr = object.get();
