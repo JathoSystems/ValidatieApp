@@ -94,6 +94,10 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         includes/server/packet/handler/GameReadyPacketHandler.hpp
         includes/LevelSwitcher.hpp
         src/LevelSwitcher.cpp
+        src/LevelSelector.cpp
+        includes/LevelSelector.h
+        includes/scenes/RoomSelectionScene.hpp
+        src/scenes/RoomSelectionScene.cpp
         includes/scenes/levels/Level1Scene.hpp
         src/scenes/levels/Level1Scene.cpp
         includes/scenes/levels/Level2Scene.hpp

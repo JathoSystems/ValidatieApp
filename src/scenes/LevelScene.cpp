@@ -30,6 +30,20 @@
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "SpawnEvent.hpp"
 #include "GameObjects/Component/AudioComponent.h"
+#include "LevelSelector.h"
+
+void LevelScene::updateLevelSelectorStatus() {
+    LevelSelector* selector = LevelSelector::getInstance();
+    if (selector) {
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        if (sceneSystem) {
+            Scene* selectorScene = sceneSystem->getActiveSceneObj();
+            if (selectorScene && selectorScene->getName() == "level_selector") {
+                selector->updateLevelStatus(selectorScene);
+            }
+        }
+    }
+}
 
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
 
@@ -376,7 +390,10 @@ void LevelScene::setupBaseLevel() {
     backButton->setOnClick([this]() {
         cleanup();
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
-        GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
+        
+        updateLevelSelectorStatus();
     });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));

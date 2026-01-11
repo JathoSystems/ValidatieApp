@@ -4,6 +4,9 @@
 #include "Scenes/Scene.h"
 #include "Network/NetworkSystem.h"
 #include "Events/EventManager.h"
+#include "Engine/GameEngine.h"
+#include "Scenes/SceneSystem.h"
+#include "Audio/AudioSystem.h"
 #include <memory>
 #include <vector>
 #include <iostream>
@@ -20,6 +23,7 @@ class Watergirl;
 class Text;
 class Door;
 class LevelGrid;
+class LevelSelector;
 
 class LevelScene : public Scene {
 public:
@@ -58,7 +62,6 @@ public:
             LevelSaver saver;
             saver.save(_levelNumber, _levelEndTime);
 
-
             audio->setVolume(0.0f);
 
             if (_isOnline && _network) {
@@ -70,8 +73,12 @@ public:
                 // return;
             }
 
-            // LevelSwitcher switcher{_network, _eventManager};
-            // switcher.openLevel(_levelNumber + 1, false);
+            cleanup();
+            GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
+            SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+            sceneSystem->setScene("level_selector");
+            
+            updateLevelSelectorStatus();
         }
     }
 
@@ -84,6 +91,9 @@ public:
 
     // Cleanup function to be called when exiting a level
     void cleanup();
+    
+    // Update level selector status after completing a level
+    void updateLevelSelectorStatus();
 
 protected:
     // Abstract methods that each level must implement

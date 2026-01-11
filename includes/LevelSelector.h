@@ -7,10 +7,12 @@
 #include "scenes/LevelScene.hpp"
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
+#include "UI/Text.h"
 #include <thread>
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <map>
 
 class LevelSelector {
 private:
@@ -19,6 +21,7 @@ private:
     EventManager* _eventManager;
     bool _networkCallbacksSetup = false;
     std::map<int, Text*> _levelTextMap;
+    static LevelSelector* _instance;
 public:
     LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);
 
@@ -29,6 +32,8 @@ public:
     void createLevelSelectorScene();
 
     void update(float deltaTime);
+    
+    static LevelSelector* getInstance() { return _instance; }
 
     void setupNetworkCallbacks();
 

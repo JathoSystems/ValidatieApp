@@ -7,6 +7,7 @@
 #include "Scenes/Camera/FixedCamera.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
+#include "LevelSaver.hpp"
 #include <asio.hpp>
 #include <iostream>
 #include "scenes/levels/Level1Scene.hpp"
@@ -15,9 +16,12 @@
 
 extern std::map<int, std::function<std::unique_ptr<Scene>()> > g_levels;
 
+LevelSelector* LevelSelector::_instance = nullptr;
+
 LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network,
                              EventManager *eventManager) : _sceneSystem(sceneSystem), _network(network),
                                                            _eventManager(eventManager) {
+    _instance = this;
     g_levels[1] = []() { return std::make_unique<Level1Scene>(); };
     g_levels[2] = []() { return std::make_unique<Level2Scene>(); };
     g_levels[3] = []() { return std::make_unique<Level3Scene>(); };
@@ -65,6 +69,8 @@ void LevelSelector::createLevelSelectorScene() {
         if (completionTime != -1) color = std::make_unique<Color>(0, 255, 0);
         levelText->setColor(std::move(color));
         auto levelTextObj = std::make_unique<GameObject>();
+        Text* levelTextPtr = levelText.get();
+        _levelTextMap[levelNum] = levelTextPtr;
         levelTextObj->addComponent(std::move(levelText));
         levelTextObj->getTransform()->getPosition()->setX(x + 80);
         levelTextObj->getTransform()->getPosition()->setY(y);
@@ -138,6 +144,24 @@ void LevelSelector::setupNetworkCallbacks() {
         event->apply(object);
     });
     _networkCallbacksSetup = true;
+}
+
+void LevelSelector::updateLevelStatus(Scene *selectorScene) {
+    if (!selectorScene || selectorScene->getName() != "level_selector") {
+        return;
+    }
+    
+    LevelSaver saver;
+    for (const auto &[levelNum, textPtr] : _levelTextMap) {
+        if (textPtr) {
+            float completionTime = saver.getCompletionTime(levelNum);
+            std::unique_ptr<Color> color = std::make_unique<Color>(255, 255, 255);
+            if (completionTime != -1) {
+                color = std::make_unique<Color>(0, 255, 0);
+            }
+            textPtr->setColor(std::move(color));
+        }
+    }
 }
 
 void LevelSelector::onOnlinePlayClicked(int levelNumber) {
