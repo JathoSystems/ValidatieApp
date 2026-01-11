@@ -1,5 +1,6 @@
 #include "LevelSelector.h"
 #include "scenes/LevelScene.hpp"
+#include "scenes/LevelScene.hpp"
 #include "scenes/RoomSelectionScene.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
@@ -100,6 +101,16 @@ void LevelSelector::onPlayClicked(int levelNumber) {
         std::cerr << "Level " << levelNumber << " not found!" << std::endl;
         return;
     }
+    
+    Scene* currentScene = _sceneSystem->getActiveSceneObj();
+    if (currentScene) {
+        LevelScene* currentLevelScene = dynamic_cast<LevelScene*>(currentScene);
+        if (currentLevelScene) {
+            std::cout << "[LevelSelector] Cleaning up current level scene before switching..." << std::endl;
+            currentLevelScene->cleanup();
+        }
+    }
+    
     std::string sceneName = "level_" + std::to_string(levelNumber);
     std::unique_ptr<Scene> scene = g_levels[levelNumber]();
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) { _sceneSystem->addScene(std::move(scene)); }

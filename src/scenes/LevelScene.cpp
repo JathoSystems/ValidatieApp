@@ -27,6 +27,7 @@
 #include "bat/BatAI.h"
 #include "GameObjects/Spritesheet/Animator.h"
 #include "GameObjects/ObjectRegistry.hpp"
+#include "GameObjects/Component/KeyInputComponent.h"
 #include "SpawnEvent.hpp"
 #include "GameObjects/Component/AudioComponent.h"
 
@@ -132,8 +133,49 @@ void LevelScene::cleanup() {
     _doors.clear();
     _peopleAtDoor = 0;
 
+    GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+    InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
+
     auto &objects = getObjects();
+    std::vector<PhysicsComponent*> allPhysicsComponents;
+    std::vector<KeyInputComponent*> allKeyInputComponents;
+
+    for (auto &obj : objects) {
+        if (!obj) continue;
+
+        auto physicsComponents = obj->getComponents<PhysicsComponent>();
+        allPhysicsComponents.insert(allPhysicsComponents.end(), physicsComponents.begin(), physicsComponents.end());
+
+        auto keyInputComponents = obj->getComponents<KeyInputComponent>();
+        allKeyInputComponents.insert(allKeyInputComponents.end(), keyInputComponents.begin(), keyInputComponents.end());
+    }
+
+    std::cout << "[LevelScene] Cleanup: Found " << allPhysicsComponents.size() << " physics components to remove" << std::endl;
+
+    for (auto *physics : allPhysicsComponents) {
+        if (physics) {
+            physics->destroyBody();
+        }
+    }
+
+    for (auto *physics : allPhysicsComponents) {
+        if (physics && physicsSystem) {
+            physicsSystem->unregisterComponent(physics);
+        }
+    }
+
+    for (auto *keyInput : allKeyInputComponents) {
+        if (keyInput && inputSystem) {
+            inputSystem->unregisterKeyComponent(keyInput);
+        }
+    }
+
     const_cast<std::vector<std::unique_ptr<GameObject> > &>(objects).clear();
+
+    if (physicsSystem) {
+        physicsSystem->clearAllComponents();
+    }
 
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
@@ -332,8 +374,8 @@ void LevelScene::setupBaseLevel() {
 
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([this]() {
+        cleanup();
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
-
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
     });
     auto backButtonObj = std::make_unique<GameObject>();

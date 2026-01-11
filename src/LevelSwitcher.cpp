@@ -21,6 +21,15 @@ void LevelSwitcher::openLevel(int level, bool online) {
 
     std::string levelSceneName = "level_" + std::to_string(level) + (online ? "_online" : "");
 
+    Scene* currentScene = sceneSystem->getActiveSceneObj();
+    if (currentScene) {
+        LevelScene* currentLevelScene = dynamic_cast<LevelScene*>(currentScene);
+        if (currentLevelScene) {
+            std::cout << "[LevelSwitcher] Cleaning up current level scene before switching..." << std::endl;
+            currentLevelScene->cleanup();
+        }
+    }
+
     auto newLevelScene = g_levels[level]();
     sceneSystem->addScene(std::move(newLevelScene));
     sceneSystem->setScene(newLevelScene->getName());

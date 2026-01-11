@@ -82,6 +82,9 @@ public:
         }
     }
 
+    // Cleanup function to be called when exiting a level
+    void cleanup();
+
 protected:
     // Abstract methods that each level must implement
     virtual void createLevelGrid() = 0;
@@ -112,7 +115,6 @@ protected:
     std::unique_ptr<AudioComponent> audio;
 
 private:
-    void cleanup();
     void checkDiamondCollisions();
     void updateDiamondCounters();
     void checkDoorCollisions();
