@@ -1,8 +1,10 @@
 #include "diamond/RedDiamond.hpp"
+
+#include "characters/Fireboy.hpp"
 #include "GameObjects/Component/SpriteRenderer.h"
 #include "Engine/GameEngine.h"
 
-RedDiamond::RedDiamond(LevelGrid* grid, int x, int y) {
+RedDiamond::RedDiamond(LevelGrid *grid, int x, int y) {
     _grid = grid;
     _x = x;
     _y = y;
@@ -21,25 +23,25 @@ RedDiamond::RedDiamond(LevelGrid* grid, int x, int y) {
     addComponent(std::move(sprite));
 }
 
-void RedDiamond::checkCollisionWith(GameObject* other) {
+void RedDiamond::checkCollisionWith(GameObject *other) {
     if (_collected) {
         return;
     }
-    
-    if (Fireboy* fireboy = dynamic_cast<Fireboy*>(other)) {
+
+    if (Fireboy *fireboy = dynamic_cast<Fireboy *>(other)) {
         float x1 = getTransform()->getPosition()->getX();
         float y1 = getTransform()->getPosition()->getY();
         float w1 = getTransform()->getSize()->getWidth();
         float h1 = getTransform()->getSize()->getHeight();
-        
+
         float x2 = fireboy->getTransform()->getPosition()->getX();
         float y2 = fireboy->getTransform()->getPosition()->getY();
         float w2 = fireboy->getTransform()->getSize()->getWidth();
         float h2 = fireboy->getTransform()->getSize()->getHeight();
-        
+
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
-                        (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
-        
+                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
+
         if (collision) {
             fireboy->addDiamond();
             _collected = true;
@@ -49,12 +51,12 @@ void RedDiamond::checkCollisionWith(GameObject* other) {
     }
 }
 
-void RedDiamond::onCollisionEnter(const CollisionData& collision) {
+void RedDiamond::onCollisionEnter(const CollisionData &collision) {
     if (_collected) {
         return;
     }
-    
-    if (Fireboy* fireboy = dynamic_cast<Fireboy*>(collision.other)) {
+
+    if (Fireboy *fireboy = dynamic_cast<Fireboy *>(collision.other)) {
         fireboy->addDiamond();
         _collected = true;
         removeComponent<SpriteRenderer>(false);

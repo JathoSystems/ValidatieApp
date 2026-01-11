@@ -1,7 +1,3 @@
-//
-// Created for lobby system
-//
-
 #include "server/LobbyManager.hpp"
 #include <algorithm>
 #include <iostream>
@@ -20,25 +16,25 @@ bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
         std::cerr << "Lobby " << lobbyId << " does not exist" << std::endl;
         return false;
     }
-    
+
     if (it->second.isFull()) {
         std::cerr << "Lobby " << lobbyId << " is full" << std::endl;
         return false;
     }
 
-    std::cerr << "Attempting to join lobby " << lobbyId << " for level " << levelId << ", level of lobby is: " << it->second.levelId << std::endl;
+    std::cerr << "Attempting to join lobby " << lobbyId << " for level " << levelId << ", level of lobby is: " << it->
+            second.levelId << std::endl;
     if (levelId != it->second.levelId) {
         std::cerr << "Level ID mismatch when joining lobby: " << levelId << " != " << it->second.levelId << std::endl;
         return false;
     }
 
-    // Check if player is already in THIS lobby (not any lobby - cleanup is done in Server.cpp)
-    auto& players = it->second.players;
+    auto &players = it->second.players;
     if (std::find(players.begin(), players.end(), clientId) != players.end()) {
         std::cerr << "Player " << clientId << " is already in lobby " << lobbyId << std::endl;
         return false;
     }
-    
+
     it->second.players.push_back(clientId);
     std::cerr << "Player " << clientId << " joined lobby " << lobbyId << " successfully" << std::endl;
     return true;
@@ -47,19 +43,19 @@ bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
 void LobbyManager::leaveLobby(int lobbyId, int32_t clientId) {
     auto it = _lobbies.find(lobbyId);
     if (it != _lobbies.end()) {
-        auto& players = it->second.players;
+        auto &players = it->second.players;
         players.erase(
             std::remove(players.begin(), players.end(), clientId),
             players.end()
         );
-        
+
         if (players.empty()) {
             _lobbies.erase(it);
         }
     }
 }
 
-Lobby* LobbyManager::getLobby(int lobbyId) {
+Lobby *LobbyManager::getLobby(int lobbyId) {
     auto it = _lobbies.find(lobbyId);
     if (it != _lobbies.end()) {
         return &it->second;
@@ -68,8 +64,8 @@ Lobby* LobbyManager::getLobby(int lobbyId) {
 }
 
 int LobbyManager::getLobbyIdForPlayer(int32_t clientId) {
-    for (auto& pair : _lobbies) {
-        for (int32_t playerId : pair.second.players) {
+    for (auto &pair: _lobbies) {
+        for (int32_t playerId: pair.second.players) {
             if (playerId == clientId) {
                 return pair.first;
             }

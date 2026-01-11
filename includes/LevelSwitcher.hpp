@@ -1,7 +1,3 @@
-//
-// Created by jusra on 7-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_LEVELSWITCHER_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_LEVELSWITCHER_HPP
 #include "Engine/GameEngine.h"

@@ -1,9 +1,7 @@
 #include <iostream>
 #include <asio.hpp>
-
 #include "LevelSelector.h"
 #include "SpawnEvent.hpp"
-#include "characters/Fireboy.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
 #include "Engine/GameEngine.h"
@@ -16,13 +14,8 @@
 #include "Network/NetworkSystem.h"
 #include "Network/Packet/PacketRegistery.h"
 #include "Network/Packet/Packets/NetworkEventPacket.h"
-#include "Network/Sockets/TcpNetworkSocket.h"
-#include "Physics/Collider.h"
-#include "Physics/PhysicsComponent.h"
-#include "Physics/PhysicsSystem.h"
 #include "Scenes/Scene.h"
 #include "Scenes/SceneSystem.h"
-#include "Scenes/Camera/FixedCamera.h"
 #include "Network/Packet/Handler/PacketHandlerFactory.hpp"
 #include "scenes/MainMenu.hpp"
 #include "scenes/Game.hpp"
@@ -68,7 +61,7 @@ std::string getLocalIPAddress() {
     return "192.168.2.161";
 }
 
-std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
+std::map<int, std::function<std::unique_ptr<Scene>()> > g_levels;
 
 int main() {
     try {
@@ -81,24 +74,20 @@ int main() {
             return 1;
         }
 
-        // Add NetworkSystem to the engine so its update() is called (processes packet queue)
         gameEngine->addSystem(std::make_unique<NetworkSystem>());
-        auto* networkSystem = gameEngine->getSystem<NetworkSystem>();
+        auto *networkSystem = gameEngine->getSystem<NetworkSystem>();
         if (!networkSystem) {
             std::cerr << "[Main] ERROR: NetworkSystem is null!" << std::endl;
             return 1;
         }
-        
-        // Network connection after init
+
         networkSystem->connect(getLocalIPAddress(), 7534);
-        
-        // Create shared_ptr wrapper for compatibility with existing code
-        // Note: This shared_ptr does NOT own the NetworkSystem - it's owned by GameEngine
-        auto network = std::shared_ptr<NetworkSystem>(networkSystem, [](NetworkSystem*) {});
+
+        auto network = std::shared_ptr<NetworkSystem>(networkSystem, [](NetworkSystem *) {
+        });
 
         EventManager manager(network->getMiddleware());
 
-        // Register packets
         PacketRegistery::getInstance().registerPacket<NetworkEventPacket>(100);
         PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
         PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
@@ -123,7 +112,6 @@ int main() {
         GameReadyPacketHandler::setNetwork(network);
         PacketHandlerFactory::getInstance().registerHandler(105, lobbyInfoHandler);
 
-        // Register events
         EventRegistry::getInstance()->registerEvent("jump", []() {
             return std::make_shared<JumpEvent>();
         });
@@ -140,7 +128,6 @@ int main() {
             return std::make_shared<BatMoveEvent>(0, 0.0f, 0.0f);
         });
 
-        // Set up event handlers - now called on main thread via packet queue
         network->getMiddleware()->setOnEventReceived([](int id, std::shared_ptr<IEvent> event) {
             if (SpawnEvent *spawn = dynamic_cast<SpawnEvent *>(event.get())) {
                 spawn->spawn();
@@ -180,7 +167,6 @@ int main() {
             event->apply(object);
         });
 
-        // Set up GameObjectFactory
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 

@@ -11,14 +11,14 @@ private:
     bool _flipHorizontal;
 
 public:
-    BatAnimator(const std::string& path, int rows, int columns);
-    
+    BatAnimator(const std::string &path, int rows, int columns);
+
     void setFlipHorizontal(bool flip) { _flipHorizontal = flip; }
     bool getFlipHorizontal() const { return _flipHorizontal; }
-    
+
     void update(float deltaTime) override;
-    void render(const std::unique_ptr<Window>& window) override;
+
+    void render(const std::unique_ptr<Window> &window) override;
 };
 
 #endif //VALIDATIEAPP_BATANIMATOR_H
-

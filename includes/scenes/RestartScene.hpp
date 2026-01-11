@@ -1,7 +1,3 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_RESTARTSCENE_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_RESTARTSCENE_HPP
 #include "Network/NetworkSystem.h"
@@ -18,7 +14,7 @@ public:
 
     void setTargetLevel(std::string level) { _previousLevel = level; }
 
-    void setOnline(bool online) {_isOnline = online;}
+    void setOnline(bool online) { _isOnline = online; }
 
     void onInitialRender() override;
 };

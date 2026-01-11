@@ -1,7 +1,3 @@
-//
-// Created by jusra on 16-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_PLAYER_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_PLAYER_HPP
 #include <cstdint>

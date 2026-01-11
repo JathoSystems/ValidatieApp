@@ -17,13 +17,16 @@ private:
     bool _isInitialized;
 
     void setupGrid();
+
     void createCharacter();
+
     void createBat();
 
 public:
     Game(std::shared_ptr<NetworkSystem> network, EventManager *eventManager);
 
     void onInitialRender() override;
+
     void update(float deltaTime);
 };
 

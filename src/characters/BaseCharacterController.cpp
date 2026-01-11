@@ -1,7 +1,4 @@
-// Created by jusra on 15-12-2025.
-
 #include "characters/BaseCharacterController.hpp"
-#include <iostream>
 #include "SpawnEvent.hpp"
 #include "characters/events/JumpEvent.h"
 #include "characters/events/MoveEvent.hpp"
@@ -23,13 +20,16 @@ BaseCharacterController::BaseCharacterController(std::shared_ptr<NetworkSystem> 
 }
 
 void BaseCharacterController::getCurrentPhysicsState(float &x, float &y, float &vx, float &vy) {
-    x = 0; y = 0; vx = 0; vy = 0;
-    GameObject* obj = ObjectRegistry::getInstance().getObject(_parentId);
+    x = 0;
+    y = 0;
+    vx = 0;
+    vy = 0;
+    GameObject *obj = ObjectRegistry::getInstance().getObject(_parentId);
     if (obj) {
         x = obj->getTransform()->getPosition()->getX();
         y = obj->getTransform()->getPosition()->getY();
 
-        if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+        if (auto *physics = obj->getComponent<PhysicsComponent>()) {
             physics->getVelocity(vx, vy);
         }
     }
@@ -52,8 +52,9 @@ void BaseCharacterController::updateMovementDirection() {
             getCurrentPhysicsState(x, y, vx, vy);
 
             _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
-                _parentId, _movementDirection, _movementDirection != Direction::NONE, x, y, vx, vy
-            ));
+                                         _parentId, _movementDirection, _movementDirection != Direction::NONE, x, y, vx,
+                                         vy
+                                     ));
         }
     }
 }
@@ -71,11 +72,11 @@ void BaseCharacterController::update(float delta) {
         getCurrentPhysicsState(x, y, vx, vy);
 
         _eventManager->broadcast(_parentId, std::make_shared<MoveEvent>(
-            _parentId,
-            _movementDirection,
-            _movementDirection != Direction::NONE,
-            x, y, vx, vy
-        ));
+                                     _parentId,
+                                     _movementDirection,
+                                     _movementDirection != Direction::NONE,
+                                     x, y, vx, vy
+                                 ));
     }
 }
 
@@ -114,7 +115,6 @@ void BaseCharacterController::move(Direction direction, PhysicsComponent *physic
     physics->getVelocity(currentVx, currentVy);
     float newVy = currentVy;
 
-    // Apply jump if requested
     if (_shouldJump) {
         newVy = JUMP_VELOCITY;
         _grounded = false;

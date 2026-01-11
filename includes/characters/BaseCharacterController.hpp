@@ -1,7 +1,3 @@
-//
-// Created by jusra on 15-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_BASECHARACTERCONTROLLER_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_BASECHARACTERCONTROLLER_HPP
 #include "enums/Direction.hpp"
@@ -47,7 +43,7 @@ public:
     bool isGrounded() const;
 
     void setGrounded(bool grounded);
-    
+
     void setParentId(int parentId) { _parentId = parentId; }
     int getParentId() const { return _parentId; }
 

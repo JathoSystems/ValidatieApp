@@ -9,10 +9,10 @@ public:
     MainMenu();
 
     void onInitialRender() override;
+
     void onExit() {
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
     }
-
 };
 
 #endif

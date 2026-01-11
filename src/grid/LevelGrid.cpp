@@ -1,7 +1,7 @@
 #include "grid/LevelGrid.h"
 #include <cmath>
 
-LevelGrid::LevelGrid(int width, int height, int cellSize) 
+LevelGrid::LevelGrid(int width, int height, int cellSize)
     : _width(width), _height(height), _cellSize(cellSize) {
     _grid.resize(width, std::vector<CellType>(height, CellType::Empty));
 }
@@ -29,12 +29,12 @@ bool LevelGrid::isWalkableWorld(float worldX, float worldY) const {
     return isWalkable(gridX, gridY);
 }
 
-void LevelGrid::worldToGrid(float worldX, float worldY, int& gridX, int& gridY) const {
+void LevelGrid::worldToGrid(float worldX, float worldY, int &gridX, int &gridY) const {
     gridX = static_cast<int>(std::floor(worldX / _cellSize));
     gridY = static_cast<int>(std::floor(worldY / _cellSize));
 }
 
-void LevelGrid::gridToWorld(int gridX, int gridY, float& worldX, float& worldY) const {
+void LevelGrid::gridToWorld(int gridX, int gridY, float &worldX, float &worldY) const {
     worldX = static_cast<float>(gridX * _cellSize);
     worldY = static_cast<float>(gridY * _cellSize);
 }

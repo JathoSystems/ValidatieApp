@@ -18,11 +18,10 @@ private:
 public:
     explicit Door(int cellSize, int x, int y, std::string color = "red")
         : _color(color), _isOccupied(false), _onReached(nullptr) {
-
         float half = cellSize * 0.5f;
         float scale = 2.0f;
-        auto* pos = getTransform()->getPosition();
-        auto* size = getTransform()->getSize();
+        auto *pos = getTransform()->getPosition();
+        auto *size = getTransform()->getSize();
 
         pos->setX(x * cellSize + half);
         pos->setY(y * cellSize + cellSize);
@@ -30,9 +29,7 @@ public:
         size->setHeight(cellSize * scale);
         setLayer(5);
 
-        std::string sprite = color == "red" ?
-            "resources/doors/door_red.png" :
-            "resources/doors/door_blue.png";
+        std::string sprite = color == "red" ? "resources/doors/door_red.png" : "resources/doors/door_blue.png";
 
         std::cout << "Loading door sprite: " << sprite << std::endl;
         auto spriteRenderer = std::make_unique<SpriteRenderer>(sprite);
@@ -43,35 +40,35 @@ public:
         _onReached = std::move(callback);
     }
 
-    void checkCollisionWithFireboy(Fireboy* fireboy) {
+    void checkCollisionWithFireboy(Fireboy *fireboy) {
         if (!fireboy || _color != "red") return;
         checkCollisionInternal(fireboy);
     }
-    
-    void checkCollisionWithWatergirl(Watergirl* watergirl) {
+
+    void checkCollisionWithWatergirl(Watergirl *watergirl) {
         if (!watergirl || _color != "blue") return;
         checkCollisionInternal(watergirl);
     }
-    
+
     bool isOccupied() const { return _isOccupied; }
     std::string getColor() const { return _color; }
-    
+
 private:
-    void checkCollisionInternal(BaseCharacter* character) {
+    void checkCollisionInternal(BaseCharacter *character) {
         if (!character) return;
-        
-        auto* doorTransform = getTransform();
+
+        auto *doorTransform = getTransform();
         if (!doorTransform) return;
-        
-        auto* doorPos = doorTransform->getPosition();
-        auto* doorSize = doorTransform->getSize();
+
+        auto *doorPos = doorTransform->getPosition();
+        auto *doorSize = doorTransform->getSize();
         if (!doorPos || !doorSize) return;
-        
-        auto* charTransform = character->getTransform();
+
+        auto *charTransform = character->getTransform();
         if (!charTransform) return;
-        
-        auto* charPos = charTransform->getPosition();
-        auto* charSize = charTransform->getSize();
+
+        auto *charPos = charTransform->getPosition();
+        auto *charSize = charTransform->getSize();
         if (!charPos || !charSize) return;
 
         float x1 = doorPos->getX();
@@ -85,7 +82,7 @@ private:
         float h2 = charSize->getHeight();
 
         bool collision = (std::abs(x1 - x2) < (w1 + w2) / 2.0f) &&
-                        (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
+                         (std::abs(y1 - y2) < (h1 + h2) / 2.0f);
 
         if (collision && !_isOccupied) {
             _isOccupied = true;

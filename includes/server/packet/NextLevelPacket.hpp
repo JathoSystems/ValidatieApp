@@ -7,7 +7,6 @@
 
 #include "Network/Packet/Packet.h"
 #include "Network/GameState.hpp"
-#include <cstdint>
 #include <string>
 
 class NextLevelPacket : public Packet {

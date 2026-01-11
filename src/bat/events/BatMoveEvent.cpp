@@ -1,7 +1,5 @@
 #include "bat/events/BatMoveEvent.hpp"
 #include "bat/BatAI.h"
-#include "GameObjects/Transform/Transform.h"
-#include "GameObjects/Transform/Position.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "Engine/GameEngine.h"
 #include "Scenes/SceneSystem.h"
@@ -19,57 +17,52 @@ std::string BatMoveEvent::getName() const {
 Package BatMoveEvent::serialize() const {
     Package p;
 
-    const uint8_t* idBytes = reinterpret_cast<const uint8_t*>(&_objectId);
+    const uint8_t *idBytes = reinterpret_cast<const uint8_t *>(&_objectId);
     for (int i = 0; i < sizeof(int); ++i) {
         p.push_back(idBytes[i]);
     }
 
-    const uint8_t* xBytes = reinterpret_cast<const uint8_t*>(&_x);
+    const uint8_t *xBytes = reinterpret_cast<const uint8_t *>(&_x);
     for (int i = 0; i < sizeof(float); ++i) p.push_back(xBytes[i]);
 
-    const uint8_t* yBytes = reinterpret_cast<const uint8_t*>(&_y);
+    const uint8_t *yBytes = reinterpret_cast<const uint8_t *>(&_y);
     for (int i = 0; i < sizeof(float); ++i) p.push_back(yBytes[i]);
-    
+
     return p;
 }
 
 Data BatMoveEvent::deserialize(const Package &package) {
     Data data;
-    
+
     if (package.size() >= 12) {
-        // Deserialize object ID as 4 bytes (int)
         std::memcpy(&_objectId, &package[0], sizeof(int));
-        
-        // Deserialize X position
+
         std::memcpy(&_x, &package[4], sizeof(float));
-        
-        // Deserialize Y position
+
         std::memcpy(&_y, &package[8], sizeof(float));
-        
-        // Copy back to data
+
         for (size_t i = 0; i < package.size(); ++i) {
             data.push_back(package[i]);
         }
     }
-    
+
     return data;
 }
 
-void BatMoveEvent::apply(GameObject* gameObject) {
-    // Safety check: only process if we're in a level scene
-    auto* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+void BatMoveEvent::apply(GameObject *gameObject) {
+    auto *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
     if (!sceneSystem) return;
-    
-    Scene* scene = sceneSystem->getActiveSceneObj();
+
+    Scene *scene = sceneSystem->getActiveSceneObj();
     if (!scene) return;
-    
+
     std::string sceneName = scene->getName();
     if (sceneName.find("level_") != 0) return;
-    
-    GameObject* obj = ObjectRegistry::getInstance().getObject(_objectId);
+
+    GameObject *obj = ObjectRegistry::getInstance().getObject(_objectId);
     if (!obj) return;
-    
-    BatAI* batAI = obj->getComponent<BatAI>();
+
+    BatAI *batAI = obj->getComponent<BatAI>();
     if (!batAI) return;
 
     batAI->setNetworkPosition(_x, _y);

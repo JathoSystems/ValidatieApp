@@ -1,7 +1,3 @@
-//
-// Created by jusra on 16-12-2025.
-//
-
 #include "scenes/Lobby.hpp"
 #include "UI/Text.h"
 #include "UI/Button.h"
@@ -11,8 +7,9 @@
 #include "Network/GameState.hpp"
 #include "server/packet/QuitPacket.hpp"
 
-Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lobbyIdTextObj(nullptr), _statusTextObj(nullptr), _levelTextObj(nullptr), _network(network) {
-    // Title
+Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0),
+                                                       _lobbyIdTextObj(nullptr), _statusTextObj(nullptr),
+                                                       _levelTextObj(nullptr), _network(network) {
     auto titleText = std::make_unique<Text>("Waiting in Lobby");
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
     titleText->setFontSize(48);
@@ -24,7 +21,6 @@ Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(
     titleObj->getTransform()->getSize()->setHeight(60);
     addObject(std::move(titleObj));
 
-    // Lobby ID display
     auto lobbyIdText = std::make_unique<Text>("Lobby ID: --");
     lobbyIdText->setColor(std::make_unique<Color>(255, 255, 0));
     lobbyIdText->setFontSize(36);
@@ -37,7 +33,6 @@ Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(
     lobbyIdObj->getTransform()->getSize()->setHeight(50);
     addObject(std::move(lobbyIdObj));
 
-    // Status display
     auto statusText = std::make_unique<Text>("Waiting for player...");
     statusText->setColor(std::make_unique<Color>(200, 200, 200));
     statusText->setFontSize(28);
@@ -50,7 +45,6 @@ Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(
     statusObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(statusObj));
 
-    // Level info
     auto levelText = std::make_unique<Text>("Level: --");
     levelText->setColor(std::make_unique<Color>(255, 255, 255));
     levelText->setFontSize(24);
@@ -63,17 +57,14 @@ Lobby::Lobby(std::shared_ptr<NetworkSystem> network) : Scene("Lobby"), _lobbyId(
     levelObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(levelObj));
 
-    // Back Button
     auto backButton = std::make_unique<Button>("Leave Lobby", std::make_unique<Color>(255, 100, 100));
     backButton->setOnClick([this]() {
-        // Send quit packet to notify server (lobby ID is in GameState)
         if (_network) {
             QuitPacket quit;
             _network->send(quit);
         }
-        // Clear game state so old lobby/role info doesn't interfere with reconnection
         GameState::getInstance().clear();
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        SceneSystem *sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("level_selector");
     });
     auto backButtonObj = std::make_unique<GameObject>();
@@ -93,29 +84,27 @@ void Lobby::setLobbyInfo(int lobbyId, int levelId, int playerCount) {
     _lobbyId = lobbyId;
     _levelId = levelId;
     _playerCount = playerCount;
-    
+
     if (_lobbyIdTextObj) {
-        if (auto* text = _lobbyIdTextObj->getComponent<Text>()) {
+        if (auto *text = _lobbyIdTextObj->getComponent<Text>()) {
             text->setText("Lobby ID: " + std::to_string(_lobbyId));
         }
     }
-    
+
     if (_levelTextObj) {
-        if (auto* text = _levelTextObj->getComponent<Text>()) {
+        if (auto *text = _levelTextObj->getComponent<Text>()) {
             text->setText("Level: " + std::to_string(_levelId));
         }
     }
-    
-    // Update status
+
     std::string status = _playerCount == 1 ? "Waiting for player..." : "Ready to start!";
     updateStatus(status);
 }
 
-void Lobby::updateStatus(const std::string& status) {
+void Lobby::updateStatus(const std::string &status) {
     if (_statusTextObj) {
-        if (auto* text = _statusTextObj->getComponent<Text>()) {
+        if (auto *text = _statusTextObj->getComponent<Text>()) {
             text->setText(status);
         }
     }
 }
-

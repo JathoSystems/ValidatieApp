@@ -1,10 +1,10 @@
 #include "characters/Watergirl.hpp"
-
 #include "SpawnEvent.hpp"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Spritesheet/Animator.h"
 
-Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* eventManager, GameEngine *engine, bool active)
+Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
+                     bool active)
     : BaseCharacter(network, eventManager, engine, active, getDefaultBindings()) {
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");
@@ -23,7 +23,7 @@ Watergirl::Watergirl(std::shared_ptr<NetworkSystem> network, EventManager* event
 }
 
 Watergirl::Watergirl(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager,
-    GameEngine *engine, bool active)
+                     GameEngine *engine, bool active)
     : BaseCharacter(parentId, network, eventManager, engine, active, getDefaultBindings()) {
     setFallingSpritesheet(R"(resources/watergirl/dropping.png)");
     setJumpingSpritesheet(R"(resources/watergirl/jumping.png)");

@@ -1,11 +1,5 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #include "cell/Water.hpp"
-
 #include <memory>
-
 #include "grid/LevelGrid.h"
 #include "Engine/GameEngine.h"
 #include "GameObjects/Component/SpriteRenderer.h"
@@ -20,7 +14,7 @@
 #include "Network/NetworkSystem.h"
 #include "GameObjects/ObjectRegistry.hpp"
 
-Water::Water(LevelGrid* grid, int x, int y)
+Water::Water(LevelGrid *grid, int x, int y)
     : Liquid(
         grid,
         x,
@@ -28,8 +22,7 @@ Water::Water(LevelGrid* grid, int x, int y)
         "resources/fluids/water/water_left.jpg",
         "resources/fluids/water/water_right.jpg",
         "resources/fluids/water/water_middle.jpg"
-    )
-{
+    ) {
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
     int cellSize = grid->getCellSize();
@@ -45,7 +38,6 @@ Water::Water(LevelGrid* grid, int x, int y)
 }
 
 void Water::onCollisionEnter(const CollisionData &collision) {
-    // Water kills Fireboy, not Watergirl
     if (dynamic_cast<Fireboy *>(collision.other)) {
         AudioSystem *audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
         audioSystem->initialize();
@@ -55,20 +47,19 @@ void Water::onCollisionEnter(const CollisionData &collision) {
         GameEngine *gameEngine = &GameEngine::getInstance();
         SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
         if (!sceneSystem) return;
-        
-        Scene* activeScene = sceneSystem->getActiveSceneObj();
+
+        Scene *activeScene = sceneSystem->getActiveSceneObj();
         if (!activeScene) return;
 
         std::string previousSceneName = activeScene->getName();
         if (previousSceneName != "Restart") {
             std::cout << "Current scene" << previousSceneName << std::endl;
 
-            // Clear packet queue before scene change
-            NetworkSystem* networkSystem = gameEngine->getSystem<NetworkSystem>();
+
+            NetworkSystem *networkSystem = gameEngine->getSystem<NetworkSystem>();
             if (networkSystem && networkSystem->getMiddleware()) {
                 networkSystem->getMiddleware()->clearPacketQueue();
             }
-            // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
 
             sceneSystem->setScene("Restart");
 

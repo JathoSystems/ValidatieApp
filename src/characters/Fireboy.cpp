@@ -1,7 +1,5 @@
 #include "characters/Fireboy.hpp"
-
 #include "SpawnEvent.hpp"
-#include "GameObjects/ObjectRegistry.hpp"
 
 Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                  bool active) : BaseCharacter(network, eventManager, engine, active, getDefaultBindings()) {
@@ -22,7 +20,7 @@ Fireboy::Fireboy(std::shared_ptr<NetworkSystem> network, EventManager *eventMana
 }
 
 Fireboy::Fireboy(int parentId, std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
-    bool active): BaseCharacter(parentId, network, eventManager, engine, active, getDefaultBindings()) {
+                 bool active) : BaseCharacter(parentId, network, eventManager, engine, active, getDefaultBindings()) {
     setFallingSpritesheet(R"(resources/fireboy/dropping.png)");
     setJumpingSpritesheet(R"(resources/fireboy/jumping.png)");
     setIdleSpritesheet(R"(resources/fireboy/idle.png)");

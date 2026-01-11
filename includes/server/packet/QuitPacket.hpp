@@ -1,7 +1,3 @@
-//
-// Created by jusra on 5-1-2026.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_GAME_QUITPACKET_HPP
 #define VUURJONGEN_WATERMEISJE_GAME_QUITPACKET_HPP
 #include "Network/Packet/Packet.h"
@@ -10,10 +6,10 @@
 class QuitPacket : public Packet {
 private:
     int _lobby;
+
 public:
     QuitPacket() {
         packetId = 120;
-        // Safely get lobby ID, default to -1 if not set
         std::string lobbyStr = GameState::getInstance().get("lobby", "");
         if (!lobbyStr.empty()) {
             try {

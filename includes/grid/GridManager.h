@@ -8,12 +8,15 @@
 
 class GridManager {
 private:
-    static std::unordered_map<std::string, std::unique_ptr<LevelGrid>> _grids;
+    static std::unordered_map<std::string, std::unique_ptr<LevelGrid> > _grids;
 
 public:
-    static void registerGrid(const std::string& sceneName, std::unique_ptr<LevelGrid> grid);
-    static LevelGrid* getGrid(const std::string& sceneName);
-    static void unregisterGrid(const std::string& sceneName);
+    static void registerGrid(const std::string &sceneName, std::unique_ptr<LevelGrid> grid);
+
+    static LevelGrid *getGrid(const std::string &sceneName);
+
+    static void unregisterGrid(const std::string &sceneName);
+
     static void clear();
 };
 

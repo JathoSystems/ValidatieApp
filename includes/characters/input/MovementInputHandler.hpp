@@ -1,7 +1,3 @@
-//
-// Created by jusra on 8-12-2025.
-//
-
 #ifndef VUURJONGEN_WATERMEISJE_MOVEMENTINPUTHANDLER_HPP
 #define VUURJONGEN_WATERMEISJE_MOVEMENTINPUTHANDLER_HPP
 #include "Input/IKeyListener.h"
