@@ -28,6 +28,7 @@ public:
         PhysicsSystem* system = GameEngine::getInstance().getSystem<PhysicsSystem>();
         std::unique_ptr<PhysicsComponent> physics = std::make_unique<PhysicsComponent>(system->getBox2DFacade());
         physics->setFixedRotation(true);
+        physics->setMaterial(Material(3.0f, 0.8f, 0.0f));
         system->registerComponent(physics.get());
         addComponent(std::move(physics));
     }

@@ -68,7 +68,6 @@ protected:
     }
 
     std::string getLevelName() const override { return "Level 3: Boxes, boxes everywhere!"; }
-
 };
 
 #endif //VUURJONGEN_WATERMEISJE_GAME_LEVEL3SCENE_HPP

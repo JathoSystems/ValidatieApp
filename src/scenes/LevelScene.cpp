@@ -308,7 +308,7 @@ void LevelScene::createCellObjects(LevelGrid *grid) {
 void LevelScene::setupBaseLevel() {
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
-    physicsSystem->setGravity(0.0f, 981.0f);
+    physicsSystem->setGravity(0.0f, 400.0f);
 
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     setCamera(std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360)));

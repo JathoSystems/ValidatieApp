@@ -24,7 +24,7 @@ BatAI::BatAI(Bat* bat, LevelGrid* grid, Scene* scene, int cellSize, float speed,
       _stuckTimer(0.0f),
       _accumulatedX(0.0f),
       _accumulatedY(0.0f),
-      _fleeDistance(200.0f),
+      _fleeDistance(400.0f),
       _isFleeing(false),
       _fleeSpeedMultiplier(1.5f),
       _rng(std::random_device{}()),
@@ -105,8 +105,14 @@ void BatAI::updatePathfinding(float deltaTime) {
 
             if (!wasFleeing || _currentPath.empty() || _currentPathIndex >= _currentPath.size()) {
                 chooseFleeTarget(playerX, playerY);
+                _targetChangeTimer = 0.0f;
+            } else {
+                _targetChangeTimer += deltaTime;
+                if (_targetChangeTimer > 0.2f) {
+                    chooseFleeTarget(playerX, playerY);
+                    _targetChangeTimer = 0.0f;
+                }
             }
-            _targetChangeTimer = 0.0f;
         }
     } else {
         if (_isFleeing) {

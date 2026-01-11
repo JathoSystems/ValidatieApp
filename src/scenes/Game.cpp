@@ -62,7 +62,7 @@ void Game::onInitialRender() {
         return;
     }
 
-    physicsSystem->setGravity(0.0f, 981.0f);
+    physicsSystem->setGravity(0.0f, 400.0f);
 
     auto viewport = std::make_unique<Viewport>(Size(1280, 720), Position(0, 0));
     auto camera = std::make_unique<FixedCamera>(std::move(viewport), Position(640, 360));
