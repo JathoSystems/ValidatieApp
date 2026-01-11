@@ -87,7 +87,7 @@ void LevelSelector::createLevelSelectorScene() {
         levelTextObj->getTransform()->getSize()->setHeight(40);
         selectorScene->addObject(std::move(levelTextObj));
 
-        // Always add stats text (empty if level not completed)
+        // Always create stats text object (even if empty, so we can update it later)
         std::ostringstream statsText;
         if (completionTime != -1) {
             statsText << std::fixed << std::setprecision(1) << completionTime << "s";
@@ -103,21 +103,20 @@ void LevelSelector::createLevelSelectorScene() {
             }
         }
         std::string statsTextStr = statsText.str();
-        // Only create stats text object if there's actual text to display
-        if (!statsTextStr.empty()) {
-            auto statsTextObj = std::make_unique<Text>(statsTextStr);
-            statsTextObj->setColor(std::make_unique<Color>(200, 200, 200));
-            statsTextObj->setFontSize(10);
-            auto statsGameObj = std::make_unique<GameObject>();
-            Text* statsTextPtr = statsTextObj.get();
-            _statsTextMap[levelNum] = statsTextPtr;
-            statsGameObj->addComponent(std::move(statsTextObj));
-            statsGameObj->getTransform()->getPosition()->setX(x + 10);
-            statsGameObj->getTransform()->getPosition()->setY(y + 35);
-            statsGameObj->getTransform()->getSize()->setWidth(cardWidth);
-            statsGameObj->getTransform()->getSize()->setHeight(20);
-            selectorScene->addObject(std::move(statsGameObj));
-        }
+        // Always create stats text object, even if empty initially
+        // This allows us to update it later when the level is completed
+        auto statsTextObj = std::make_unique<Text>(statsTextStr.empty() ? " " : statsTextStr);
+        statsTextObj->setColor(std::make_unique<Color>(200, 200, 200));
+        statsTextObj->setFontSize(10);
+        auto statsGameObj = std::make_unique<GameObject>();
+        Text* statsTextPtr = statsTextObj.get();
+        _statsTextMap[levelNum] = statsTextPtr;
+        statsGameObj->addComponent(std::move(statsTextObj));
+        statsGameObj->getTransform()->getPosition()->setX(x + 10);
+        statsGameObj->getTransform()->getPosition()->setY(y + 35);
+        statsGameObj->getTransform()->getSize()->setWidth(cardWidth);
+        statsGameObj->getTransform()->getSize()->setHeight(20);
+        selectorScene->addObject(std::move(statsGameObj));
         auto playButton = std::make_unique<Button>("Play", std::make_unique<Color>(0, 128, 255));
         playButton->setOnClick([this, levelNum]() { onPlayClicked(levelNum); });
         auto playButtonObj = std::make_unique<GameObject>();

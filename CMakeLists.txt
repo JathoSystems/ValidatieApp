@@ -102,6 +102,8 @@ add_executable(Vuurjongen_Watermeisje_Server src/server/Server.cpp
         src/scenes/levels/Level1Scene.cpp
         includes/scenes/levels/Level2Scene.hpp
         src/scenes/levels/Level2Scene.cpp
+        includes/scenes/levels/Level3Scene.hpp
+        src/scenes/levels/Level3Scene.cpp
 )
 
 add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
@@ -188,6 +190,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/scenes/levels/Level1Scene.cpp
         includes/scenes/levels/Level2Scene.hpp
         src/scenes/levels/Level2Scene.cpp
+        includes/scenes/levels/Level3Scene.hpp
+        src/scenes/levels/Level3Scene.cpp
         includes/Box.hpp
         includes/scenes/levels/Level3Scene.hpp
         includes/LevelSaver.hpp

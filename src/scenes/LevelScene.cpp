@@ -78,15 +78,9 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
-    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
-    if (physicsSystem) {
-        physicsSystem->endShutdown();
-    }
-
     SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
     gameEngine->getSystem<AudioSystem>()->initialize();
 
-    std::unique_ptr<GameObject> object = std::unique_ptr<GameObject>();
     audio = std::make_unique<AudioComponent>(gameEngine->getSystem<AudioSystem>());
     audio->addClip("background", "resources/music.mp3", 0.05f);
     audio->play("background", true);
@@ -156,40 +150,14 @@ void LevelScene::cleanup() {
 
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+    InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
 
     if (!physicsSystem) {
         std::cout << "[LevelScene] No physics system, aborting cleanup" << std::endl;
         return;
     }
 
-    physicsSystem->beginShutdown();
-    std::cout << "[LevelScene] Physics shutdown initiated" << std::endl;
-
-    std::cout << "[LevelScene] Waiting for physics to stop..." << std::endl;
-    int waitCount = 0;
-    while (physicsSystem->isUpdating() && waitCount < 200) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        waitCount++;
-    }
-
-    if (waitCount >= 200) {
-        std::cout << "[LevelScene] WARNING: Timeout waiting for physics!" << std::endl;
-    }
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-
-    std::cout << "[LevelScene] Locking physics system..." << std::endl;
-    physicsSystem->lockPhysics();
-
-    std::cout << "[LevelScene] Physics locked, destroying bodies..." << std::endl;
-
-    if (physicsSystem->getBox2DFacade()) {
-        for (auto& obj : _objects) {
-            if (!obj) continue;
-
-    GameEngine *gameEngine = &GameEngine::getInstance();
-    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
-    InputSystem *inputSystem = gameEngine->getSystem<InputSystem>();
+    std::cout << "[LevelScene] Collecting components to unregister..." << std::endl;
 
     auto &objects = getObjects();
     std::vector<PhysicsComponent*> allPhysicsComponents;
@@ -208,12 +176,6 @@ void LevelScene::cleanup() {
     std::cout << "[LevelScene] Cleanup: Found " << allPhysicsComponents.size() << " physics components to remove" << std::endl;
 
     for (auto *physics : allPhysicsComponents) {
-        if (physics) {
-            physics->destroyBody();
-        }
-    }
-
-    for (auto *physics : allPhysicsComponents) {
         if (physics && physicsSystem) {
             physicsSystem->unregisterComponent(physics);
         }
@@ -225,49 +187,17 @@ void LevelScene::cleanup() {
         }
     }
 
-    const_cast<std::vector<std::unique_ptr<GameObject> > &>(objects).clear();
-            if (auto* physics = obj->getComponent<PhysicsComponent>()) {
-                b2BodyId bodyId = physics->getBodyId();
-
-                if (B2_IS_NON_NULL(bodyId)) {
-                    physicsSystem->getBox2DFacade()->destroyBody(bodyId);
-                    std::cout << "[LevelScene] Destroyed body" << std::endl;
-                }
-
-                physics->clearBodyId();
-                physicsSystem->unregisterComponent(physics);
-            }
-        }
-    }
-
-    std::cout << "[LevelScene] All bodies destroyed, unlocking physics..." << std::endl;
-    physicsSystem->unlockPhysics();
-
-    // IMPORTANT: Reset the shutdown flag so physics can work again
-    physicsSystem->endShutdown();
-    std::cout << "[LevelScene] Physics shutdown ended" << std::endl;
-
-    if (physicsSystem) {
-        physicsSystem->clearAllComponents();
-    }
-
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
-    for(int i = 1; i <= _batCount; i++) {
-
     for (int i = 1; i <= _batCount; i++) {
         ObjectRegistry::getInstance().removeObject(i);
     }
     _batCount = 0;
 
-    if (_hud) {
-        _hud->clear();
-    }
-
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
     std::cout << "[LevelScene] Clearing objects..." << std::endl;
-    _objects.clear();
+    objects.clear();
 
     SpawnEvent::_pendingEvents.clear();
 

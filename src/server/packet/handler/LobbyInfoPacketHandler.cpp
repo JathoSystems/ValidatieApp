@@ -6,6 +6,9 @@
 #include "server/packet/LobbyInfoPacket.hpp"
 #include "scenes/Lobby.hpp"
 #include "scenes/LevelScene.hpp"
+#include "scenes/levels/Level1Scene.hpp"
+#include "scenes/levels/Level2Scene.hpp"
+#include "scenes/levels/Level3Scene.hpp"
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
@@ -84,7 +87,22 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
             // Check if level scene already exists
             Scene* existingLevel = sceneSystem->getScene(levelSceneName);
             if (!existingLevel) {
-                auto newLevelScene = std::make_unique<LevelScene>(levelId, true, network, eventManager);
+                std::unique_ptr<LevelScene> newLevelScene;
+                // Create the appropriate level scene based on levelId
+                switch (levelId) {
+                    case 1:
+                        newLevelScene = std::make_unique<Level1Scene>(true, network, eventManager);
+                        break;
+                    case 2:
+                        newLevelScene = std::make_unique<Level2Scene>(true, network, eventManager);
+                        break;
+                    case 3:
+                        newLevelScene = std::make_unique<Level3Scene>(true, network, eventManager);
+                        break;
+                    default:
+                        std::cerr << "[LobbyInfoPacketHandler] Unknown level ID: " << levelId << std::endl;
+                        return;
+                }
                 sceneSystem->addScene(std::move(newLevelScene));
             }
         });

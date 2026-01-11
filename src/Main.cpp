@@ -95,7 +95,9 @@ int main() {
         PacketRegistery::getInstance().registerPacket<PlayerAssignPacket>(110);
         PacketHandlerFactory::getInstance().registerHandler(110, std::make_shared<PlayerAssignPacketHandler>());
         PacketRegistery::getInstance().registerPacket<GameReadyPacket>(102);
-        PacketHandlerFactory::getInstance().registerHandler(102, std::make_shared<GameReadyPacketHandler>());
+        auto gameReadyHandler = std::make_shared<GameReadyPacketHandler>();
+        GameReadyPacketHandler::setNetworkAndEventManager(network, &manager);
+        PacketHandlerFactory::getInstance().registerHandler(102, gameReadyHandler);
 
         PacketRegistery::getInstance().registerPacket<CreateLobbyPacket>(103);
         PacketRegistery::getInstance().registerPacket<JoinLobbyPacket>(104);

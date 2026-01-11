@@ -74,8 +74,7 @@ public:
                 std::cout << "[QuitLevelPacketHandler] Cleaning up: " << sceneName << std::endl;
                 levelScene->cleanup();
             }
-            sceneSystem->removeScene(sceneName);
-            std::cout << "[QuitLevelPacketHandler] Removed: " << sceneName << std::endl;
+            std::cout << "[QuitLevelPacketHandler] Cleaned up: " << sceneName << std::endl;
         }
 
         // 5. Clear the cleaning flag
