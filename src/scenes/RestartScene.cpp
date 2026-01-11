@@ -7,6 +7,7 @@
 #include "characters/BaseCharacter.hpp"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
+#include "Network/GameState.hpp"
 #include "scenes/LevelScene.hpp"
 #include "Scenes/SceneSystem.h"
 #include "server/packet/QuitPacket.hpp"
@@ -50,13 +51,15 @@ void RestartScene::onInitialRender() {
     std::unique_ptr<Button> mainMenuButton = std::make_unique<Button>("Main Menu",
                                                                       std::make_unique<Color>(255, 0, 0));
     mainMenuButton->setOnClick([this]() {
-        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
-        sceneSystem->setScene("MainMenu");
-        sceneSystem->removeScene("Restart");
         if (_isOnline) {
+            // Send quit packet BEFORE clearing game state (so lobby ID is available)
             QuitPacket quit;
             _network->send(quit);
+            // Clear game state so old lobby/role info doesn't interfere with reconnection
+            GameState::getInstance().clear();
         }
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("MainMenu");
     });
     mainMenuButtonObject->addComponent(std::move(mainMenuButton));
     mainMenuButtonObject->getTransform()->getPosition()->setX(640);

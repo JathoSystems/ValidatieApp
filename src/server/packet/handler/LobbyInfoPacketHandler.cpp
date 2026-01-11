@@ -9,6 +9,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
+#include "Network/GameState.hpp"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
 
@@ -38,8 +39,23 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
         int playerCount = lobbyInfo.playerCount;
         std::string status = lobbyInfo.status;
         
+        // Store lobby ID in game state so it can be used for quit/restart packets
+        GameState::getInstance().set("lobby", std::to_string(lobbyId));
+        
+        // Get current scene name to remove room_selection scene if we came from there
+        std::string currentSceneName;
+        Scene* currentScene = sceneSystem->getActiveSceneObj();
+        if (currentScene) {
+            currentSceneName = currentScene->getName();
+        }
+        
         // Set the scene first
         sceneSystem->setScene("Lobby");
+        
+        // Remove the room_selection scene if we came from there
+        if (!currentSceneName.empty() && currentSceneName.find("room_selection_") == 0) {
+            sceneSystem->removeScene(currentSceneName);
+        }
         
         // Then update the lobby info
         Scene* activeScene = sceneSystem->getActiveSceneObj();

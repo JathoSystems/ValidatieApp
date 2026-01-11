@@ -9,6 +9,7 @@
 #include "Network/NetworkSystem.h"
 #include "Scenes/SceneSystem.h"
 #include "GameObjects/ObjectRegistry.hpp"
+#include "Network/GameState.hpp"
 
 class QuitLevelPacketHandler : public IPacketHandler {
 public:
@@ -31,6 +32,9 @@ public:
             networkSystem->getMiddleware()->clearPacketQueue();
         }
         // NOTE: Don't clear ObjectRegistry - let Broadcastable destructors handle it
+        
+        // Clear game state so old lobby/role info doesn't interfere with reconnection
+        GameState::getInstance().clear();
         
         // Switch to main menu
         sceneSystem->setScene("MainMenu");

@@ -16,7 +16,13 @@ int LobbyManager::createLobby(int levelId, int32_t hostId) {
 
 bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
     auto it = _lobbies.find(lobbyId);
-    if (it == _lobbies.end() || it->second.isFull()) {
+    if (it == _lobbies.end()) {
+        std::cerr << "Lobby " << lobbyId << " does not exist" << std::endl;
+        return false;
+    }
+    
+    if (it->second.isFull()) {
+        std::cerr << "Lobby " << lobbyId << " is full" << std::endl;
         return false;
     }
 
@@ -26,15 +32,15 @@ bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
         return false;
     }
 
-    // Check if player already in lobby
-    for (auto& pair : _lobbies) {
-        auto& players = pair.second.players;
-        if (std::find(players.begin(), players.end(), clientId) != players.end()) {
-            return false; // Already in a lobby
-        }
+    // Check if player is already in THIS lobby (not any lobby - cleanup is done in Server.cpp)
+    auto& players = it->second.players;
+    if (std::find(players.begin(), players.end(), clientId) != players.end()) {
+        std::cerr << "Player " << clientId << " is already in lobby " << lobbyId << std::endl;
+        return false;
     }
     
     it->second.players.push_back(clientId);
+    std::cerr << "Player " << clientId << " joined lobby " << lobbyId << " successfully" << std::endl;
     return true;
 }
 

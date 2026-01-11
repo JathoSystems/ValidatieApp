@@ -183,7 +183,7 @@ int main() {
         GameObjectFactory::getInstance().setEventManager(&manager);
 
         sceneSystem->addScene(std::make_unique<MainMenu>());
-        sceneSystem->addScene(std::make_unique<Lobby>());
+        sceneSystem->addScene(std::make_unique<Lobby>(network));
         sceneSystem->addScene(std::make_unique<Game>(network, &manager));
         sceneSystem->addScene(std::make_unique<RestartScene>(network));
 

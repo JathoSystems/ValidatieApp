@@ -48,9 +48,9 @@ void LevelSwitcher::openLevel(int level, bool online) {
     sceneSystem->addScene(std::move(newLevelScene));
     sceneSystem->setScene(levelSceneName);
 
-    if (!currentSceneName.empty() && currentSceneName != levelSceneName) {
-        sceneSystem->removeScene(currentSceneName);
-    }
+    // if (!currentSceneName.empty() && currentSceneName != levelSceneName) {
+    //     sceneSystem->removeScene(currentSceneName);
+    // }
 
     std::cout << "Switched to level scene: " << levelSceneName << "\n";
 }
