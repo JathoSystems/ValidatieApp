@@ -10,6 +10,8 @@
 #include "LevelSaver.hpp"
 #include <asio.hpp>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 #include "scenes/levels/Level1Scene.hpp"
 #include "scenes/levels/Level2Scene.hpp"
 #include "scenes/levels/Level3Scene.hpp"
@@ -65,6 +67,8 @@ void LevelSelector::createLevelSelectorScene() {
         auto levelText = std::make_unique<Text>("Level " + std::to_string(levelNum));
         LevelSaver saver;
         float completionTime = saver.getCompletionTime(levelNum);
+        int redGems = saver.getRedGems(levelNum);
+        int blueGems = saver.getBlueGems(levelNum);
         std::unique_ptr<Color> color = std::make_unique<Color>(255, 255, 255);
         if (completionTime != -1) color = std::make_unique<Color>(0, 255, 0);
         levelText->setColor(std::move(color));
@@ -77,12 +81,44 @@ void LevelSelector::createLevelSelectorScene() {
         levelTextObj->getTransform()->getSize()->setWidth(150);
         levelTextObj->getTransform()->getSize()->setHeight(40);
         selectorScene->addObject(std::move(levelTextObj));
+        
+        // Always add stats text (empty if level not completed)
+        std::ostringstream statsText;
+        if (completionTime != -1) {
+            statsText << std::fixed << std::setprecision(1) << completionTime << "s";
+            if (redGems != -1 || blueGems != -1) {
+                statsText << " | ";
+                if (redGems != -1) {
+                    statsText << "R:" << redGems;
+                }
+                if (blueGems != -1) {
+                    if (redGems != -1) statsText << " ";
+                    statsText << "B:" << blueGems;
+                }
+            }
+        }
+        std::string statsTextStr = statsText.str();
+        // Only create stats text object if there's actual text to display
+        if (!statsTextStr.empty()) {
+            auto statsTextObj = std::make_unique<Text>(statsTextStr);
+            statsTextObj->setColor(std::make_unique<Color>(200, 200, 200));
+            statsTextObj->setFontSize(10);
+            auto statsGameObj = std::make_unique<GameObject>();
+            Text* statsTextPtr = statsTextObj.get();
+            _statsTextMap[levelNum] = statsTextPtr;
+            statsGameObj->addComponent(std::move(statsTextObj));
+            statsGameObj->getTransform()->getPosition()->setX(x + 10);
+            statsGameObj->getTransform()->getPosition()->setY(y + 35);
+            statsGameObj->getTransform()->getSize()->setWidth(cardWidth);
+            statsGameObj->getTransform()->getSize()->setHeight(20);
+            selectorScene->addObject(std::move(statsGameObj));
+        }
         auto playButton = std::make_unique<Button>("Play", std::make_unique<Color>(0, 128, 255));
         playButton->setOnClick([this, levelNum]() { onPlayClicked(levelNum); });
         auto playButtonObj = std::make_unique<GameObject>();
         playButtonObj->addComponent(std::move(playButton));
         playButtonObj->getTransform()->getPosition()->setX(x);
-        playButtonObj->getTransform()->getPosition()->setY(y + 50);
+        playButtonObj->getTransform()->getPosition()->setY(y + 70);
         playButtonObj->getTransform()->getSize()->setWidth(cardWidth);
         playButtonObj->getTransform()->getSize()->setHeight(50);
         selectorScene->addObject(std::move(playButtonObj));
@@ -91,7 +127,7 @@ void LevelSelector::createLevelSelectorScene() {
         auto onlineButtonObj = std::make_unique<GameObject>();
         onlineButtonObj->addComponent(std::move(onlineButton));
         onlineButtonObj->getTransform()->getPosition()->setX(x);
-        onlineButtonObj->getTransform()->getPosition()->setY(y + 110);
+        onlineButtonObj->getTransform()->getPosition()->setY(y + 130);
         onlineButtonObj->getTransform()->getSize()->setWidth(cardWidth);
         onlineButtonObj->getTransform()->getSize()->setHeight(50);
         selectorScene->addObject(std::move(onlineButtonObj));
@@ -160,6 +196,31 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
                 color = std::make_unique<Color>(0, 255, 0);
             }
             textPtr->setColor(std::move(color));
+        }
+    }
+    
+    // Update stats text
+    for (const auto &[levelNum, statsTextPtr] : _statsTextMap) {
+        if (statsTextPtr) {
+            float completionTime = saver.getCompletionTime(levelNum);
+            int redGems = saver.getRedGems(levelNum);
+            int blueGems = saver.getBlueGems(levelNum);
+            
+            std::ostringstream statsText;
+            if (completionTime != -1) {
+                statsText << std::fixed << std::setprecision(1) << completionTime << "s";
+                if (redGems != -1 || blueGems != -1) {
+                    statsText << " | ";
+                    if (redGems != -1) {
+                        statsText << "R:" << redGems;
+                    }
+                    if (blueGems != -1) {
+                        if (redGems != -1) statsText << " ";
+                        statsText << "B:" << blueGems;
+                    }
+                }
+            }
+            statsTextPtr->setText(statsText.str());
         }
     }
 }

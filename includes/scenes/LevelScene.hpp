@@ -52,35 +52,7 @@ public:
 
     int getPeopleAtDoor() const { return _peopleAtDoor; }
     void incrementPeopleAtDoor() { _peopleAtDoor++; }
-    void reachedDoor() {
-        _peopleAtDoor++;
-
-        if (_peopleAtDoor >= 2 && !_levelCompleted) {
-            _levelCompleted = true;
-            _levelEndTime = _elapsedTime;
-
-            LevelSaver saver;
-            saver.save(_levelNumber, _levelEndTime);
-
-            audio->setVolume(0.0f);
-
-            if (_isOnline && _network) {
-                int nextLevel = _levelNumber + 1;
-
-                // NextLevelPacket packet(nextLevel);
-                // packet.serialize();
-                // _network->send(packet);
-                // return;
-            }
-
-            cleanup();
-            GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
-            SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
-            sceneSystem->setScene("level_selector");
-            
-            updateLevelSelectorStatus();
-        }
-    }
+    void reachedDoor();
 
     void leftDoor() {
         if (_peopleAtDoor > 0) {

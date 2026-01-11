@@ -21,6 +21,7 @@ private:
     EventManager* _eventManager;
     bool _networkCallbacksSetup = false;
     std::map<int, Text*> _levelTextMap;
+    std::map<int, Text*> _statsTextMap;
     static LevelSelector* _instance;
 public:
     LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSystem> network, EventManager* eventManager);

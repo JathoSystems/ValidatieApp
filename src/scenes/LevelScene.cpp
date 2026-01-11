@@ -316,6 +316,39 @@ void LevelScene::checkDoorCollisions() {
     }
 }
 
+void LevelScene::reachedDoor() {
+    _peopleAtDoor++;
+
+    if (_peopleAtDoor >= 2 && !_levelCompleted) {
+        _levelCompleted = true;
+        _levelEndTime = _elapsedTime;
+
+        int redGems = _fireboy ? _fireboy->getDiamonds() : 0;
+        int blueGems = _watergirl ? _watergirl->getDiamonds() : 0;
+
+        LevelSaver saver;
+        saver.save(_levelNumber, _levelEndTime, redGems, blueGems);
+
+        audio->setVolume(0.0f);
+
+        if (_isOnline && _network) {
+            int nextLevel = _levelNumber + 1;
+
+            // NextLevelPacket packet(nextLevel);
+            // packet.serialize();
+            // _network->send(packet);
+            // return;
+        }
+
+        cleanup();
+        GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
+        SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
+        sceneSystem->setScene("level_selector");
+        
+        updateLevelSelectorStatus();
+    }
+}
+
 void LevelScene::createGroundBlock(LevelGrid *grid, int x, int y) {
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
