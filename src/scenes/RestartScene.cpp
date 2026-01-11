@@ -7,6 +7,7 @@
 #include "characters/BaseCharacter.hpp"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
+#include "Network/GameState.hpp"
 #include "scenes/LevelScene.hpp"
 #include "Scenes/SceneSystem.h"
 #include "server/packet/QuitPacket.hpp"
@@ -29,11 +30,12 @@ void RestartScene::onInitialRender() {
         // Get the level scene
         Scene* oldScene = sceneSystem->getScene(_previousLevel);
         if (auto* levelScene = dynamic_cast<LevelScene*>(oldScene)) {
+            std::cout << "[RestartScene] Restarting level..." << std::endl;
+
             // Do soft reset
             levelScene->resetLevel();
 
-            // Just switch to the scene - DON'T call onInitialRender() again!
-            // The scene is already initialized, we just need to make it active
+            // Switch to the level
             sceneSystem->setScene(_previousLevel);
 
             if (_isOnline) {
@@ -55,19 +57,21 @@ void RestartScene::onInitialRender() {
         SceneSystem *sceneSystem = engine->getSystem<SceneSystem>();
 
         if (_isOnline) {
+            // Send quit packet - server will broadcast to all players
             QuitPacket quit;
             _network->send(quit);
-        }
-
-        // Clean up the level scene BEFORE switching
-        if (!_previousLevel.empty()) {
-            Scene* levelScene = sceneSystem->getScene(_previousLevel);
-            if (auto* level = dynamic_cast<LevelScene*>(levelScene)) {
-                level->cleanup();
+        } else {
+            // For offline mode, do local cleanup
+            if (!_previousLevel.empty()) {
+                Scene* levelScene = sceneSystem->getScene(_previousLevel);
+                if (auto* level = dynamic_cast<LevelScene*>(levelScene)) {
+                    level->cleanup();
+                }
+                sceneSystem->removeScene(_previousLevel);
             }
-            sceneSystem->removeScene(_previousLevel);
         }
 
+        // Clear state (QuitPacketHandler will do this too for online, but safe to do twice)
         GameState::getInstance().remove("lobby");
         GameState::getInstance().remove("role");
 

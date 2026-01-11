@@ -20,30 +20,24 @@ class RestartLevelPacketHandler : public IPacketHandler {
             // Get the current active scene
             Scene* currentScene = sceneSystem->getActiveSceneObj();
 
-            // Check if we're already on the level scene
-            if (currentScene && currentScene->getName() == sceneName) {
-                // We're already on the level scene, just do soft reset
-                if (auto* levelScene = dynamic_cast<LevelScene*>(currentScene)) {
-                    std::cout << "[RestartLevelPacketHandler] Already on level scene, doing soft reset only...\n";
-                    levelScene->resetLevel();
-                    std::cout << "[RestartLevelPacketHandler] Soft reset complete (no scene switch needed)\n";
-                }
-            } else {
-                // We're on the restart screen, need to switch back to level
-                Scene* scene = sceneSystem->getScene(sceneName);
-                if (auto* levelScene = dynamic_cast<LevelScene*>(scene)) {
-                    std::cout << "[RestartLevelPacketHandler] Switching from restart screen, doing soft reset then switch...\n";
+            // Get the level scene (might not be active if we're on restart screen)
+            Scene* scene = sceneSystem->getScene(sceneName);
 
-                    // Do soft reset first
-                    levelScene->resetLevel();
+            if (auto* levelScene = dynamic_cast<LevelScene*>(scene)) {
+                std::cout << "[RestartLevelPacketHandler] Performing soft reset..." << std::endl;
 
-                    // Then switch (onInitialRender will early-return)
+                // Do soft reset
+                levelScene->resetLevel();
+
+                // Switch to level if not already there
+                if (!currentScene || currentScene->getName() != sceneName) {
+                    std::cout << "[RestartLevelPacketHandler] Switching to level scene" << std::endl;
                     sceneSystem->setScene(sceneName);
-
-                    std::cout << "[RestartLevelPacketHandler] Restart complete\n";
-                } else {
-                    std::cout << "[RestartLevelPacketHandler] ERROR: Scene not found or not a LevelScene\n";
                 }
+
+                std::cout << "[RestartLevelPacketHandler] Restart complete" << std::endl;
+            } else {
+                std::cout << "[RestartLevelPacketHandler] ERROR: Level scene not found: " << sceneName << std::endl;
             }
         }
     }
