@@ -135,6 +135,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/server/packet/GameReady.hpp
         src/server/packet/handler/PlayerAssignPacketHandler.cpp
         includes/server/packet/handler/PlayerAssignPacketHandler.hpp
+        src/server/packet/handler/GameReadyPacketHandler.cpp
+        includes/server/packet/handler/GameReadyPacketHandler.hpp
         src/server/packet/handler/LobbyInfoPacketHandler.cpp
         includes/server/packet/handler/LobbyInfoPacketHandler.hpp
         src/LevelSelector.cpp
@@ -189,6 +191,7 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         includes/Box.hpp
         includes/scenes/levels/Level3Scene.hpp
         includes/LevelSaver.hpp
+        includes/server/GlobalFlags.h
 )
 
 include_directories("includes")

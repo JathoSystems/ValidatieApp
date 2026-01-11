@@ -1,10 +1,10 @@
 #include "LevelSelector.h"
 #include "scenes/LevelScene.hpp"
-#include "scenes/LevelScene.hpp"
 #include "scenes/RoomSelectionScene.hpp"
 #include "UI/Button.h"
 #include "UI/Text.h"
 #include "Scenes/Camera/FixedCamera.h"
+#include "Engine/GameEngine.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include "SpawnEvent.hpp"
 #include "LevelSaver.hpp"
@@ -35,6 +35,7 @@ LevelSelector::~LevelSelector() {
 
 void LevelSelector::createLevelSelectorScene() {
     std::unique_ptr<Scene> selectorScene = std::make_unique<Scene>("level_selector");
+
     std::unique_ptr<Text> titleText = std::make_unique<Text>("Select Level");
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
     titleText->setFontSize(48);
@@ -45,8 +46,11 @@ void LevelSelector::createLevelSelectorScene() {
     titleObject->getTransform()->getSize()->setWidth(400);
     titleObject->getTransform()->getSize()->setHeight(60);
     selectorScene->addObject(std::move(titleObject));
+
     auto backButton = std::make_unique<Button>("Back", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([this]() { _sceneSystem->setScene("MainMenu"); });
+    backButton->setOnClick([this]() {
+        _sceneSystem->setScene("MainMenu");
+    });
     auto backButtonObj = std::make_unique<GameObject>();
     backButtonObj->addComponent(std::move(backButton));
     backButtonObj->getTransform()->getPosition()->setX(20);
@@ -54,6 +58,7 @@ void LevelSelector::createLevelSelectorScene() {
     backButtonObj->getTransform()->getSize()->setWidth(80);
     backButtonObj->getTransform()->getSize()->setHeight(40);
     selectorScene->addObject(std::move(backButtonObj));
+
     float startX = 100;
     float startY = 120;
     float cardWidth = 250;
@@ -81,7 +86,7 @@ void LevelSelector::createLevelSelectorScene() {
         levelTextObj->getTransform()->getSize()->setWidth(150);
         levelTextObj->getTransform()->getSize()->setHeight(40);
         selectorScene->addObject(std::move(levelTextObj));
-        
+
         // Always add stats text (empty if level not completed)
         std::ostringstream statsText;
         if (completionTime != -1) {
@@ -143,7 +148,7 @@ void LevelSelector::onPlayClicked(int levelNumber) {
         std::cerr << "Level " << levelNumber << " not found!" << std::endl;
         return;
     }
-    
+
     Scene* currentScene = _sceneSystem->getActiveSceneObj();
     if (currentScene) {
         LevelScene* currentLevelScene = dynamic_cast<LevelScene*>(currentScene);
@@ -152,7 +157,7 @@ void LevelSelector::onPlayClicked(int levelNumber) {
             currentLevelScene->cleanup();
         }
     }
-    
+
     std::string sceneName = "level_" + std::to_string(levelNumber);
     std::unique_ptr<Scene> scene = g_levels[levelNumber]();
     if (_sceneSystem->getActiveSceneObj()->getName() != sceneName) { _sceneSystem->addScene(std::move(scene)); }
@@ -186,7 +191,7 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
     if (!selectorScene || selectorScene->getName() != "level_selector") {
         return;
     }
-    
+
     LevelSaver saver;
     for (const auto &[levelNum, textPtr] : _levelTextMap) {
         if (textPtr) {
@@ -198,14 +203,14 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
             textPtr->setColor(std::move(color));
         }
     }
-    
+
     // Update stats text
     for (const auto &[levelNum, statsTextPtr] : _statsTextMap) {
         if (statsTextPtr) {
             float completionTime = saver.getCompletionTime(levelNum);
             int redGems = saver.getRedGems(levelNum);
             int blueGems = saver.getBlueGems(levelNum);
-            
+
             std::ostringstream statsText;
             if (completionTime != -1) {
                 statsText << std::fixed << std::setprecision(1) << completionTime << "s";
@@ -239,5 +244,6 @@ void LevelSelector::onOnlinePlayClicked(int levelNumber) {
     std::string sceneName = "room_selection_level_" + std::to_string(levelNumber);
     auto roomScene = std::make_unique<RoomSelectionScene>(_network, levelNumber, g_levels[levelNumber]);
     _sceneSystem->addScene(std::move(roomScene));
+    
     _sceneSystem->setScene(sceneName);
 }

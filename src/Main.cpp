@@ -44,6 +44,7 @@
 #include "server/packet/handler/QuitLevelPacketHandler.hpp"
 #include "server/packet/handler/RestartLevelPacketHandler.hpp"
 #include "GameObjectFactory.hpp"
+#include "Network/GameState.hpp"
 
 std::string getLocalIPAddress() {
     try {
@@ -176,8 +177,9 @@ int main() {
         GameObjectFactory::getInstance().setNetworkSystem(network);
         GameObjectFactory::getInstance().setEventManager(&manager);
 
+        // Add scenes - FIXED: Pass network to Lobby constructor
         sceneSystem->addScene(std::make_unique<MainMenu>());
-        sceneSystem->addScene(std::make_unique<Lobby>());
+        sceneSystem->addScene(std::make_unique<Lobby>(network));  // FIXED: Added network parameter
         sceneSystem->addScene(std::make_unique<Game>(network, &manager));
         sceneSystem->addScene(std::make_unique<RestartScene>(network));
 
@@ -193,4 +195,10 @@ int main() {
     }
 
     return 0;
+}
+
+void cleanupLobbyState() {
+    std::cout << "[Cleanup] Clearing lobby state" << std::endl;
+    GameState::getInstance().remove("lobby");
+    GameState::getInstance().remove("role");
 }

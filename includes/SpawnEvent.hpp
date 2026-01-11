@@ -12,6 +12,7 @@
 #include "Scenes/SceneSystem.h"
 #include "bat/BatAI.h"
 #include "grid/GridManager.h"
+#include "server/GlobalFlags.h"
 
 class SpawnEvent : public IEvent {
 private:
@@ -20,6 +21,7 @@ private:
     std::string objectName = "fireboy";
     float spawnX = 0.0f;
     float spawnY = 0.0f;
+    static std::mutex _pendingMutex;
 
 public:
     static std::vector<SpawnEvent> _pendingEvents;
@@ -33,6 +35,8 @@ public:
     }
 
     static void processPending() {
+        std::lock_guard<std::mutex> lock(_pendingMutex);
+
         if (_pendingEvents.empty()) return;
 
         std::cout << "[SpawnEvent] Processing " << _pendingEvents.size() << " pending spawns..." << std::endl;
@@ -91,10 +95,20 @@ public:
     }
 
     void apply(GameObject * gameObject) override {
-        spawn();
+        if (GlobalFlags::isLevelCleaning) {
+            return;
+        }
+
+        std::lock_guard<std::mutex> lock(_pendingMutex);  // ADD THIS
+        std::cout << "[SpawnEvent] Deferring spawn to main thread: " << objectName << std::endl;
+        _pendingEvents.push_back(*this);
     }
 
     void spawn() {
+        if (GlobalFlags::isLevelCleaning) {
+            return;
+        }
+
         GameObject* existingObj = ObjectRegistry::getInstance().getObject(registryId);
         if (existingObj) {
             Transform* transform = existingObj->getTransform();

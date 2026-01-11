@@ -29,6 +29,7 @@
 #include "GameObjects/ObjectRegistry.hpp"
 #include "GameObjects/Component/KeyInputComponent.h"
 #include "SpawnEvent.hpp"
+#include "server/GlobalFlags.h"
 #include "GameObjects/Component/AudioComponent.h"
 #include "LevelSelector.h"
 
@@ -46,6 +47,7 @@ void LevelScene::updateLevelSelectorStatus() {
 }
 
 std::vector<SpawnEvent> SpawnEvent::_pendingEvents;
+std::mutex SpawnEvent::_pendingMutex;
 
 LevelScene::LevelScene(int levelNumber, bool isOnline, std::shared_ptr<NetworkSystem> network,
                        EventManager *eventManager)
@@ -76,6 +78,11 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize started for level " << _levelNumber << std::endl;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+    if (physicsSystem) {
+        physicsSystem->endShutdown();
+    }
+
     SceneSystem *sceneSystem = gameEngine->getSystem<SceneSystem>();
     gameEngine->getSystem<AudioSystem>()->initialize();
 
@@ -130,6 +137,8 @@ void LevelScene::onInitialRender() {
     setupHUD();
 
     _isInitialized = true;
+
+    GlobalFlags::isLevelCleaning = false;
     SpawnEvent::processPending();
 
     std::cout << "[LevelScene] Setting up level specifics..." << std::endl;
@@ -137,15 +146,46 @@ void LevelScene::onInitialRender() {
     std::cout << "[LevelScene] Initialize completed" << std::endl;
 }
 
-void LevelScene::cleanup() {
-    std::cout << "[LevelScene] Cleanup: Clearing all references..." << std::endl;
 
-    _fireboyDiamondText = nullptr;
-    _watergirlDiamondText = nullptr;
-    _fireboy = nullptr;
-    _watergirl = nullptr;
-    _doors.clear();
-    _peopleAtDoor = 0;
+void LevelScene::cleanup() {
+    if (!_isInitialized) return;
+
+    std::cout << "[LevelScene] Cleanup: Starting..." << std::endl;
+
+    GlobalFlags::isLevelCleaning = true;
+
+    GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+
+    if (!physicsSystem) {
+        std::cout << "[LevelScene] No physics system, aborting cleanup" << std::endl;
+        return;
+    }
+
+    physicsSystem->beginShutdown();
+    std::cout << "[LevelScene] Physics shutdown initiated" << std::endl;
+
+    std::cout << "[LevelScene] Waiting for physics to stop..." << std::endl;
+    int waitCount = 0;
+    while (physicsSystem->isUpdating() && waitCount < 200) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        waitCount++;
+    }
+
+    if (waitCount >= 200) {
+        std::cout << "[LevelScene] WARNING: Timeout waiting for physics!" << std::endl;
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    std::cout << "[LevelScene] Locking physics system..." << std::endl;
+    physicsSystem->lockPhysics();
+
+    std::cout << "[LevelScene] Physics locked, destroying bodies..." << std::endl;
+
+    if (physicsSystem->getBox2DFacade()) {
+        for (auto& obj : _objects) {
+            if (!obj) continue;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
     PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
@@ -186,6 +226,26 @@ void LevelScene::cleanup() {
     }
 
     const_cast<std::vector<std::unique_ptr<GameObject> > &>(objects).clear();
+            if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+                b2BodyId bodyId = physics->getBodyId();
+
+                if (B2_IS_NON_NULL(bodyId)) {
+                    physicsSystem->getBox2DFacade()->destroyBody(bodyId);
+                    std::cout << "[LevelScene] Destroyed body" << std::endl;
+                }
+
+                physics->clearBodyId();
+                physicsSystem->unregisterComponent(physics);
+            }
+        }
+    }
+
+    std::cout << "[LevelScene] All bodies destroyed, unlocking physics..." << std::endl;
+    physicsSystem->unlockPhysics();
+
+    // IMPORTANT: Reset the shutdown flag so physics can work again
+    physicsSystem->endShutdown();
+    std::cout << "[LevelScene] Physics shutdown ended" << std::endl;
 
     if (physicsSystem) {
         physicsSystem->clearAllComponents();
@@ -193,18 +253,37 @@ void LevelScene::cleanup() {
 
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
+    for(int i = 1; i <= _batCount; i++) {
 
     for (int i = 1; i <= _batCount; i++) {
         ObjectRegistry::getInstance().removeObject(i);
     }
     _batCount = 0;
 
+    if (_hud) {
+        _hud->clear();
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    std::cout << "[LevelScene] Clearing objects..." << std::endl;
+    _objects.clear();
+
     SpawnEvent::_pendingEvents.clear();
 
     std::string sceneName = getName();
     GridManager::unregisterGrid(sceneName);
 
+    _fireboyDiamondText = nullptr;
+    _watergirlDiamondText = nullptr;
+    _fireboy = nullptr;
+    _watergirl = nullptr;
+    _doors.clear();
+    _peopleAtDoor = 0;
+
     _isInitialized = false;
+    GlobalFlags::isLevelCleaning = false;
+
     std::cout << "[LevelScene] Cleanup: Complete" << std::endl;
 }
 
@@ -247,6 +326,9 @@ void LevelScene::onUpdate(float deltaTime) {
     if (!_isInitialized) {
         return;
     }
+
+    SpawnEvent::processPending();
+
     _elapsedTime += deltaTime;
     updateDiamondCounters();
     checkDiamondCollisions();
@@ -344,7 +426,7 @@ void LevelScene::reachedDoor() {
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
         SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("level_selector");
-        
+
         updateLevelSelectorStatus();
     }
 }
@@ -425,7 +507,7 @@ void LevelScene::setupBaseLevel() {
         GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
         SceneSystem* sceneSystem = GameEngine::getInstance().getSystem<SceneSystem>();
         sceneSystem->setScene("level_selector");
-        
+
         updateLevelSelectorStatus();
     });
     auto backButtonObj = std::make_unique<GameObject>();
@@ -438,8 +520,6 @@ void LevelScene::setupBaseLevel() {
 }
 
 void LevelScene::setupCharacters() {
-    // Only skip if both characters already exist (to prevent duplicate creation)
-    // But allow re-initialization if we're restarting (both should be nullptr after cleanup)
     if (_fireboy && _watergirl) return;
 
     GameEngine *gameEngine = &GameEngine::getInstance();

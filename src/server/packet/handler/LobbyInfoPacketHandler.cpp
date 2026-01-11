@@ -1,3 +1,7 @@
+//
+// Created for lobby system
+//
+
 #include "server/packet/handler/LobbyInfoPacketHandler.hpp"
 #include "server/packet/LobbyInfoPacket.hpp"
 #include "scenes/Lobby.hpp"
@@ -5,20 +9,19 @@
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
 #include "Network/NetworkSystem.h"
-#include "Network/GameState.hpp"
 #include "Events/EventManager.h"
 #include "GameObjects/ObjectRegistry.hpp"
 #include <mutex>
 #include <vector>
 #include <functional>
 
+// External event queue for thread-safe scene changes
 extern std::mutex eventMutex;
 extern std::vector<std::function<void()>> eventQueue;
 
+// Static storage for network and event manager (set from Main.cpp)
 static std::shared_ptr<NetworkSystem> g_network = nullptr;
 static EventManager* g_eventManager = nullptr;
-
-extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
 
 void LobbyInfoPacketHandler::setNetworkAndEventManager(std::shared_ptr<NetworkSystem> network, EventManager* eventManager) {
     g_network = network;
@@ -29,22 +32,41 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
     LobbyInfoPacket lobbyInfo;
     lobbyInfo.getBuffer().setData(packet.getBuffer().getData());
     lobbyInfo.deserialize();
-    
+
+    GameState::getInstance().set("lobby", std::to_string(lobbyInfo.lobbyId));
+    std::cout << "[LobbyInfoPacketHandler] Stored lobby ID in GameState: "
+              << lobbyInfo.lobbyId << std::endl;
+
     auto gameEngine = &GameEngine::getInstance();
     auto sceneSystem = gameEngine->getSystem<SceneSystem>();
-    
+
     if (sceneSystem) {
+        // Queue all scene operations to main thread to avoid race conditions
         std::lock_guard<std::mutex> lock(eventMutex);
-        
+
+        // Store lobby info for the queued operation
         int lobbyId = lobbyInfo.lobbyId;
         int levelId = lobbyInfo.levelId;
         int playerCount = lobbyInfo.playerCount;
         std::string status = lobbyInfo.status;
-        
-        eventQueue.push_back([sceneSystem, lobbyId, levelId, playerCount, status]() {
-            GameState::getInstance().set("lobby", std::to_string(lobbyId));
+
+        // FIXED: Use g_network instead of network
+        auto network = g_network;
+        auto eventManager = g_eventManager;
+
+        eventQueue.push_back([sceneSystem, lobbyId, levelId, playerCount, status, network]() {
+            // Check if Lobby scene already exists
+            Scene* existingLobby = sceneSystem->getScene("Lobby");
+            if (!existingLobby) {
+                // Create new Lobby scene with network
+                auto newLobby = std::make_unique<Lobby>(network);
+                sceneSystem->addScene(std::move(newLobby));
+            }
+
+            // Set the scene
             sceneSystem->setScene("Lobby");
-            
+
+            // Then update the lobby info
             Scene* activeScene = sceneSystem->getActiveSceneObj();
             if (activeScene) {
                 Lobby* lobby = dynamic_cast<Lobby*>(activeScene);
@@ -54,18 +76,17 @@ void LobbyInfoPacketHandler::handle(const Packet &packet) {
                 }
             }
         });
-        
-        if (g_network && g_eventManager) {
-            auto network = g_network;
-            auto eventManager = g_eventManager;
-            eventQueue.push_back([sceneSystem, levelId, network, eventManager]() {
-                auto scene = g_levels[levelId]();
 
-                if (LevelScene* lvl = dynamic_cast<LevelScene*>(scene.get()))
-                    lvl->toggleOnline(network, eventManager);
+        // Create the level scene for when game starts (if not already created)
+        std::string levelSceneName = "level_" + std::to_string(lobbyInfo.levelId) + "_online";
 
-                sceneSystem->addScene(std::move(scene));
-            });
-        }
+        eventQueue.push_back([sceneSystem, levelSceneName, levelId, network, eventManager]() {
+            // Check if level scene already exists
+            Scene* existingLevel = sceneSystem->getScene(levelSceneName);
+            if (!existingLevel) {
+                auto newLevelScene = std::make_unique<LevelScene>(levelId, true, network, eventManager);
+                sceneSystem->addScene(std::move(newLevelScene));
+            }
+        });
     }
 }

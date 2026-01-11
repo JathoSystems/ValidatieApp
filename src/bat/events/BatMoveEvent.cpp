@@ -5,6 +5,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "server/GlobalFlags.h"
+
 BatMoveEvent::BatMoveEvent(int objectId, float x, float y)
     : _objectId(objectId), _x(x), _y(y) {
 }
@@ -54,10 +56,13 @@ Data BatMoveEvent::deserialize(const Package &package) {
 
 void BatMoveEvent::apply(GameObject* gameObject) {
     if (!gameObject) return;
+
+    if (GlobalFlags::isLevelCleaning) {
+        return;
+    }
     
     // Get BatAI component
-    BatAI* batAI = gameObject->getComponent<BatAI>();
-    if (!batAI) return;
-
-    batAI->setNetworkPosition(_x, _y);
+    if (auto* batAI = gameObject->getComponent<BatAI>()) {
+        batAI->setNetworkPosition(_x, _y);
+    }
 }

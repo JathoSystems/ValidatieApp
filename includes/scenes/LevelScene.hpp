@@ -63,7 +63,7 @@ public:
 
     // Cleanup function to be called when exiting a level
     void cleanup();
-    
+
     // Update level selector status after completing a level
     void updateLevelSelectorStatus();
 

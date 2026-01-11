@@ -33,7 +33,7 @@ bool LobbyManager::joinLobby(int lobbyId, int32_t clientId, int levelId) {
             return false; // Already in a lobby
         }
     }
-    
+
     it->second.players.push_back(clientId);
     return true;
 }
@@ -46,7 +46,7 @@ void LobbyManager::leaveLobby(int lobbyId, int32_t clientId) {
             std::remove(players.begin(), players.end(), clientId),
             players.end()
         );
-        
+
         if (players.empty()) {
             _lobbies.erase(it);
         }

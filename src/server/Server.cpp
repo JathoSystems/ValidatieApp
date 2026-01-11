@@ -107,7 +107,7 @@ int main() {
                 joinPacket.deserialize();
 
                 Lobby *lobby = lobbyManager.getLobby(joinPacket.lobbyId);
-                if (!lobby && lobby->isFull()) {
+                if (!lobby || lobby->isFull()) {
                     std::cout << "Lobby " << joinPacket.lobbyId << " not found or full\n";
                     return;
                 }
@@ -139,13 +139,26 @@ int main() {
                 quitPacket.getBuffer().setData(packet.getBuffer().getData());
                 quitPacket.deserialize();
 
-                Lobby *lobby = lobbyManager.getLobby(quitPacket.getLobby());
-                std::cout << "Disbanding " << std::to_string(quitPacket.getLobby()) << std::endl;
-                lobby->broadcastInLobby(quitPacket, server);
-                for (int32_t player: lobby->players)
-                    lobbyManager.leaveLobby(quitPacket.getLobby(), player);
+                int lobbyId = quitPacket.getLobby();
+                std::cout << "[SERVER] Processing QuitPacket for Lobby ID: " << lobbyId << std::endl;
 
-                lobbyManager.removeLobby(quitPacket.getLobby());
+                Lobby *lobby = lobbyManager.getLobby(lobbyId);
+
+                if (!lobby) {
+                    std::cout << "[SERVER] WARNING: Lobby " << lobbyId << " not found or already disbanded. Ignoring." << std::endl;
+                    return;
+                }
+
+                std::cout << "Disbanding " << std::to_string(lobbyId) << std::endl;
+
+                lobby->broadcastInLobby(quitPacket, server);
+
+                std::vector<int32_t> players = lobby->players;
+                for (int32_t player : players) {
+                    lobbyManager.leaveLobby(lobbyId, player);
+                }
+
+                lobbyManager.removeLobby(lobbyId);
             } else if (packetId == 121) {
                 RestartPacket restart;
                 restart.getBuffer().setData(packet.getBuffer().getData());

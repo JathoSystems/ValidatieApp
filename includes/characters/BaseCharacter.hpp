@@ -85,6 +85,9 @@ public:
     void addDiamond() { _diamonds++; }
     int getDiamonds() {return _diamonds;}
 
+    void resetDiamonds() {
+        _diamonds = 0;
+    }
 
 
     BaseCharacterController* getController() { return _controller.get(); }

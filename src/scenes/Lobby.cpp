@@ -8,8 +8,19 @@
 #include "Scenes/Camera/FixedCamera.h"
 #include "Scenes/SceneSystem.h"
 #include "Engine/GameEngine.h"
+#include "Network/GameState.hpp"
+#include "server/packet/QuitPacket.hpp"
 
-Lobby::Lobby() : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lobbyIdTextObj(nullptr), _statusTextObj(nullptr), _levelTextObj(nullptr) {
+Lobby::Lobby(std::shared_ptr<NetworkSystem> network)
+    : Scene("Lobby"),
+      _lobbyId(0),
+      _levelId(0),
+      _playerCount(0),
+      _lobbyIdTextObj(nullptr),
+      _statusTextObj(nullptr),
+      _levelTextObj(nullptr),
+      _network(network) {
+
     // Title
     auto titleText = std::make_unique<Text>("Waiting in Lobby");
     titleText->setColor(std::make_unique<Color>(255, 255, 255));
@@ -61,9 +72,27 @@ Lobby::Lobby() : Scene("Lobby"), _lobbyId(0), _levelId(0), _playerCount(0), _lob
     levelObj->getTransform()->getSize()->setHeight(40);
     addObject(std::move(levelObj));
 
-    // Back Button
+    // Leave Lobby Button - WITH NETWORK CLEANUP
     auto backButton = std::make_unique<Button>("Leave Lobby", std::make_unique<Color>(255, 100, 100));
-    backButton->setOnClick([]() {
+    backButton->setOnClick([this]() {
+        std::cout << "[Lobby] Leave Lobby clicked" << std::endl;
+
+        // Get lobby ID from GameState
+        std::string lobbyIdStr = GameState::getInstance().get("lobby");
+
+        // Send quit packet if we have a network connection and lobby ID
+        if (!lobbyIdStr.empty() && _network) {
+            std::cout << "[Lobby] Sending quit packet for lobby " << lobbyIdStr << std::endl;
+            QuitPacket quit;
+            _network->send(quit);
+        }
+
+        // Clear lobby state from GameState
+        GameState::getInstance().remove("lobby");
+        GameState::getInstance().remove("role");
+        std::cout << "[Lobby] Cleared lobby state from GameState" << std::endl;
+
+        // Go back to level selector
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
     });
     auto backButtonObj = std::make_unique<GameObject>();
@@ -83,19 +112,19 @@ void Lobby::setLobbyInfo(int lobbyId, int levelId, int playerCount) {
     _lobbyId = lobbyId;
     _levelId = levelId;
     _playerCount = playerCount;
-    
+
     if (_lobbyIdTextObj) {
         if (auto* text = _lobbyIdTextObj->getComponent<Text>()) {
             text->setText("Lobby ID: " + std::to_string(_lobbyId));
         }
     }
-    
+
     if (_levelTextObj) {
         if (auto* text = _levelTextObj->getComponent<Text>()) {
             text->setText("Level: " + std::to_string(_levelId));
         }
     }
-    
+
     // Update status
     std::string status = _playerCount == 1 ? "Waiting for player..." : "Ready to start!";
     updateStatus(status);
@@ -108,4 +137,3 @@ void Lobby::updateStatus(const std::string& status) {
         }
     }
 }
-
