@@ -11,6 +11,7 @@
 
 #include "scenes/levels/Level1Scene.hpp"
 #include "scenes/levels/Level2Scene.hpp"
+#include "scenes/levels/Level3Scene.hpp"
 
 extern std::map<int, std::function<std::unique_ptr<Scene>()>> g_levels;
 
@@ -19,6 +20,7 @@ LevelSelector::LevelSelector(SceneSystem *sceneSystem, std::shared_ptr<NetworkSy
 
     g_levels[1] = []() { return std::make_unique<Level1Scene>(); };
     g_levels[2] = []() { return std::make_unique<Level2Scene>(); };
+    g_levels[3] = []() { return std::make_unique<Level3Scene>(); };
 }
 
 void LevelSelector::createLevelSelectorScene() {

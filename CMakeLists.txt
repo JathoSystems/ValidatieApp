@@ -182,6 +182,8 @@ add_executable(Vuurjongen_Watermeisje_Game src/Main.cpp
         src/scenes/levels/Level1Scene.cpp
         includes/scenes/levels/Level2Scene.hpp
         src/scenes/levels/Level2Scene.cpp
+        includes/Box.hpp
+        includes/scenes/levels/Level3Scene.hpp
 )
 
 include_directories("includes")

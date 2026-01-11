@@ -1,4 +1,6 @@
 #include "scenes/LevelScene.hpp"
+
+#include "Box.hpp"
 #include "grid/LevelGrid.h"
 #include "grid/GridManager.h"
 #include "characters/Fireboy.hpp"
@@ -283,6 +285,7 @@ void LevelScene::createCellObjects(LevelGrid* grid) {
             if (type == CellType::Lava) addObject(std::make_unique<Lava>(grid, x, y));
             if (type == CellType::RedDiamond) addObject(std::make_unique<RedDiamond>(grid, x, y));
             if (type == CellType::BlueDiamond) addObject(std::make_unique<BlueDiamond>(grid, x, y));
+            if (type == CellType::Box) addObject(std::make_unique<Box>(grid, x, y));
             if (type == CellType::RedDoor) {
                 auto door = std::make_unique<Door>(this, grid->getCellSize(), x, y);
                 _doors.push_back(door.get());
