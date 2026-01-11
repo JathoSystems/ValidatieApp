@@ -157,7 +157,9 @@ int main() {
                     return;
                 }
 
-                std::cout << "Restarting lobby: " << restart.getLobby() << "\n";
+                std::cout << "Restarting lobby: " << restart.getLobby() << ", level: " << restart.getLevel() << "\n";
+                // Serialize the packet before broadcasting to ensure it's in the correct format
+                restart.serialize();
                 lobby->broadcastInLobby(restart, server);
                 // Handle NetworkEventPacket
             } else if (packetId == 122) {

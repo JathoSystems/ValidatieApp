@@ -220,7 +220,13 @@ void LevelSelector::updateLevelStatus(Scene *selectorScene) {
                     }
                 }
             }
-            statsTextPtr->setText(statsText.str());
+            std::string statsTextStr = statsText.str();
+            // If text is empty, set to a space to avoid "Text has zero width" error
+            // This ensures the text object always has valid content
+            if (statsTextStr.empty()) {
+                statsTextStr = " ";
+            }
+            statsTextPtr->setText(statsTextStr);
         }
     }
 }

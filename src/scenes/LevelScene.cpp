@@ -438,7 +438,9 @@ void LevelScene::setupBaseLevel() {
 }
 
 void LevelScene::setupCharacters() {
-    if (_watergirl) return;
+    // Only skip if both characters already exist (to prevent duplicate creation)
+    // But allow re-initialization if we're restarting (both should be nullptr after cleanup)
+    if (_fireboy && _watergirl) return;
 
     GameEngine *gameEngine = &GameEngine::getInstance();
     const int FIREBOY_ID = 99;
