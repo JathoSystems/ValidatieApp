@@ -114,6 +114,26 @@ void LevelScene::cleanup() {
     GlobalFlags::isLevelCleaning = true;
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
+    GameEngine *gameEngine = &GameEngine::getInstance();
+    PhysicsSystem *physicsSystem = gameEngine->getSystem<PhysicsSystem>();
+
+    std::cout << "[LevelScene] Cleanup: Destroying all physics bodies..." << std::endl;
+    for (auto& obj : _objects) {
+        if (!obj) continue;
+
+        // Get physics component and destroy its body explicitly
+        if (auto* physics = obj->getComponent<PhysicsComponent>()) {
+            if (B2_IS_NON_NULL(physics->getBodyId())) {
+                physicsSystem->getBox2DFacade()->destroyBody(physics->getBodyId());
+                physics->clearBodyId();  // Mark as destroyed
+            }
+            // Unregister from physics system
+            physicsSystem->unregisterComponent(physics);
+        }
+    }
+
+    std::cout << "[LevelScene] Cleanup: All physics bodies destroyed" << std::endl;
+
     ObjectRegistry::getInstance().removeObject(99);
     ObjectRegistry::getInstance().removeObject(100);
     for(int i = 1; i <= _batCount; i++) {
