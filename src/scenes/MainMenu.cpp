@@ -6,6 +6,7 @@
 #include "Scenes/SceneSystem.h"
 #include "Scenes/Camera/FixedCamera.h"
 #include "Engine/GameEngine.h"
+#include "Audio/AudioSystem.h"
 #include "GameObjects/Component/AudioComponent.h"
 #include "GameObjects/Spritesheet/Animator.h"
 
@@ -55,6 +56,7 @@ MainMenu::MainMenu() : Scene("MainMenu") {
 
     auto playButton = std::make_unique<Button>("Play", std::make_unique<Color>(0, 128, 255));
     playButton->setOnClick([]() {
+        GameEngine::getInstance().getSystem<AudioSystem>()->stopMusic();
         GameEngine::getInstance().getSystem<SceneSystem>()->setScene("level_selector");
     });
     auto playButtonObj = std::make_unique<GameObject>();
@@ -84,8 +86,9 @@ MainMenu::MainMenu() : Scene("MainMenu") {
 
 void MainMenu::onInitialRender() {
     GameEngine::getInstance().getSystem<AudioSystem>()->initialize();
-    std::unique_ptr<GameObject> object = std::unique_ptr<GameObject>();
-    auto audio = std::make_unique<AudioComponent>(GameEngine::getInstance().getSystem<AudioSystem>());
-    audio->addClip("mainmenu", "resources/mainmenu.mp3", 0.05f);
-    audio->play("mainmenu", true);
+    auto* audioSystem = GameEngine::getInstance().getSystem<AudioSystem>();
+    if (audioSystem) {
+        audioSystem->loadSound("mainmenu", "resources/mainmenu.mp3");
+        audioSystem->playMusic("mainmenu", 0.05f, true);
+    }
 }
