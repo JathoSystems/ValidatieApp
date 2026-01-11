@@ -12,7 +12,7 @@
 #include "Physics/PhysicsComponent.h"
 #include "Physics/PhysicsSystem.h"
 
-#define JUMP_VELOCITY -200000.0f
+#define JUMP_VELOCITY -1200.0f
 
 BaseCharacter::BaseCharacter(std::shared_ptr<NetworkSystem> network, EventManager *eventManager, GameEngine *engine,
                              bool activePlayer, KeyBindings bindings) : Broadcastable(this) {
