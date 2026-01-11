@@ -93,7 +93,6 @@ private:
 
     void setupHUD();
 
-
     void updateDiamondCounters();
 
     void createBat();

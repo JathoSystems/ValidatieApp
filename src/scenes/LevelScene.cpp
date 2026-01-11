@@ -231,8 +231,12 @@ void LevelScene::resetLevel() {
     std::cout << "[LevelScene] SOFT RESET STARTING" << std::endl;
     std::cout << "========================================\n" << std::endl;
 
-    // 1. Reset flags
-    GlobalFlags::isLevelCleaning = false;
+    // 1. Set cleaning flag FIRST to prevent physics updates during reset
+    GlobalFlags::isLevelCleaning = true;
+
+    // Small delay to let any pending physics updates finish
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
     _levelFinished = false;
     _peopleAtDoor = 0;
     std::cout << "[RESET] Flags reset" << std::endl;
@@ -347,6 +351,9 @@ void LevelScene::resetLevel() {
 
     // 9. Update UI
     updateDiamondCounters();
+
+    // IMPORTANT: Clear the cleaning flag LAST
+    GlobalFlags::isLevelCleaning = false;
 
     std::cout << "[RESET] COMPLETE - Level ready to play again!" << std::endl;
     std::cout << "========================================\n" << std::endl;
